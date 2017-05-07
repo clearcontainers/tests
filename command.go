@@ -76,7 +76,9 @@ func NewCommand(path string, args ...string) *Command {
 // Run runs a command returning its exit code
 func (c *Command) Run() int {
 	LogIfFail("Running command '%s %s'\n", c.cmd.Path, c.cmd.Args)
-	c.cmd.Start()
+	if err := c.cmd.Start(); err != nil {
+		LogIfFail("could no start command: %v\n", err)
+	}
 
 	done := make(chan error)
 	go func() { done <- c.cmd.Wait() }()
@@ -89,7 +91,7 @@ func (c *Command) Run() int {
 	select {
 	case <-timeout:
 		LogIfFail("Killing process timeout reached '%d' seconds\n", c.Timeout)
-		c.cmd.Process.Kill()
+		_ = c.cmd.Process.Kill()
 		return -1
 
 	case err := <-done:
