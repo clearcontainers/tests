@@ -17,12 +17,9 @@ package tests
 import (
 	"bytes"
 	"flag"
-	"fmt"
 	"os/exec"
 	"syscall"
 	"time"
-
-	. "github.com/onsi/ginkgo"
 )
 
 // Runtime is the path of Clear Containers Runtime
@@ -78,7 +75,7 @@ func NewCommand(path string, args ...string) *Command {
 
 // Run runs a command returning its exit code
 func (c *Command) Run() int {
-	GinkgoWriter.Write([]byte(fmt.Sprintf("Running command '%s %s'\n", c.cmd.Path, c.cmd.Args)))
+	LogIfFail("Running command '%s %s'\n", c.cmd.Path, c.cmd.Args)
 	c.cmd.Start()
 
 	done := make(chan error)
@@ -91,17 +88,17 @@ func (c *Command) Run() int {
 
 	select {
 	case <-timeout:
-		GinkgoWriter.Write([]byte(fmt.Sprintf("Killing process timeout reached '%d' seconds\n", c.Timeout)))
+		LogIfFail("Killing process timeout reached '%d' seconds\n", c.Timeout)
 		c.cmd.Process.Kill()
 		return -1
 
 	case err := <-done:
 		if err != nil {
-			GinkgoWriter.Write([]byte(fmt.Sprintf("command failed error '%s'\n", err)))
+			LogIfFail("command failed error '%s'\n", err)
 		}
 		exitCode := c.cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 		if exitCode != c.ExitCode {
-			GinkgoWriter.Write([]byte(fmt.Sprintf("Exit code '%d' does not match with expected exit code '%d'\n", exitCode, c.ExitCode)))
+			LogIfFail("Exit code '%d' does not match with expected exit code '%d'\n", exitCode, c.ExitCode)
 		}
 		return exitCode
 	}
