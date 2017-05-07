@@ -13,6 +13,9 @@ TIMEOUT ?= 5
 functional:
 	ginkgo ./functional/ -- -runtime "${RUNTIME}" -proxy "${PROXY}" -shim "${SHIM}" -timeout ${TIMEOUT}
 
+check:
+	.ci/go-lint.sh
+
 all: functional
 
-.PHONY: functional
+.PHONY: functional check
