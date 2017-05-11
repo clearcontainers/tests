@@ -14,22 +14,4 @@
 
 package functional
 
-import (
-	. "github.com/clearcontainers/tests"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-)
-
-var _ = Describe("start", func() {
-	c := NewCommand(Runtime, "start")
-	c.ExitCode = 1
-	ret := c.Run()
-	Context("without container id", func() {
-		It("should NOT return 0", func() {
-			Expect(ret).NotTo(Equal(0))
-		})
-		It("should report an error", func() {
-			Expect(c.Stderr.Len()).NotTo(Equal(0))
-		})
-	})
-})
+var _ = DescribeCommandWithoutID("start")
