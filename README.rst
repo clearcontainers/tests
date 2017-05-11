@@ -3,10 +3,25 @@ Tests
 
 Clear Containers Tests Repository
 
-Running functional tests
-------------------------
+Functional tests
+----------------
 
-To run functional tests::
+In order to run all functional test you have to install next packages
+
+- github.com/onsi/ginkgo/ginkgo
+- github.com/onsi/gomega
+
+To install above packages, just run::
+
+  $ go get github.com/onsi/ginkgo/ginkgo
+  $ go get github.com/onsi/gomega
+
+and add ``$GOPATH/bin`` to the ``$PATH``::
+
+  $ export GOBIN=$GOPATH/bin
+  $ export PATH=$PATH:$GOBIN
+
+To run all functional tests, run::
 
   $ make functional
 
