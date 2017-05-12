@@ -24,11 +24,11 @@ import (
 func DescribeCommandWithoutID(command string) bool {
 	return Describe(command, func() {
 		c := NewCommand(Runtime, command)
-		c.ExitCode = 1
+		c.ExpectedExitCode = 1
 		ret := c.Run()
 		Context("without container id", func() {
 			It("should NOT return 0", func() {
-				Expect(ret).To(Equal(c.ExitCode))
+				Expect(ret).To(Equal(c.ExpectedExitCode))
 			})
 			It("should report an error", func() {
 				Expect(c.Stderr.Len()).NotTo(Equal(0))
