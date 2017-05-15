@@ -18,4 +18,10 @@ check:
 
 all: functional
 
+checkcommits:
+	cd cmd/checkcommits/ && go build && go test
+
+clean:
+	rm -f cmd/checkcommits/checkcommits
+
 .PHONY: functional check
