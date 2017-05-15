@@ -14,4 +14,25 @@
 
 package functional
 
-var _ = DescribeCommandWithoutID("start")
+import (
+	. "github.com/clearcontainers/tests"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
+
+// DescribeCommandWithoutID describes a command without a container ID
+func DescribeCommandWithoutID(command string) bool {
+	return Describe(command, func() {
+		c := NewCommand(Runtime, command)
+		c.ExpectedExitCode = 1
+		ret := c.Run()
+		Context("without container id", func() {
+			It("should NOT return 0", func() {
+				Expect(ret).To(Equal(c.ExpectedExitCode))
+			})
+			It("should report an error", func() {
+				Expect(c.Stderr.Len()).NotTo(Equal(0))
+			})
+		})
+	})
+}

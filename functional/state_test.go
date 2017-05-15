@@ -14,4 +14,4 @@
 
 package functional
 
-var _ = DescribeCommandWithoutID("start")
+var _ = DescribeCommandWithoutID("state")
