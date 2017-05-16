@@ -162,7 +162,7 @@ func checkCommitBodyLine(config *CommitConfig, commit string, line string,
 	length := len(line)
 	if length > config.MaxBodyLineLength {
 		return fmt.Errorf("commit %v: body line %d too long (max %v, got %v): %v",
-			commit, config.MaxBodyLineLength, 1+lineNum, length, line)
+			commit, 1+lineNum, config.MaxBodyLineLength, length, line)
 	}
 
 	return nil
