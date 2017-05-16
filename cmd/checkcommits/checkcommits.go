@@ -102,7 +102,7 @@ func checkCommitSubject(config *CommitConfig, commit, subject string) error {
 
 	length := len(subject)
 	if length > config.MaxSubjectLineLength {
-		return fmt.Errorf("commit %v: subject too long (max %v, got %v): %v",
+		return fmt.Errorf("commit %v: subject too long (max %v, got %v): %q",
 			commit, config.MaxSubjectLineLength, length, subject)
 	}
 
@@ -161,8 +161,8 @@ func checkCommitBodyLine(config *CommitConfig, commit string, line string,
 
 	length := len(line)
 	if length > config.MaxBodyLineLength {
-		return fmt.Errorf("commit %v: body line %d too long (max %v, got %v): %v",
-			commit, config.MaxBodyLineLength, 1+lineNum, length, line)
+		return fmt.Errorf("commit %v: body line %d too long (max %v, got %v): %q",
+			commit, 1+lineNum, config.MaxBodyLineLength, length, line)
 	}
 
 	return nil
