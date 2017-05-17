@@ -55,6 +55,9 @@ const (
 
 	defaultMaxSubjectLineLength = 75
 	defaultMaxBodyLineLength    = 72
+
+	defaultCommit = "HEAD"
+	defaultBranch = "master"
 )
 
 var (
@@ -400,6 +403,29 @@ func checkCommits(config *CommitConfig, commits []string) error {
 	return nil
 }
 
+func detectCIEnvironment() (commit, branch string) {
+	var name string
+
+	if os.Getenv("TRAVIS") != "" {
+		name = "TravisCI"
+
+		commit = os.Getenv("TRAVIS_COMMIT")
+		branch = os.Getenv("TRAVIS_BRANCH")
+
+	} else if os.Getenv("SEMAPHORE") != "" {
+		name = "SemaphoreCI"
+
+		commit = os.Getenv("REVISION")
+		branch = os.Getenv("BRANCH_NAME")
+	}
+
+	if verbose && name != "" {
+		fmt.Printf("Detected %v Environment\n", name)
+	}
+
+	return commit, branch
+}
+
 // preChecks performs checks on the range of commits described by commit
 // and branch.
 func preChecks(config *CommitConfig, commit, branch string) error {
@@ -412,7 +438,7 @@ func preChecks(config *CommitConfig, commit, branch string) error {
 	}
 
 	if branch == "" {
-		branch = "master"
+		return errNoBranch
 	}
 
 	commits, err := getCommitRange(commit, branch)
@@ -509,17 +535,36 @@ func main() {
 		var branch string
 
 		count := c.NArg()
-
-		if count < 1 || count > 2 {
-			return fmt.Errorf("Usage: %s [options] <commit> [<branch>]", c.App.Name)
+		if count == 0 {
+			commit, branch = detectCIEnvironment()
 		}
 
-		if count >= 1 {
+		if count > 2 {
+			return fmt.Errorf("Usage: %s [options] [<commit> [<branch>]]", c.App.Name)
+		}
+
+		if commit == "" && count >= 1 {
 			commit = c.Args().Get(0)
 		}
 
-		if count == 2 {
+		if branch == "" && count == 2 {
 			branch = c.Args().Get(1)
+		}
+
+		if commit == "" {
+			commit = defaultCommit
+
+			if verbose {
+				fmt.Printf("Defaulting commit to %s\n", commit)
+			}
+		}
+
+		if branch == "" {
+			branch = defaultBranch
+
+			if verbose {
+				fmt.Printf("Defaulting branch to %s\n", branch)
+			}
 		}
 
 		config := NewCommitConfig(c.Bool("need-fixes"),
