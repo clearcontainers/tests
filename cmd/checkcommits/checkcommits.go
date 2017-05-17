@@ -502,6 +502,21 @@ func NewCommitConfig(needFixes, needSignOffs bool, fixesPrefix, signoffPrefix st
 	return config
 }
 
+// ignoreBranch returns true if branch is specified in the slice.
+func ignoreBranch(branch string, branches []string) (bool, error) {
+	if branch == "" {
+		return false, errNoBranch
+	}
+
+	for _, b := range branches {
+		if b == branch {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "commitchecks"
@@ -548,6 +563,11 @@ func main() {
 		cli.StringFlag{
 			Name:  "sign-off-prefix",
 			Usage: fmt.Sprintf("Sign-off prefix used as an alternative to %q", defaultSobString),
+		},
+
+		cli.StringSliceFlag{
+			Name:  "ignore-branch",
+			Usage: "branch to ignore (can be specified multiple times)",
 		},
 
 		cli.UintFlag{
@@ -602,6 +622,19 @@ func main() {
 			if verbose {
 				fmt.Printf("Defaulting branch to %s\n", branch)
 			}
+		}
+
+		ignore, err := ignoreBranch(branch, c.StringSlice("ignore-branch"))
+		if err != nil {
+			return err
+		}
+
+		if ignore {
+			if verbose {
+				fmt.Printf("Exiting as ignored branch %q found.\n", branch)
+			}
+
+			os.Exit(0)
 		}
 
 		config := NewCommitConfig(c.Bool("need-fixes"),
