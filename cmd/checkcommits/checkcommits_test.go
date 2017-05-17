@@ -113,12 +113,12 @@ func TestCheckCommitSubject(t *testing.T) {
 		{"", "bar", nil, true, false},
 		{"", "baz", config, true, false},
 		{"", "subsystem: A subject", config, true, false},
-		{"", strings.Repeat("x", (defaultMaxSubjectLineLength/2)-1), nil, true, false},
-		{"", strings.Repeat("x", defaultMaxSubjectLineLength/2), nil, true, false},
-		{"", strings.Repeat("x", (defaultMaxSubjectLineLength/2)+1), nil, true, false},
-		{"", strings.Repeat("x:", (defaultMaxSubjectLineLength/2)-1), nil, true, false},
-		{"", strings.Repeat("x:", defaultMaxSubjectLineLength/2), nil, true, false},
-		{"", strings.Repeat("x:", (defaultMaxSubjectLineLength/2)+1), nil, true, false},
+		{"", strings.Repeat("a", (defaultMaxSubjectLineLength/2)-1), nil, true, false},
+		{"", strings.Repeat("b", defaultMaxSubjectLineLength/2), nil, true, false},
+		{"", strings.Repeat("c", (defaultMaxSubjectLineLength/2)+1), nil, true, false},
+		{"", strings.Repeat("d:", (defaultMaxSubjectLineLength/2)-1), nil, true, false},
+		{"", strings.Repeat("e:", defaultMaxSubjectLineLength/2), nil, true, false},
+		{"", strings.Repeat("f:", (defaultMaxSubjectLineLength/2)+1), nil, true, false},
 
 		// invalid subject
 		{"HEAD", "", nil, true, false},
@@ -136,13 +136,13 @@ func TestCheckCommitSubject(t *testing.T) {
 		{"HEAD", " \n\r ", config, true, false},
 		{"HEAD", "invalid as no subsystem", config, true, false},
 
-		{"HEAD", strings.Repeat("x:", (defaultMaxSubjectLineLength/2)+1), config, true, false},
+		{"HEAD", strings.Repeat("g:", (defaultMaxSubjectLineLength/2)+1), config, true, false},
 
 		// valid (no fixes)
 		{"HEAD", "subsystem: A subject", config, false, false},
 		{"HEAD", "我很好: 你好", config, false, false},
-		{"HEAD", strings.Repeat("x:", (defaultMaxSubjectLineLength/2)-1), config, false, false},
-		{"HEAD", strings.Repeat("x:", (defaultMaxSubjectLineLength / 2)), config, false, false},
+		{"HEAD", strings.Repeat("h:", (defaultMaxSubjectLineLength/2)-1), config, false, false},
+		{"HEAD", strings.Repeat("i:", (defaultMaxSubjectLineLength / 2)), config, false, false},
 
 		// valid (with fixes)
 		{"HEAD", "subsystem: A subject fixes #1", config, false, true},
@@ -151,8 +151,8 @@ func TestCheckCommitSubject(t *testing.T) {
 		{"HEAD", "subsystem: A subject fixes #999", config, false, true},
 		{"HEAD", "我很好: 你好", config, false, false},
 		{"HEAD", "我很好: fixes #12345. 你好", config, false, true},
-		{"HEAD", strings.Repeat("x:", (defaultMaxSubjectLineLength/2)-1), config, false, false},
-		{"HEAD", strings.Repeat("x:", (defaultMaxSubjectLineLength / 2)), config, false, false},
+		{"HEAD", strings.Repeat("j:", (defaultMaxSubjectLineLength/2)-1), config, false, false},
+		{"HEAD", strings.Repeat("k:", (defaultMaxSubjectLineLength / 2)), config, false, false},
 	}
 
 	for _, d := range data {
@@ -235,9 +235,22 @@ func TestCheckCommitBody(t *testing.T) {
 		{"HEAD", []string{"foo", "\t Signed-off-by: me@foo.com"}, config, true, false},
 		{"HEAD", []string{"foo", " \t Signed-off-by: me@foo.com"}, config, true, false},
 
-		{"HEAD", []string{strings.Repeat("x", (defaultMaxBodyLineLength)+1), "Signed-off-by: me@foo.com"}, config, true, false},
-
 		// valid
+
+		// single-word long lines should be accepted
+		{"HEAD", []string{strings.Repeat("l", (defaultMaxBodyLineLength)+1), "Signed-off-by: me@foo.com"}, config, false, false},
+		{"HEAD", []string{"https://this-is-a-really-really-really-reeeeally-loooooooong-and-silly-unique-resource-locator-that-nobody-should-ever-have-to-type/27706e53e877987138d758bcfcac6af623059be7/yet-another-silly-long-file-name-foo.html", "Signed-off-by: me@foo.com"}, config, false, false},
+		// indented URL
+		{"HEAD", []string{" https://this-is-a-really-really-really-reeeeally-loooooooong-and-silly-unique-resource-locator-that-nobody-should-ever-have-to-type/27706e53e877987138d758bcfcac6af623059be7/yet-another-silly-long-file-name-foo.html", "Signed-off-by: me@foo.com"}, config, false, false},
+
+		// multi-word long lines should not be accepted
+		{"HEAD", []string{
+			fmt.Sprintf("%s %s",
+				strings.Repeat("l", (defaultMaxBodyLineLength/2)+1),
+				strings.Repeat("l", (defaultMaxBodyLineLength/2)+1),
+			),
+			"Signed-off-by: me@foo.com"}, config, false, false},
+
 		{"HEAD", []string{"foo", "Signed-off-by: me@foo.com"}, config, false, false},
 		{"HEAD", []string{"你好", "Signed-off-by: me@foo.com"}, config, false, false},
 
@@ -251,48 +264,48 @@ func TestCheckCommitBody(t *testing.T) {
 
 		// SOB can be any length
 		{"HEAD", []string{"foo",
-			fmt.Sprintf("Signed-off-by: %s@foo.com", strings.Repeat("x", defaultMaxBodyLineLength*13))},
+			fmt.Sprintf("Signed-off-by: %s@foo.com", strings.Repeat("m", defaultMaxBodyLineLength*13))},
 			config, false, false},
 
 		// Non-alphabetic lines can be any length
 		{"HEAD", []string{"foo",
-			fmt.Sprintf("0%s", strings.Repeat("x", defaultMaxBodyLineLength*7)),
+			fmt.Sprintf("0%s", strings.Repeat("n", defaultMaxBodyLineLength*7)),
 			fmt.Sprintf("Signed-off-by: me@foo.com")},
 			config, false, false},
 
 		{"HEAD", []string{"foo",
-			fmt.Sprintf("1%s", strings.Repeat("x", defaultMaxBodyLineLength*7)),
+			fmt.Sprintf("1%s", strings.Repeat("o", defaultMaxBodyLineLength*7)),
 			fmt.Sprintf("Signed-off-by: me@foo.com")},
 			config, false, false},
 
 		{"HEAD", []string{"foo",
-			fmt.Sprintf("9%s", strings.Repeat("x", defaultMaxBodyLineLength*7)),
+			fmt.Sprintf("9%s", strings.Repeat("p", defaultMaxBodyLineLength*7)),
 			fmt.Sprintf("Signed-off-by: me@foo.com")},
 			config, false, false},
 
 		{"HEAD", []string{"foo",
-			fmt.Sprintf("_%s", strings.Repeat("x", defaultMaxBodyLineLength*7)),
+			fmt.Sprintf("_%s", strings.Repeat("q", defaultMaxBodyLineLength*7)),
 			fmt.Sprintf("Signed-off-by: me@foo.com")},
 			config, false, false},
 
 		{"HEAD", []string{"foo",
-			fmt.Sprintf(".%s", strings.Repeat("x", defaultMaxBodyLineLength*7)),
+			fmt.Sprintf(".%s", strings.Repeat("r", defaultMaxBodyLineLength*7)),
 			fmt.Sprintf("Signed-off-by: me@foo.com")},
 			config, false, false},
 
 		{"HEAD", []string{"foo",
-			fmt.Sprintf("!%s", strings.Repeat("x", defaultMaxBodyLineLength*7)),
+			fmt.Sprintf("!%s", strings.Repeat("s", defaultMaxBodyLineLength*7)),
 			fmt.Sprintf("Signed-off-by: me@foo.com")},
 			config, false, false},
 
 		{"HEAD", []string{"foo",
-			fmt.Sprintf("?%s", strings.Repeat("x", defaultMaxBodyLineLength*7)),
+			fmt.Sprintf("?%s", strings.Repeat("t", defaultMaxBodyLineLength*7)),
 			fmt.Sprintf("Signed-off-by: me@foo.com")},
 			config, false, false},
 
 		// Indented data can be any length
 		{"HEAD", []string{"foo",
-			fmt.Sprintf(" %s", strings.Repeat("x", defaultMaxBodyLineLength*7)),
+			fmt.Sprintf(" %s", strings.Repeat("u", defaultMaxBodyLineLength*7)),
 			fmt.Sprintf("Signed-off-by: me@foo.com")},
 			config, false, false},
 
@@ -301,8 +314,8 @@ func TestCheckCommitBody(t *testing.T) {
 			fmt.Sprintf("Signed-off-by: me@foo.com")},
 			config, false, false},
 
-		{"HEAD", []string{strings.Repeat("x", (defaultMaxBodyLineLength)-1), "Signed-off-by: me@foo.com"}, config, false, false},
-		{"HEAD", []string{strings.Repeat("x", defaultMaxBodyLineLength), "Signed-off-by: me@foo.com"}, config, false, false},
+		{"HEAD", []string{strings.Repeat("v", (defaultMaxBodyLineLength)-1), "Signed-off-by: me@foo.com"}, config, false, false},
+		{"HEAD", []string{strings.Repeat("w", defaultMaxBodyLineLength), "Signed-off-by: me@foo.com"}, config, false, false},
 	}
 
 	for _, d := range data {

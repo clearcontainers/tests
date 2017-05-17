@@ -73,11 +73,22 @@ $ ./checkcommits -h
 $ go get github.com/clearcontainers/tests/cmd/checkcommits
 ```
 
+### Basic use
+
+```
+$ checkcommits "$commit" "$branch"
+```
+
+### Example showing most of the available options:
+
+```
+$ checkcommits --verbose --need-fixes --need-sign-offs --body-length 99 --subject-length 42 "$commit" "$branch"
+```
+
 ### Run under TravisCI
 
-Require fixes and sign-offs.
 ```
-$ checkcommits --need-fixes --need-sign-offs "$TRAVIS_COMMIT" "$TRAVIS_BRANCH"
+$ checkcommits "$TRAVIS_COMMIT" "$TRAVIS_BRANCH"
 ```
 
 ### Run under SemaphoreCI

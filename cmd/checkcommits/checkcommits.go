@@ -55,12 +55,16 @@ const (
 
 	defaultMaxSubjectLineLength = 75
 	defaultMaxBodyLineLength    = 72
+
+	defaultCommit = "HEAD"
+	defaultBranch = "master"
 )
 
 var (
 	// Full path to git(1) command
 	gitPath = ""
 	verbose = false
+	debug   = false
 
 	errNoCommit = errors.New("Need commit")
 	errNoBranch = errors.New("Need branch")
@@ -128,8 +132,11 @@ func checkCommitBodyLine(config *CommitConfig, commit string, line string,
 		return nil
 	}
 
+	// Remove all whitespace
+	trimmedLine := strings.TrimSpace(line)
+
 	if *nonWhitespaceOnlyLine == -1 {
-		if strings.TrimSpace(line) != "" {
+		if trimmedLine != "" {
 			*nonWhitespaceOnlyLine = lineNum
 		}
 	}
@@ -159,8 +166,17 @@ func checkCommitBodyLine(config *CommitConfig, commit string, line string,
 		return nil
 	}
 
+	// If the line comprises of only a single word, it may be
+	// something like a URL (it's certainly very unlikely to be a
+	// normal word if the default lengths are being used), so length
+	// checks won't be applied to it.
+	singleWordLine := false
+	if trimmedLine == line {
+		singleWordLine = true
+	}
+
 	length := len(line)
-	if length > config.MaxBodyLineLength {
+	if length > config.MaxBodyLineLength && !singleWordLine {
 		return fmt.Errorf("commit %v: body line %d too long (max %v, got %v): %q",
 			commit, 1+lineNum, config.MaxBodyLineLength, length, line)
 	}
@@ -228,16 +244,21 @@ func getCommitRange(commit, branch string) ([]string, error) {
 	args = append(args, "rev-list")
 	args = append(args, "--no-merges")
 	args = append(args, "--reverse")
-	args = append(args, fmt.Sprintf("%s..", branch))
+	args = append(args, fmt.Sprintf("%s..%s", branch, commit))
 
-	cmdLine := exec.Command(args[0], args[1:]...)
+	cmdline := strings.Join(args, " ")
 
-	bytes, err := cmdLine.Output()
+	if debug {
+		fmt.Printf("Running: %q\n", cmdline)
+	}
+
+	cmd := exec.Command(args[0], args[1:]...)
+
+	bytes, err := cmd.Output()
 	if err != nil {
 		return nil,
-			fmt.Errorf("Failed to run command %v: %v",
-				strings.Join(args, " "),
-				err)
+			fmt.Errorf("Failed to run command %q: %v",
+				cmdline, err)
 	}
 
 	lines := strings.Split(string(bytes), "\n")
@@ -265,13 +286,19 @@ func getCommitSubject(commit string) (string, error) {
 	args = append(args, "--pretty=%s")
 	args = append(args, commit)
 
-	cmdLine := exec.Command(args[0], args[1:]...)
+	cmdline := strings.Join(args, " ")
 
-	bytes, err := cmdLine.Output()
+	if debug {
+		fmt.Printf("Running: %q\n", cmdline)
+	}
+
+	cmd := exec.Command(args[0], args[1:]...)
+
+	bytes, err := cmd.Output()
 	if err != nil {
 		return "",
 			fmt.Errorf("Failed to run command %v: %v",
-				strings.Join(args, " "), err)
+				cmdline, err)
 	}
 
 	return string(bytes), nil
@@ -290,13 +317,19 @@ func getCommitBody(commit string) ([]string, error) {
 	args = append(args, "--pretty=%b")
 	args = append(args, commit)
 
-	cmdLine := exec.Command(args[0], args[1:]...)
+	cmdline := strings.Join(args, " ")
 
-	bytes, err := cmdLine.Output()
+	if debug {
+		fmt.Printf("Running: %q\n", cmdline)
+	}
+
+	cmd := exec.Command(args[0], args[1:]...)
+
+	bytes, err := cmd.Output()
 	if err != nil {
 		return []string{},
 			fmt.Errorf("Failed to run command %v: %v",
-				strings.Join(args, " "), err)
+				cmdline, err)
 	}
 
 	lines := strings.Split(string(bytes), "\n")
@@ -388,6 +421,29 @@ func checkCommits(config *CommitConfig, commits []string) error {
 	return nil
 }
 
+func detectCIEnvironment() (commit, branch string) {
+	var name string
+
+	if os.Getenv("TRAVIS") != "" {
+		name = "TravisCI"
+
+		commit = os.Getenv("TRAVIS_COMMIT")
+		branch = os.Getenv("TRAVIS_BRANCH")
+
+	} else if os.Getenv("SEMAPHORE") != "" {
+		name = "SemaphoreCI"
+
+		commit = os.Getenv("REVISION")
+		branch = os.Getenv("BRANCH_NAME")
+	}
+
+	if verbose && name != "" {
+		fmt.Printf("Detected %v Environment\n", name)
+	}
+
+	return commit, branch
+}
+
 // preChecks performs checks on the range of commits described by commit
 // and branch.
 func preChecks(config *CommitConfig, commit, branch string) error {
@@ -400,7 +456,7 @@ func preChecks(config *CommitConfig, commit, branch string) error {
 	}
 
 	if branch == "" {
-		branch = "master"
+		return errNoBranch
 	}
 
 	commits, err := getCommitRange(commit, branch)
@@ -409,7 +465,8 @@ func preChecks(config *CommitConfig, commit, branch string) error {
 	}
 
 	if verbose {
-		fmt.Printf("Found %d commits\n", len(commits))
+		fmt.Printf("Found %d commits between commit %v and branch %v\n",
+			len(commits), commit, branch)
 	}
 
 	return checkCommits(config, commits)
@@ -445,10 +502,85 @@ func NewCommitConfig(needFixes, needSignOffs bool, fixesPrefix, signoffPrefix st
 	return config
 }
 
+// ignoreBranch returns true if branch is specified in the slice.
+func ignoreBranch(branch string, branches []string) (bool, error) {
+	if branch == "" {
+		return false, errNoBranch
+	}
+
+	for _, b := range branches {
+		if b == branch {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// getCommitAndBranch determines the commit and branch to use.
+func getCommitAndBranch(c *cli.Context) (commit, branch string, err error) {
+	count := c.NArg()
+	if count == 0 {
+		// no arguments so check the environment
+		commit, branch = detectCIEnvironment()
+	}
+
+	if count > 2 {
+		return "", "", errors.New("Too many arguments. Run with '--help' for usage")
+	}
+
+	if commit == "" && count >= 1 {
+		commit = c.Args().Get(0)
+	}
+
+	if branch == "" && count == 2 {
+		branch = c.Args().Get(1)
+	}
+
+	if commit == "" {
+		commit = defaultCommit
+
+		if verbose {
+			fmt.Printf("Defaulting commit to %s\n", commit)
+		}
+	}
+
+	if branch == "" {
+		branch = defaultBranch
+
+		if verbose {
+			fmt.Printf("Defaulting branch to %s\n", branch)
+		}
+	}
+
+	ignore, err := ignoreBranch(branch, c.StringSlice("ignore-branch"))
+	if err != nil {
+		return "", "", err
+	}
+
+	if ignore {
+		if verbose {
+			fmt.Printf("Exiting as ignored branch %q found.\n", branch)
+		}
+
+		os.Exit(0)
+	}
+
+	return commit, branch, nil
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "commitchecks"
+	app.Version = "0.0.1"
 	app.Description = "perform checks on git commits"
+	app.Usage = app.Description
+	app.UsageText = fmt.Sprintf("%s [global options] [commit [branch]]\n", app.Name)
+	app.UsageText += fmt.Sprintf("\n")
+	app.UsageText += fmt.Sprintf("   If not specified, commit and branch will be set automatically\n")
+	app.UsageText += fmt.Sprintf("   from standard CI environment variables.\n")
+	app.UsageText += fmt.Sprintf("   If not running under a recognised CI environment (Travis or Sempahore),\n")
+	app.UsageText += fmt.Sprintf("   commit will default to %q and branch to %q.", defaultCommit, defaultBranch)
 
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
@@ -468,6 +600,13 @@ func main() {
 			Destination: &verbose,
 		},
 
+		cli.BoolFlag{
+			Name:        "debug",
+			Usage:       "Display debug messages (implies verbose)",
+			EnvVar:      "CHECKCOMMITS_DEBUG",
+			Destination: &debug,
+		},
+
 		cli.StringFlag{
 			Name:  "fixes-prefix",
 			Usage: fmt.Sprintf("Fixes prefix used as an alternative to %q", defaultFixesString),
@@ -476,6 +615,11 @@ func main() {
 		cli.StringFlag{
 			Name:  "sign-off-prefix",
 			Usage: fmt.Sprintf("Sign-off prefix used as an alternative to %q", defaultSobString),
+		},
+
+		cli.StringSliceFlag{
+			Name:  "ignore-branch",
+			Usage: "branch to ignore (can be specified multiple times)",
 		},
 
 		cli.UintFlag{
@@ -492,21 +636,13 @@ func main() {
 	}
 
 	app.Action = func(c *cli.Context) error {
-		var commit string
-		var branch string
-
-		count := c.NArg()
-
-		if count < 1 || count > 2 {
-			return fmt.Errorf("Usage: %s [options] <commit> [<branch>]", c.App.Name)
+		if c.Bool("debug") {
+			verbose = true
 		}
 
-		if count >= 1 {
-			commit = c.Args().Get(0)
-		}
-
-		if count == 2 {
-			branch = c.Args().Get(1)
+		commit, branch, err := getCommitAndBranch(c)
+		if err != nil {
+			return err
 		}
 
 		config := NewCommitConfig(c.Bool("need-fixes"),
