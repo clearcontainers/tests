@@ -507,6 +507,13 @@ func main() {
 	app.Name = "commitchecks"
 	app.Version = "0.0.1"
 	app.Description = "perform checks on git commits"
+	app.Usage = app.Description
+	app.UsageText = fmt.Sprintf("%s [global options] [commit [branch]]\n", app.Name)
+	app.UsageText += fmt.Sprintf("\n")
+	app.UsageText += fmt.Sprintf("   If not specified, commit and branch will be set automatically\n")
+	app.UsageText += fmt.Sprintf("   from standard CI environment variables.\n")
+	app.UsageText += fmt.Sprintf("   If not running under a recognised CI environment (Travis or Sempahore),\n")
+	app.UsageText += fmt.Sprintf("   commit will default to %q and branch to %q.", defaultCommit, defaultBranch)
 
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
@@ -570,7 +577,7 @@ func main() {
 		}
 
 		if count > 2 {
-			return fmt.Errorf("Usage: %s [options] [<commit> [<branch>]]", c.App.Name)
+			return errors.New("Too many arguments. Run with '--help' for usage")
 		}
 
 		if commit == "" && count >= 1 {
