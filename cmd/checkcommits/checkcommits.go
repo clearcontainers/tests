@@ -517,6 +517,58 @@ func ignoreBranch(branch string, branches []string) (bool, error) {
 	return false, nil
 }
 
+// getCommitAndBranch determines the commit and branch to use.
+func getCommitAndBranch(c *cli.Context) (commit, branch string, err error) {
+	count := c.NArg()
+	if count == 0 {
+		// no arguments so check the environment
+		commit, branch = detectCIEnvironment()
+	}
+
+	if count > 2 {
+		return "", "", errors.New("Too many arguments. Run with '--help' for usage")
+	}
+
+	if commit == "" && count >= 1 {
+		commit = c.Args().Get(0)
+	}
+
+	if branch == "" && count == 2 {
+		branch = c.Args().Get(1)
+	}
+
+	if commit == "" {
+		commit = defaultCommit
+
+		if verbose {
+			fmt.Printf("Defaulting commit to %s\n", commit)
+		}
+	}
+
+	if branch == "" {
+		branch = defaultBranch
+
+		if verbose {
+			fmt.Printf("Defaulting branch to %s\n", branch)
+		}
+	}
+
+	ignore, err := ignoreBranch(branch, c.StringSlice("ignore-branch"))
+	if err != nil {
+		return "", "", err
+	}
+
+	if ignore {
+		if verbose {
+			fmt.Printf("Exiting as ignored branch %q found.\n", branch)
+		}
+
+		os.Exit(0)
+	}
+
+	return commit, branch, nil
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "commitchecks"
@@ -588,53 +640,9 @@ func main() {
 			verbose = true
 		}
 
-		var commit string
-		var branch string
-
-		count := c.NArg()
-		if count == 0 {
-			commit, branch = detectCIEnvironment()
-		}
-
-		if count > 2 {
-			return errors.New("Too many arguments. Run with '--help' for usage")
-		}
-
-		if commit == "" && count >= 1 {
-			commit = c.Args().Get(0)
-		}
-
-		if branch == "" && count == 2 {
-			branch = c.Args().Get(1)
-		}
-
-		if commit == "" {
-			commit = defaultCommit
-
-			if verbose {
-				fmt.Printf("Defaulting commit to %s\n", commit)
-			}
-		}
-
-		if branch == "" {
-			branch = defaultBranch
-
-			if verbose {
-				fmt.Printf("Defaulting branch to %s\n", branch)
-			}
-		}
-
-		ignore, err := ignoreBranch(branch, c.StringSlice("ignore-branch"))
+		commit, branch, err := getCommitAndBranch(c)
 		if err != nil {
 			return err
-		}
-
-		if ignore {
-			if verbose {
-				fmt.Printf("Exiting as ignored branch %q found.\n", branch)
-			}
-
-			os.Exit(0)
 		}
 
 		config := NewCommitConfig(c.Bool("need-fixes"),
