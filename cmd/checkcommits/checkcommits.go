@@ -64,6 +64,7 @@ var (
 	// Full path to git(1) command
 	gitPath = ""
 	verbose = false
+	debug   = false
 
 	errNoCommit = errors.New("Need commit")
 	errNoBranch = errors.New("Need branch")
@@ -245,14 +246,19 @@ func getCommitRange(commit, branch string) ([]string, error) {
 	args = append(args, "--reverse")
 	args = append(args, fmt.Sprintf("%s..%s", branch, commit))
 
-	cmdLine := exec.Command(args[0], args[1:]...)
+	cmdline := strings.Join(args, " ")
 
-	bytes, err := cmdLine.Output()
+	if debug {
+		fmt.Printf("Running: %q\n", cmdline)
+	}
+
+	cmd := exec.Command(args[0], args[1:]...)
+
+	bytes, err := cmd.Output()
 	if err != nil {
 		return nil,
-			fmt.Errorf("Failed to run command %v: %v",
-				strings.Join(args, " "),
-				err)
+			fmt.Errorf("Failed to run command %q: %v",
+				cmdline, err)
 	}
 
 	lines := strings.Split(string(bytes), "\n")
@@ -280,13 +286,19 @@ func getCommitSubject(commit string) (string, error) {
 	args = append(args, "--pretty=%s")
 	args = append(args, commit)
 
-	cmdLine := exec.Command(args[0], args[1:]...)
+	cmdline := strings.Join(args, " ")
 
-	bytes, err := cmdLine.Output()
+	if debug {
+		fmt.Printf("Running: %q\n", cmdline)
+	}
+
+	cmd := exec.Command(args[0], args[1:]...)
+
+	bytes, err := cmd.Output()
 	if err != nil {
 		return "",
 			fmt.Errorf("Failed to run command %v: %v",
-				strings.Join(args, " "), err)
+				cmdline, err)
 	}
 
 	return string(bytes), nil
@@ -305,13 +317,19 @@ func getCommitBody(commit string) ([]string, error) {
 	args = append(args, "--pretty=%b")
 	args = append(args, commit)
 
-	cmdLine := exec.Command(args[0], args[1:]...)
+	cmdline := strings.Join(args, " ")
 
-	bytes, err := cmdLine.Output()
+	if debug {
+		fmt.Printf("Running: %q\n", cmdline)
+	}
+
+	cmd := exec.Command(args[0], args[1:]...)
+
+	bytes, err := cmd.Output()
 	if err != nil {
 		return []string{},
 			fmt.Errorf("Failed to run command %v: %v",
-				strings.Join(args, " "), err)
+				cmdline, err)
 	}
 
 	lines := strings.Split(string(bytes), "\n")
@@ -507,6 +525,13 @@ func main() {
 			Destination: &verbose,
 		},
 
+		cli.BoolFlag{
+			Name:        "debug",
+			Usage:       "Display debug messages (implies verbose)",
+			EnvVar:      "CHECKCOMMITS_DEBUG",
+			Destination: &debug,
+		},
+
 		cli.StringFlag{
 			Name:  "fixes-prefix",
 			Usage: fmt.Sprintf("Fixes prefix used as an alternative to %q", defaultFixesString),
@@ -531,6 +556,10 @@ func main() {
 	}
 
 	app.Action = func(c *cli.Context) error {
+		if c.Bool("debug") {
+			verbose = true
+		}
+
 		var commit string
 		var branch string
 
