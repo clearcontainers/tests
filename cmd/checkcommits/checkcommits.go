@@ -505,6 +505,7 @@ func NewCommitConfig(needFixes, needSignOffs bool, fixesPrefix, signoffPrefix st
 func main() {
 	app := cli.NewApp()
 	app.Name = "commitchecks"
+	app.Version = "0.0.1"
 	app.Description = "perform checks on git commits"
 
 	app.Flags = []cli.Flag{
