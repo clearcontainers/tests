@@ -128,8 +128,11 @@ func checkCommitBodyLine(config *CommitConfig, commit string, line string,
 		return nil
 	}
 
+	// Remove all whitespace
+	trimmedLine := strings.TrimSpace(line)
+
 	if *nonWhitespaceOnlyLine == -1 {
-		if strings.TrimSpace(line) != "" {
+		if trimmedLine != "" {
 			*nonWhitespaceOnlyLine = lineNum
 		}
 	}
@@ -159,8 +162,17 @@ func checkCommitBodyLine(config *CommitConfig, commit string, line string,
 		return nil
 	}
 
+	// If the line comprises of only a single word, it may be
+	// something like a URL (it's certainly very unlikely to be a
+	// normal word if the default lengths are being used), so length
+	// checks won't be applied to it.
+	singleWordLine := false
+	if trimmedLine == line {
+		singleWordLine = true
+	}
+
 	length := len(line)
-	if length > config.MaxBodyLineLength {
+	if length > config.MaxBodyLineLength && !singleWordLine {
 		return fmt.Errorf("commit %v: body line %d too long (max %v, got %v): %q",
 			commit, 1+lineNum, config.MaxBodyLineLength, length, line)
 	}

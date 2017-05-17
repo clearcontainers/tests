@@ -235,9 +235,22 @@ func TestCheckCommitBody(t *testing.T) {
 		{"HEAD", []string{"foo", "\t Signed-off-by: me@foo.com"}, config, true, false},
 		{"HEAD", []string{"foo", " \t Signed-off-by: me@foo.com"}, config, true, false},
 
-		{"HEAD", []string{strings.Repeat("l", (defaultMaxBodyLineLength)+1), "Signed-off-by: me@foo.com"}, config, true, false},
-
 		// valid
+
+		// single-word long lines should be accepted
+		{"HEAD", []string{strings.Repeat("l", (defaultMaxBodyLineLength)+1), "Signed-off-by: me@foo.com"}, config, false, false},
+		{"HEAD", []string{"https://this-is-a-really-really-really-reeeeally-loooooooong-and-silly-unique-resource-locator-that-nobody-should-ever-have-to-type/27706e53e877987138d758bcfcac6af623059be7/yet-another-silly-long-file-name-foo.html", "Signed-off-by: me@foo.com"}, config, false, false},
+		// indented URL
+		{"HEAD", []string{" https://this-is-a-really-really-really-reeeeally-loooooooong-and-silly-unique-resource-locator-that-nobody-should-ever-have-to-type/27706e53e877987138d758bcfcac6af623059be7/yet-another-silly-long-file-name-foo.html", "Signed-off-by: me@foo.com"}, config, false, false},
+
+		// multi-word long lines should not be accepted
+		{"HEAD", []string{
+			fmt.Sprintf("%s %s",
+				strings.Repeat("l", (defaultMaxBodyLineLength/2)+1),
+				strings.Repeat("l", (defaultMaxBodyLineLength/2)+1),
+			),
+			"Signed-off-by: me@foo.com"}, config, false, false},
+
 		{"HEAD", []string{"foo", "Signed-off-by: me@foo.com"}, config, false, false},
 		{"HEAD", []string{"你好", "Signed-off-by: me@foo.com"}, config, false, false},
 
