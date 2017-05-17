@@ -409,7 +409,8 @@ func preChecks(config *CommitConfig, commit, branch string) error {
 	}
 
 	if verbose {
-		fmt.Printf("Found %d commits\n", len(commits))
+		fmt.Printf("Found %d commits between commit %v and branch %v\n",
+			len(commits), commit, branch)
 	}
 
 	return checkCommits(config, commits)
