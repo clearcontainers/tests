@@ -15,6 +15,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -246,31 +247,7 @@ func getCommitRange(commit, branch string) ([]string, error) {
 	args = append(args, "--reverse")
 	args = append(args, fmt.Sprintf("%s..%s", branch, commit))
 
-	cmdline := strings.Join(args, " ")
-
-	if debug {
-		fmt.Printf("Running: %q\n", cmdline)
-	}
-
-	cmd := exec.Command(args[0], args[1:]...)
-
-	bytes, err := cmd.Output()
-	if err != nil {
-		return nil,
-			fmt.Errorf("Failed to run command %q: %v",
-				cmdline, err)
-	}
-
-	lines := strings.Split(string(bytes), "\n")
-
-	// Remove last line if empty
-	length := len(lines)
-	last := lines[length-1]
-	if last == "" {
-		lines = lines[:length-1]
-	}
-
-	return lines, nil
+	return runCommand(args)
 }
 
 func getCommitSubject(commit string) (string, error) {
@@ -286,22 +263,12 @@ func getCommitSubject(commit string) (string, error) {
 	args = append(args, "--pretty=%s")
 	args = append(args, commit)
 
-	cmdline := strings.Join(args, " ")
-
-	if debug {
-		fmt.Printf("Running: %q\n", cmdline)
-	}
-
-	cmd := exec.Command(args[0], args[1:]...)
-
-	bytes, err := cmd.Output()
+	lines, err := runCommand(args)
 	if err != nil {
-		return "",
-			fmt.Errorf("Failed to run command %v: %v",
-				cmdline, err)
+		return "", err
 	}
 
-	return string(bytes), nil
+	return lines[0], nil
 }
 
 func getCommitBody(commit string) ([]string, error) {
@@ -317,31 +284,7 @@ func getCommitBody(commit string) ([]string, error) {
 	args = append(args, "--pretty=%b")
 	args = append(args, commit)
 
-	cmdline := strings.Join(args, " ")
-
-	if debug {
-		fmt.Printf("Running: %q\n", cmdline)
-	}
-
-	cmd := exec.Command(args[0], args[1:]...)
-
-	bytes, err := cmd.Output()
-	if err != nil {
-		return []string{},
-			fmt.Errorf("Failed to run command %v: %v",
-				cmdline, err)
-	}
-
-	lines := strings.Split(string(bytes), "\n")
-
-	// Remove last line if empty
-	length := len(lines)
-	last := lines[length-1]
-	if last == "" {
-		lines = lines[:length-1]
-	}
-
-	return lines, nil
+	return runCommand(args)
 }
 
 func checkCommitFull(config *CommitConfig, commit, subject string, body []string) error {
@@ -470,6 +413,41 @@ func preChecks(config *CommitConfig, commit, branch string) error {
 	}
 
 	return checkCommits(config, commits)
+}
+
+// runCommand runs the command specified by args and returns its stdout
+// lines as a slice.
+func runCommand(args []string) (stdout []string, err error) {
+	var outBytes, errBytes bytes.Buffer
+
+	cmd := exec.Command(args[0], args[1:]...)
+
+	cmdline := strings.Join(args, " ")
+	if debug {
+		fmt.Printf("Running: %q\n", cmdline)
+	}
+
+	cmd.Stdout = &outBytes
+	cmd.Stderr = &errBytes
+
+	err = cmd.Run()
+	if err != nil {
+		e := fmt.Errorf("Failed to run command %v: %v"+
+			" (stdout: %v, stderr: %v)",
+			cmdline, err, outBytes.String(), errBytes.String())
+		return nil, e
+	}
+
+	lines := strings.Split(outBytes.String(), "\n")
+
+	// Remove last line if empty
+	length := len(lines)
+	last := lines[length-1]
+	if last == "" {
+		lines = lines[:length-1]
+	}
+
+	return lines, nil
 }
 
 // NewCommitConfig creates a new CommitConfig object.
