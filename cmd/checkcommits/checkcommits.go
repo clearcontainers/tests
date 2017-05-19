@@ -560,10 +560,14 @@ func main() {
 	app.Usage = app.Description
 	app.UsageText = fmt.Sprintf("%s [global options] [commit [branch]]\n", app.Name)
 	app.UsageText += fmt.Sprintf("\n")
-	app.UsageText += fmt.Sprintf("   If not specified, commit and branch will be set automatically\n")
-	app.UsageText += fmt.Sprintf("   from standard CI environment variables.\n")
-	app.UsageText += fmt.Sprintf("   If not running under a recognised CI environment (Travis or Sempahore),\n")
-	app.UsageText += fmt.Sprintf("   commit will default to %q and branch to %q.", defaultCommit, defaultBranch)
+	app.UsageText += fmt.Sprintf("Notes:\n")
+	app.UsageText += fmt.Sprintf("   - The commit argument refers to the (normally latest) commit in the\n")
+	app.UsageText += fmt.Sprintf("     source branch that wants to be merged into the specified (destination)\n")
+	app.UsageText += fmt.Sprintf("     branch.\n\n")
+	app.UsageText += fmt.Sprintf("   - If not specified, commit and branch will be set automatically\n")
+	app.UsageText += fmt.Sprintf("     if running in a supported CI environment (Travis or Semaphore).\n\n")
+	app.UsageText += fmt.Sprintf("   - If not running under a recognised CI environment, commit will default\n")
+	app.UsageText += fmt.Sprintf("     to %q and branch to %q.", defaultCommit, defaultBranch)
 
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
