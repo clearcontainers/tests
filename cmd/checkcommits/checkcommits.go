@@ -250,9 +250,13 @@ func getCommitRange(commit, branch string) ([]string, error) {
 	return runCommand(args)
 }
 
-func getCommitSubject(commit string) (string, error) {
+func runGitLog(commit, prettyFormat string) ([]string, error) {
 	if commit == "" {
-		return "", errNoCommit
+		return nil, errNoCommit
+	}
+
+	if prettyFormat == "" {
+		return nil, errors.New("no pretty format")
 	}
 
 	var args []string
@@ -260,10 +264,18 @@ func getCommitSubject(commit string) (string, error) {
 	args = append(args, gitPath)
 	args = append(args, "log")
 	args = append(args, "-1")
-	args = append(args, "--pretty=%s")
+	args = append(args, fmt.Sprintf("--pretty=%s", prettyFormat))
 	args = append(args, commit)
 
-	lines, err := runCommand(args)
+	return runCommand(args)
+}
+
+func getCommitSubject(commit string) (string, error) {
+	if commit == "" {
+		return "", errNoCommit
+	}
+
+	lines, err := runGitLog(commit, "%s")
 	if err != nil {
 		return "", err
 	}
@@ -276,15 +288,7 @@ func getCommitBody(commit string) ([]string, error) {
 		return []string{}, errNoCommit
 	}
 
-	var args []string
-
-	args = append(args, gitPath)
-	args = append(args, "log")
-	args = append(args, "-1")
-	args = append(args, "--pretty=%b")
-	args = append(args, commit)
-
-	return runCommand(args)
+	return runGitLog(commit, "%b")
 }
 
 func checkCommitFull(config *CommitConfig, commit, subject string, body []string) error {
