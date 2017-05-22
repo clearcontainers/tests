@@ -368,27 +368,47 @@ func checkCommits(config *CommitConfig, commits []string) error {
 	return nil
 }
 
-func detectCIEnvironment() (commit, branch string) {
+// detectCIEnvironment checks if running under a recognised Continuous
+// Integration system and returns the commit from the source ("from")
+// branch, the destination ("to") branch (normally "master") that
+// "commit" wants to be merged into, and the source ("from") branch.
+//
+// If srcBranch is unset the CI is handling a "master" branch (non-PR)
+// build.
+func detectCIEnvironment() (commit, dstBranch, srcBranch string) {
 	var name string
 
 	if os.Getenv("TRAVIS") != "" {
 		name = "TravisCI"
 
 		commit = os.Getenv("TRAVIS_COMMIT")
-		branch = os.Getenv("TRAVIS_BRANCH")
+
+		srcBranch = os.Getenv("TRAVIS_PULL_REQUEST_BRANCH")
+		dstBranch = os.Getenv("TRAVIS_BRANCH")
 
 	} else if os.Getenv("SEMAPHORE") != "" {
 		name = "SemaphoreCI"
 
 		commit = os.Getenv("REVISION")
-		branch = os.Getenv("BRANCH_NAME")
+
+		dstBranch = os.Getenv("BRANCH_NAME")
+
+		// Semaphore only has a single branch variable. For a PR
+		// branch, it will contain the name of the PR branch,
+		// but for a build of "master", that same variable will
+		// contain "master". Essentially, the variable always
+		// refers to the name of the current branch being built.
+		if os.Getenv("PULL_REQUEST_NUMBER") != "" {
+			srcBranch = dstBranch
+			dstBranch = defaultBranch
+		}
 	}
 
 	if verbose && name != "" {
 		fmt.Printf("Detected %v Environment\n", name)
 	}
 
-	return commit, branch
+	return commit, dstBranch, srcBranch
 }
 
 // preChecks performs checks on the range of commits described by commit
@@ -489,27 +509,34 @@ func NewCommitConfig(needFixes, needSignOffs bool, fixesPrefix, signoffPrefix st
 	return config
 }
 
-// ignoreBranch returns true if branch is specified in the slice.
-func ignoreBranch(branch string, branches []string) (bool, error) {
+// branchMatchesREList returns the matching pattern if branch is
+// specified by any of the regular expressions in the slice, else "".
+func branchMatchesREList(branch string, branches []string) string {
 	if branch == "" {
-		return false, errNoBranch
+		return ""
 	}
 
-	for _, b := range branches {
-		if b == branch {
-			return true, nil
+	for _, pattern := range branches {
+		re := regexp.MustCompile(pattern)
+
+		matches := re.FindAllStringSubmatch(branch, -1)
+		if matches != nil {
+			return pattern
 		}
 	}
 
-	return false, nil
+	return ""
 }
 
 // getCommitAndBranch determines the commit and branch to use.
 func getCommitAndBranch(c *cli.Context) (commit, branch string, err error) {
+	var srcBranch string
+
 	count := c.NArg()
+
 	if count == 0 {
 		// no arguments so check the environment
-		commit, branch = detectCIEnvironment()
+		commit, branch, srcBranch = detectCIEnvironment()
 	}
 
 	if count > 2 {
@@ -540,14 +567,11 @@ func getCommitAndBranch(c *cli.Context) (commit, branch string, err error) {
 		}
 	}
 
-	ignore, err := ignoreBranch(branch, c.StringSlice("ignore-branch"))
-	if err != nil {
-		return "", "", err
-	}
+	match := ignoreSrcBranch(commit, srcBranch, c.StringSlice("ignore-source-branch"))
 
-	if ignore {
+	if match != "" {
 		if verbose {
-			fmt.Printf("Exiting as ignored branch %q found.\n", branch)
+			fmt.Printf("Exiting as ignored source branch %q matched pattern %q.\n", srcBranch, match)
 		}
 
 		os.Exit(0)
@@ -600,28 +624,28 @@ func main() {
 
 		cli.StringFlag{
 			Name:  "fixes-prefix",
-			Usage: fmt.Sprintf("Fixes prefix used as an alternative to %q", defaultFixesString),
+			Usage: fmt.Sprintf("Fixes `prefix` used as an alternative to %q", defaultFixesString),
 		},
 
 		cli.StringFlag{
 			Name:  "sign-off-prefix",
-			Usage: fmt.Sprintf("Sign-off prefix used as an alternative to %q", defaultSobString),
+			Usage: fmt.Sprintf("Sign-off `prefix` used as an alternative to %q", defaultSobString),
 		},
 
 		cli.StringSliceFlag{
-			Name:  "ignore-branch",
-			Usage: "branch to ignore (can be specified multiple times)",
+			Name:  "ignore-source-branch",
+			Usage: "regular expression `regex` representing source branch to ignore (can be specified multiple times)",
 		},
 
 		cli.UintFlag{
 			Name:  "body-length",
-			Usage: "Specify maximum body line length",
+			Usage: "Specify maximum body line `length`",
 			Value: uint(defaultMaxBodyLineLength),
 		},
 
 		cli.UintFlag{
 			Name:  "subject-length",
-			Usage: "Specify maximum subject line length",
+			Usage: "Specify maximum subject line `length`",
 			Value: uint(defaultMaxSubjectLineLength),
 		},
 	}
@@ -653,4 +677,24 @@ func main() {
 	}
 
 	os.Exit(0)
+}
+
+// ignoreSrcBranch returns the matching regular expression pattern from
+// branchesToIgnore for a match or "" if no match.
+func ignoreSrcBranch(commit, srcBranch string, branchesToIgnore []string) string {
+	if branchesToIgnore == nil {
+		return ""
+	}
+
+	if srcBranch == "" {
+		// This is a non-PR build so it is not possible to
+		// ignore any branches.
+		if verbose {
+			fmt.Printf("WARNING: cannot use ignore branches on %v\n", defaultBranch)
+		}
+
+		return ""
+	}
+
+	return branchMatchesREList(srcBranch, branchesToIgnore)
 }
