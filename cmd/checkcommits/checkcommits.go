@@ -659,6 +659,10 @@ func main() {
 			verbose = true
 		}
 
+		if verbose {
+			fmt.Printf("Running %v version %s\n", c.App.Name, c.App.Version)
+		}
+
 		commit, branch, err := getCommitAndBranch(c)
 		if err != nil {
 			return err
