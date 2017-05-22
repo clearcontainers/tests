@@ -67,6 +67,10 @@ var (
 	verbose = false
 	debug   = false
 
+	// XXX: set by build
+	appCommit  = ""
+	appVersion = ""
+
 	errNoCommit = errors.New("Need commit")
 	errNoBranch = errors.New("Need branch")
 	errNoConfig = errors.New("Need config")
@@ -583,7 +587,7 @@ func getCommitAndBranch(c *cli.Context) (commit, branch string, err error) {
 func main() {
 	app := cli.NewApp()
 	app.Name = "commitchecks"
-	app.Version = "0.0.1"
+	app.Version = appVersion + " (commit " + appCommit + ")"
 	app.Description = "perform checks on git commits"
 	app.Usage = app.Description
 	app.UsageText = fmt.Sprintf("%s [global options] [commit [branch]]\n", app.Name)
