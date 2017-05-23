@@ -16,6 +16,8 @@
 
 set -e
 
+cidir=$(dirname "$0")
+
 echo "Add clear containers sources to apt list"
 sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/clearlinux:/preview:/clear-containers-2.1/xUbuntu_16.10/ /' >> /etc/apt/sources.list.d/cc-oci-runtime.list"
 
@@ -52,15 +54,10 @@ echo -e "Create symbolic link ${cc_img_path}/${cc_img_link_name}"
 sudo ln -fs ${cc_img_path}/clear-${latest_version}-containers.img ${cc_img_path}/${cc_img_link_name}
 
 bug_url="https://github.com/clearcontainers/runtime/issues/91"
+kernel_clear_release=12760
 kernel_version="4.5-50"
-cc_kernel_link_name="vmlinux.container"
 echo -e "\nWARNING:"
 echo "WARNING: Using backlevel kernel version ${kernel_version} due to bug ${bug_url}"
 echo -e "WARNING:\n"
-echo -e "Install clear containers kernel ${kernel_version}"
-curl -LO "https://download.clearlinux.org/releases/12760/clear/x86_64/os/Packages/linux-container-${kernel_version}.x86_64.rpm"
-rpm2cpio linux-container-${kernel_version}.x86_64.rpm | cpio -ivdm
-sudo install --owner root --group root --mode 0755 .${cc_img_path}/vmlinux-${kernel_version}.container ${cc_img_path}
 
-echo -e "Create symbolic link ${cc_img_path}/${cc_kernel_link_name}"
-sudo ln -fs ${cc_img_path}/vmlinux-${kernel_version}.container ${cc_img_path}/${cc_kernel_link_name}
+"./$cidir/install_clear_kernel.sh" ${kernel_clear_release} ${kernel_version} "${cc_img_path}"
