@@ -37,3 +37,10 @@ sudo install -D --owner root --group root --mode 0700 .${clear_install_path}/${k
 
 echo -e "Create symbolic link ${install_path}/${cc_kernel_link_name}"
 sudo ln -fs ${install_path}/${kernel} ${install_path}/${cc_kernel_link_name}
+
+# cleanup
+rm -f linux-container-${kernel_version}.x86_64.rpm
+# be careful here, we don't want to rm something silly, note the leading .
+rm -r .${clear_install_path}
+rmdir ./usr/share
+rmdir ./usr

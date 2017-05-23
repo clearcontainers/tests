@@ -45,3 +45,6 @@ sudo install -D --owner root --group root --mode 0755 ${image} ${install_path}/$
 
 echo -e "Create symbolic link ${install_path}/${cc_img_link_name}"
 sudo ln -fs ${install_path}/${image} ${install_path}/${cc_img_link_name}
+
+# clean up
+rm -f ${image} ${image}.xz-SHA512SUMS
