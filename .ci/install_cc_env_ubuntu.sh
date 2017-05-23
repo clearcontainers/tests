@@ -29,9 +29,6 @@ chronic sudo apt-get install -y rpm2cpio
 echo "Update apt repositories"
 chronic sudo apt-get update
 
-echo "Install linux-container kernel"
-chronic sudo apt-get install -y --force-yes linux-container
-
 echo "Install qemu-lite binary"
 chronic sudo apt-get install -y --force-yes qemu-lite
 
