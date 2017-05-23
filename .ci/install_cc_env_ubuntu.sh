@@ -33,25 +33,10 @@ chronic sudo apt-get update
 echo "Install qemu-lite binary"
 chronic sudo apt-get install -y --force-yes qemu-lite
 
-echo "Download clear containers image"
-latest_version=$(curl -sL https://download.clearlinux.org/latest)
-curl -LO "https://download.clearlinux.org/current/clear-${latest_version}-containers.img.xz"
-
-echo "Validate clear containers image checksum"
-curl -LO "https://download.clearlinux.org/current/clear-${latest_version}-containers.img.xz-SHA512SUMS"
-sha512sum -c clear-${latest_version}-containers.img.xz-SHA512SUMS
-
-echo "Extract clear containers image"
-unxz clear-${latest_version}-containers.img.xz
-
+clear_release=$(curl -sL https://download.clearlinux.org/latest)
 cc_img_path="/usr/share/clear-containers"
-cc_img_link_name="clear-containers.img"
-sudo mkdir -p ${cc_img_path}
-echo "Install clear containers image"
-sudo install --owner root --group root --mode 0755 clear-${latest_version}-containers.img ${cc_img_path}
 
-echo -e "Create symbolic link ${cc_img_path}/${cc_img_link_name}"
-sudo ln -fs ${cc_img_path}/clear-${latest_version}-containers.img ${cc_img_path}/${cc_img_link_name}
+"./$cidir/install_clear_image.sh" ${clear_release} "${cc_img_path}"
 
 bug_url="https://github.com/clearcontainers/runtime/issues/91"
 kernel_clear_release=12760
