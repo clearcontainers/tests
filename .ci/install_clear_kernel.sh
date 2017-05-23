@@ -33,7 +33,7 @@ echo -e "Install clear containers kernel ${kernel_version}"
 
 curl -LO "https://download.clearlinux.org/releases/${clear_release}/clear/x86_64/os/Packages/linux-container-${kernel_version}.x86_64.rpm"
 rpm2cpio linux-container-${kernel_version}.x86_64.rpm | cpio -ivdm
-sudo install -D --owner root --group root --mode 0755 .${clear_install_path}/${kernel} ${install_path}/${kernel}
+sudo install -D --owner root --group root --mode 0700 .${clear_install_path}/${kernel} ${install_path}/${kernel}
 
 echo -e "Create symbolic link ${install_path}/${cc_kernel_link_name}"
 sudo ln -fs ${install_path}/${kernel} ${install_path}/${cc_kernel_link_name}
