@@ -24,7 +24,8 @@ fi
 
 clear_release="$1"
 kernel_version="$2"
-cc_img_path="$3"
+install_path="$3"
+clear_install_path="/usr/share/clear-containers"
 kernel=vmlinux-${kernel_version}.container
 cc_kernel_link_name="vmlinux.container"
 
@@ -32,7 +33,7 @@ echo -e "Install clear containers kernel ${kernel_version}"
 
 curl -LO "https://download.clearlinux.org/releases/${clear_release}/clear/x86_64/os/Packages/linux-container-${kernel_version}.x86_64.rpm"
 rpm2cpio linux-container-${kernel_version}.x86_64.rpm | cpio -ivdm
-sudo install -D --owner root --group root --mode 0755 .${cc_img_path}/${kernel} ${cc_img_path}/${kernel}
+sudo install -D --owner root --group root --mode 0755 .${clear_install_path}/${kernel} ${install_path}/${kernel}
 
-echo -e "Create symbolic link ${cc_img_path}/${cc_kernel_link_name}"
-sudo ln -fs ${cc_img_path}/${kernel} ${cc_img_path}/${cc_kernel_link_name}
+echo -e "Create symbolic link ${install_path}/${cc_kernel_link_name}"
+sudo ln -fs ${install_path}/${kernel} ${install_path}/${cc_kernel_link_name}
