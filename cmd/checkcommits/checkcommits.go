@@ -400,7 +400,10 @@ func detectCIEnvironment() (commit, dstBranch, srcBranch string) {
 		// refers to the name of the current branch being built.
 		if os.Getenv("PULL_REQUEST_NUMBER") != "" {
 			srcBranch = dstBranch
-			dstBranch = defaultBranch
+
+			// Oddly, a git checkout for a PR under Semaphore *only*
+			// contains that branch: master doesn't exist.
+			dstBranch = "origin"
 		}
 	}
 
