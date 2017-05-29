@@ -16,12 +16,12 @@ functional:
 check:
 	.ci/go-lint.sh
 
-all: functional
+all: functional checkcommits
 
 checkcommits:
-	cd cmd/checkcommits/ && go build && go test
+	cd cmd/checkcommits && make
 
 clean:
-	rm -f cmd/checkcommits/checkcommits
+	cd cmd/checkcommits && make clean
 
 .PHONY: functional check
