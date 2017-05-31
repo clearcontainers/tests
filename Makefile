@@ -10,8 +10,15 @@ SHIM ?= "${GOPATH}/src/github.com/clearcontainers/shim/cc-shim"
 # The time limit in seconds for each test
 TIMEOUT ?= 5
 
-functional:
-	ginkgo ./functional/ -- -runtime "${RUNTIME}" -proxy "${PROXY}" -shim "${SHIM}" -timeout ${TIMEOUT}
+TESTS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+GINKGO_PATH = ${GOPATH}/bin/ginkgo
+
+ginkgo:
+	go get github.com/onsi/ginkgo/ginkgo
+
+functional: ginkgo
+	$(GINKGO_PATH) $(TESTS_DIR)/functional/ -- -runtime "${RUNTIME}" -proxy "${PROXY}" -shim "${SHIM}" -timeout ${TIMEOUT}
 
 check:
 	.ci/go-lint.sh
@@ -24,4 +31,4 @@ checkcommits:
 clean:
 	cd cmd/checkcommits && make clean
 
-.PHONY: functional check
+.PHONY: functional check ginkgo
