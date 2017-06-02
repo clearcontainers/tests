@@ -20,8 +20,7 @@ ginkgo:
 functional: ginkgo
 	$(GINKGO_PATH) $(TESTS_DIR)/functional/ -- -runtime "${RUNTIME}" -proxy "${PROXY}" -shim "${SHIM}" -timeout ${TIMEOUT}
 
-check:
-	.ci/go-lint.sh
+check:	functional
 
 all: functional checkcommits
 
