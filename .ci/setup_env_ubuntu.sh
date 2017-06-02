@@ -16,7 +16,7 @@
 
 set -e
 
-cidir=$(dirname "$0")
+cidir=${GOPATH}/src/github.com/clearcontainers/tests/.ci
 
 echo "Add clear containers sources to apt list"
 sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/clearlinux:/preview:/clear-containers-2.1/xUbuntu_16.10/ /' >> /etc/apt/sources.list.d/cc-oci-runtime.list"

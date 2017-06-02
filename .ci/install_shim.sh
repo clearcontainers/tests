@@ -1,7 +1,7 @@
 #!/bin/bash
-
+#
 # Copyright (c) 2017 Intel Corporation
-
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -17,22 +17,8 @@
 
 set -e
 
-echo "Retrieve cc-shim repository"
-tmpdir=$(mktemp -d)
-pushd ${tmpdir}
-git clone https://github.com/clearcontainers/shim.git
-pushd shim
+tests_ci_dir=${GOPATH}/src/github.com/clearcontainers/tests/.ci
 
-echo "Run autogen.sh"
-./autogen.sh
+source ${tests_ci_dir}/lib.sh
 
-echo "Build cc-shim"
-make
-
-echo "Install cc-shim"
-sudo make install
-
-popd
-popd
-
-rm -rf ${tmpdir}
+clone_build_and_install "github.com/clearcontainers/shim"
