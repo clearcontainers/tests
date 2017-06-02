@@ -36,7 +36,7 @@ chronic sudo apt-get install -y --force-yes qemu-lite
 clear_release=$(curl -sL https://download.clearlinux.org/latest)
 cc_img_path="/usr/share/clear-containers"
 
-"./$cidir/install_clear_image.sh" ${clear_release} "${cc_img_path}"
+"${cidir}/install_clear_image.sh" ${clear_release} "${cc_img_path}"
 
 bug_url="https://github.com/clearcontainers/runtime/issues/91"
 kernel_clear_release=12760
@@ -45,4 +45,4 @@ echo -e "\nWARNING:"
 echo "WARNING: Using backlevel kernel version ${kernel_version} due to bug ${bug_url}"
 echo -e "WARNING:\n"
 
-"./$cidir/install_clear_kernel.sh" ${kernel_clear_release} ${kernel_version} "${cc_img_path}"
+"${cidir}/install_clear_kernel.sh" ${kernel_clear_release} ${kernel_version} "${cc_img_path}"
