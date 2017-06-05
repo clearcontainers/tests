@@ -4,13 +4,13 @@ CC_RUNTIME ?= cc-runtime
 # The time limit in seconds for each test
 TIMEOUT ?= 5
 
-GINKGO_PATH = ${GOPATH}/bin/ginkgo
-
 ginkgo:
-	go get github.com/onsi/ginkgo/ginkgo
+	ln -sf . vendor/src
+	GOPATH=$(PWD)/vendor/src go build ./vendor/github.com/onsi/ginkgo/ginkgo
+	unlink vendor/src
 
 functional: ginkgo
-	$(GINKGO_PATH) functional/ -- -runtime ${CC_RUNTIME} -timeout ${TIMEOUT}
+	./ginkgo functional/ -- -runtime ${CC_RUNTIME} -timeout ${TIMEOUT}
 
 check:
 	.ci/go-lint.sh
