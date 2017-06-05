@@ -25,12 +25,6 @@ import (
 // Runtime is the path of Clear Containers Runtime
 var Runtime string
 
-// Proxy is the path of Clear Containers Proxy
-var Proxy string
-
-// Shim is the path of Clear Containers Shim
-var Shim string
-
 // Timeout specifies the time limit in seconds for each test
 var Timeout int
 
@@ -54,8 +48,6 @@ type Command struct {
 
 func init() {
 	flag.StringVar(&Runtime, "runtime", "cc-runtime", "Path of Clear Containers Runtime")
-	flag.StringVar(&Proxy, "proxy", "cc-proxy", "Path of Clear Containers Proxy")
-	flag.StringVar(&Shim, "shim", "cc-shim", "Path of Clear Containers Shim")
 	flag.IntVar(&Timeout, "timeout", 5, "Time limit in seconds for each test")
 
 	flag.Parse()
