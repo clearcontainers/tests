@@ -1,4 +1,4 @@
-memo = "3de2e64ac81f72a4539ad683af9d5cdefcfc472574f286328bcc4d41cd77b954"
+memo = "1ca7d968da0bc5d5cf2c1f42bbb651deb1f3fb4bbc3a0fae139ea0d9caf8ccea"
 
 [[projects]]
   name = "github.com/onsi/ginkgo"
@@ -11,6 +11,12 @@ memo = "3de2e64ac81f72a4539ad683af9d5cdefcfc472574f286328bcc4d41cd77b954"
   packages = [".","format","internal/assertion","internal/asyncassertion","internal/oraclematcher","internal/testingtsupport","matchers","matchers/support/goraph/bipartitegraph","matchers/support/goraph/edge","matchers/support/goraph/node","matchers/support/goraph/util","types"]
   revision = "334b8f472b3af5d541c5642701c1e29e2126f486"
   version = "v1.1.0"
+
+[[projects]]
+  name = "github.com/urfave/cli"
+  packages = ["."]
+  revision = "0bdeddeeb0f650497d603c4ad7b20cfe685682f6"
+  version = "v1.19.1"
 
 [[projects]]
   branch = "master"

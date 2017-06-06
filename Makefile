@@ -1,24 +1,16 @@
 # Path of Clear Containers Runtime
-RUNTIME ?= "${GOPATH}/src/github.com/clearcontainers/runtime/cc-runtime"
-
-# Path of Clear Containers Proxy
-PROXY ?= "${GOPATH}/src/github.com/clearcontainers/proxy/cc-proxy"
-
-# Path of Clear Containers Shim
-SHIM ?= "${GOPATH}/src/github.com/clearcontainers/shim/cc-shim"
+CC_RUNTIME ?= cc-runtime
 
 # The time limit in seconds for each test
 TIMEOUT ?= 5
 
-TESTS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-
-GINKGO_PATH = ${GOPATH}/bin/ginkgo
-
 ginkgo:
-	go get github.com/onsi/ginkgo/ginkgo
+	ln -sf . vendor/src
+	GOPATH=$(PWD)/vendor/src go build ./vendor/github.com/onsi/ginkgo/ginkgo
+	unlink vendor/src
 
 functional: ginkgo
-	$(GINKGO_PATH) $(TESTS_DIR)/functional/ -- -runtime "${RUNTIME}" -proxy "${PROXY}" -shim "${SHIM}" -timeout ${TIMEOUT}
+	./ginkgo functional/ -- -runtime ${CC_RUNTIME} -timeout ${TIMEOUT}
 
 check:	functional
 
