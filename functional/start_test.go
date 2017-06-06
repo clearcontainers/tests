@@ -15,3 +15,4 @@
 package functional
 
 var _ = DescribeCommandWithoutID("start")
+var _ = DescribeCommandWithInexistentID("start")
