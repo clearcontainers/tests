@@ -589,7 +589,7 @@ func getCommitAndBranch(c *cli.Context) (commit, branch string, err error) {
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "commitchecks"
+	app.Name = "checkcommits"
 	app.Version = appVersion + " (commit " + appCommit + ")"
 	app.Description = "perform checks on git commits"
 	app.Usage = app.Description
