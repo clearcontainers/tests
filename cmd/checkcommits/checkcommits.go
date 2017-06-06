@@ -687,6 +687,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	if verbose {
+		fmt.Printf("All commit checks passed.\n")
+	}
+
 	os.Exit(0)
 }
 
