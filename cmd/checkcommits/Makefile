@@ -8,7 +8,7 @@ COMMIT := $(if $(shell git status --porcelain --untracked-files=no),"${COMMIT_NO
 default: $(TARGET)
 
 $(TARGET): $(SOURCES)
-	go build -i -ldflags "-X main.appCommit=${COMMIT} -X main.appVersion=${VERSION}" -o $@ .
+	go install -ldflags "-X main.appCommit=${COMMIT} -X main.appVersion=${VERSION}" .
 	go test
 
 clean:
