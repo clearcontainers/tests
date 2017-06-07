@@ -15,10 +15,28 @@
 package functional
 
 import (
+	"math/rand"
+
 	. "github.com/clearcontainers/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+const letters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+const lettersMask = 63
+
+func randString(n int) string {
+	b := make([]byte, n)
+	for i := 0; i < n; {
+		if j := int(rand.Int63() & lettersMask); j < len(letters) {
+			b[i] = letters[j]
+			i++
+		}
+	}
+
+	return string(b)
+}
 
 // DescribeCommandWithoutID describes a command without a container ID
 func DescribeCommandWithoutID(command string) bool {
@@ -27,6 +45,23 @@ func DescribeCommandWithoutID(command string) bool {
 		c.ExpectedExitCode = 1
 		ret := c.Run()
 		Context("without container id", func() {
+			It("should NOT return 0", func() {
+				Expect(ret).To(Equal(c.ExpectedExitCode))
+			})
+			It("should report an error", func() {
+				Expect(c.Stderr.Len()).NotTo(Equal(0))
+			})
+		})
+	})
+}
+
+// DescribeCommandWithInexistentID describes a command with an inexistent container ID
+func DescribeCommandWithInexistentID(command string) bool {
+	return Describe(command, func() {
+		c := NewCommand(Runtime, command, randString(30))
+		c.ExpectedExitCode = 1
+		ret := c.Run()
+		Context("with inexistent container id", func() {
 			It("should NOT return 0", func() {
 				Expect(ret).To(Equal(c.ExpectedExitCode))
 			})
