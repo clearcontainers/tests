@@ -6,7 +6,7 @@ TIMEOUT ?= 5
 
 ginkgo:
 	ln -sf . vendor/src
-	GOPATH=$(PWD)/vendor/src go build ./vendor/github.com/onsi/ginkgo/ginkgo
+	GOPATH=$(PWD)/vendor go build ./vendor/github.com/onsi/ginkgo/ginkgo
 	unlink vendor/src
 
 functional: ginkgo
