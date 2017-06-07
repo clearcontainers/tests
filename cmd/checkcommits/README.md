@@ -70,7 +70,9 @@ $ ./checkcommits -h
 ### Download and Build
 
 ```
-$ go get github.com/clearcontainers/tests/cmd/checkcommits
+$ repo="github.com/clearcontainers/tests/cmd/checkcommits"
+$ go get -d "$repo"
+$ (cd "$GOPATH/src/$repo" && make)
 ```
 
 ### Basic use
