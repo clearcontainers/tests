@@ -704,6 +704,10 @@ func main() {
 // ignoreSrcBranch returns the matching regular expression pattern from
 // branchesToIgnore for a match or "" if no match.
 func ignoreSrcBranch(commit, srcBranch string, branchesToIgnore []string) string {
+	if commit == "" {
+		return ""
+	}
+
 	if branchesToIgnore == nil {
 		return ""
 	}

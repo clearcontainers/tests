@@ -351,3 +351,32 @@ func TestCheckCommitBody(t *testing.T) {
 		}
 	}
 }
+
+func TestIgnoreSrcBranch(t *testing.T) {
+	type testData struct {
+		commit           string
+		srcBranch        string
+		branchesToIgnore []string
+		expected         string
+	}
+
+	data := []testData{
+		{"", "", nil, ""},
+		{"", "", []string{}, ""},
+		{"commit", "", []string{}, ""},
+		{"commit", "", []string{""}, ""},
+		{"commit", "", []string{"", ""}, ""},
+		{"commit", "branch", []string{}, ""},
+		{"commit", "branch", []string{""}, ""},
+		{"commit", "branch", []string{"branch"}, "branch"},
+		{"commit", "branch", []string{"b.*"}, "b.*"},
+		{"commit", "branch", []string{"^b.*h$"}, "^b.*h$"},
+	}
+
+	for _, d := range data {
+		result := ignoreSrcBranch(d.commit, d.srcBranch, d.branchesToIgnore)
+		if result != d.expected {
+			t.Fatalf("Unexpected ignoreSrcBranch return value %v (params %+v)", result, d)
+		}
+	}
+}
