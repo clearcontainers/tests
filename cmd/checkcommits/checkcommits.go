@@ -579,14 +579,16 @@ func getCommitAndBranch(c *cli.Context) (commit, branch string, err error) {
 		}
 	}
 
-	match := ignoreSrcBranch(commit, srcBranch, c.StringSlice("ignore-source-branch"))
+	if srcBranch != "" {
+		match := ignoreSrcBranch(commit, srcBranch, c.StringSlice("ignore-source-branch"))
 
-	if match != "" {
-		if verbose {
-			fmt.Printf("Exiting as ignored source branch %q matched pattern %q.\n", srcBranch, match)
+		if match != "" {
+			if verbose {
+				fmt.Printf("Exiting as ignored source branch %q matched pattern %q.\n", srcBranch, match)
+			}
+
+			os.Exit(0)
 		}
-
-		os.Exit(0)
 	}
 
 	return commit, branch, nil
