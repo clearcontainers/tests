@@ -76,6 +76,14 @@ func TestCheckCommits(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected an error")
 	}
+
+	// Simulate a Travis build on the "master" branch
+	config.NeedFixes = true
+	config.NeedSOBS = true
+	err = checkCommits(config, []string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 }
 
 func TestCheckCommit(t *testing.T) {

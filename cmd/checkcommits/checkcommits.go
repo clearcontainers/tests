@@ -353,6 +353,11 @@ func checkCommits(config *CommitConfig, commits []string) error {
 		return errNoCommit
 	}
 
+	if len(commits) == 0 {
+		// Handle Travis builds on master
+		return nil
+	}
+
 	config.FixesPattern = regexp.MustCompile(fmt.Sprintf("%s:* *#\\d+", config.FixesString))
 
 	for _, commit := range commits {
