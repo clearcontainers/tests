@@ -541,10 +541,18 @@ func branchMatchesREList(branch string, branches []string) string {
 }
 
 // getCommitAndBranch determines the commit and branch to use.
-func getCommitAndBranch(c *cli.Context) (commit, branch string, err error) {
+func getCommitAndBranch(args, srcBranchesToIgnore []string) (commit, branch string, err error) {
 	var srcBranch string
 
-	count := c.NArg()
+	if args == nil {
+		return "", "", errors.New("No args")
+	}
+
+	if srcBranchesToIgnore == nil {
+		return "", "", errors.New("No source branches")
+	}
+
+	count := len(args)
 
 	if count == 0 {
 		// no arguments so check the environment
@@ -556,11 +564,11 @@ func getCommitAndBranch(c *cli.Context) (commit, branch string, err error) {
 	}
 
 	if commit == "" && count >= 1 {
-		commit = c.Args().Get(0)
+		commit = args[0]
 	}
 
 	if branch == "" && count == 2 {
-		branch = c.Args().Get(1)
+		branch = args[1]
 	}
 
 	if commit == "" {
@@ -580,7 +588,7 @@ func getCommitAndBranch(c *cli.Context) (commit, branch string, err error) {
 	}
 
 	if srcBranch != "" {
-		match := ignoreSrcBranch(commit, srcBranch, c.StringSlice("ignore-source-branch"))
+		match := ignoreSrcBranch(commit, srcBranch, srcBranchesToIgnore)
 
 		if match != "" {
 			if verbose {
@@ -592,6 +600,10 @@ func getCommitAndBranch(c *cli.Context) (commit, branch string, err error) {
 	}
 
 	return commit, branch, nil
+}
+
+func getCommitAndBranchWithContext(c *cli.Context) (commit, branch string, err error) {
+	return getCommitAndBranch(c.Args(), c.StringSlice("ignore-source-branch"))
 }
 
 func main() {
@@ -673,7 +685,7 @@ func main() {
 			fmt.Printf("Running %v version %s\n", c.App.Name, c.App.Version)
 		}
 
-		commit, branch, err := getCommitAndBranch(c)
+		commit, branch, err := getCommitAndBranchWithContext(c)
 		if err != nil {
 			return err
 		}

@@ -564,3 +564,78 @@ func TestDetectCIEnvironment(t *testing.T) {
 
 	restoreEnv()
 }
+
+func TestGetCommitAndBranch(t *testing.T) {
+	type testData struct {
+		args                []string
+		srcBranchesToIgnore []string
+		expectedCommit      string
+		expectedBranch      string
+		expectFail          bool
+	}
+
+	data := []testData{
+		{nil, nil, "", "", true},
+		{[]string{}, nil, "", "", true},
+		{nil, []string{}, "", "", true},
+		{[]string{}, []string{}, "HEAD", "master", false},
+		{[]string{"commit"}, []string{}, "commit", "master", false},
+		{[]string{"commit", "branch"}, []string{}, "commit", "branch", false},
+		{[]string{"too", "many", "args"}, []string{}, "commit", "branch", true},
+	}
+
+	for _, d := range data {
+		commit, branch, err := getCommitAndBranch(d.args, d.srcBranchesToIgnore)
+
+		if d.expectFail {
+			if err == nil {
+				t.Fatalf("Unexpected success: %+d", d)
+			}
+		} else {
+			if err != nil {
+				t.Fatalf("Unexpected failure: %+d: %v", d, err)
+			}
+		}
+
+		if d.expectFail {
+			continue
+		}
+
+		if commit != d.expectedCommit {
+			t.Fatalf("Unexpected commit %v (%+v)", commit, d)
+		}
+
+		if branch != d.expectedBranch {
+			t.Fatalf("Expected branch %v, got %v", d.expectedBranch, branch)
+		}
+	}
+
+	// Now deal with CI auto-detection
+	for _, d := range testCIEnvData {
+		err := setCIVariables(d.env)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// XXX: crucially, no arguments (to trigger the auto-detection)
+		commit, dstBranch, err := getCommitAndBranch([]string{}, []string{})
+
+		if commit != d.expectedCommit {
+			t.Fatalf("Unexpected commit %v (%+v)", commit, d)
+		}
+
+		if dstBranch != d.expectedDstBranch {
+			t.Fatalf("Unexpected destination branch %v (%+v)", dstBranch, d)
+		}
+
+		// Crudely undo the changes (it'll be fully undone later
+		// using restoreEnv() but this is required to avoid
+		// tests interfering with one another).
+		err = unsetCIVariables(d.env)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	restoreEnv()
+}
