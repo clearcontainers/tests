@@ -41,9 +41,6 @@ type Command struct {
 
 	// Timeout is the time limit of seconds of the command
 	Timeout time.Duration
-
-	// ExpectedExitCode is the expected exit code
-	ExpectedExitCode int
 }
 
 func init() {
@@ -59,7 +56,6 @@ func NewCommand(path string, args ...string) *Command {
 	c.cmd = exec.Command(path, args...)
 	c.cmd.Stderr = &c.Stderr
 	c.cmd.Stdout = &c.Stdout
-	c.ExpectedExitCode = 0
 	c.Timeout = time.Duration(Timeout)
 
 	return c
@@ -90,10 +86,6 @@ func (c *Command) Run() int {
 		if err != nil {
 			LogIfFail("command failed error '%s'\n", err)
 		}
-		exitCode := c.cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
-		if exitCode != c.ExpectedExitCode {
-			LogIfFail("Exit code '%d' does not match with expected exit code '%d'\n", exitCode, c.ExpectedExitCode)
-		}
-		return exitCode
+		return c.cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
 }

@@ -15,6 +15,7 @@
 package functional
 
 import (
+	"fmt"
 	"math/rand"
 
 	. "github.com/clearcontainers/tests"
@@ -41,12 +42,12 @@ func randString(n int) string {
 // DescribeCommandWithoutID describes a command without a container ID
 func DescribeCommandWithoutID(command string) bool {
 	return Describe(command, func() {
+		expectExitCode := 1
 		c := NewCommand(Runtime, command)
-		c.ExpectedExitCode = 1
 		ret := c.Run()
 		Context("without container id", func() {
-			It("should NOT return 0", func() {
-				Expect(ret).To(Equal(c.ExpectedExitCode))
+			It(fmt.Sprintf("should return '%d'", expectExitCode), func() {
+				Expect(expectExitCode).To(Equal(ret))
 			})
 			It("should report an error", func() {
 				Expect(c.Stderr.Len()).NotTo(Equal(0))
@@ -58,12 +59,12 @@ func DescribeCommandWithoutID(command string) bool {
 // DescribeCommandWithInexistentID describes a command with an inexistent container ID
 func DescribeCommandWithInexistentID(command string) bool {
 	return Describe(command, func() {
+		expectExitCode := 1
 		c := NewCommand(Runtime, command, randString(30))
-		c.ExpectedExitCode = 1
 		ret := c.Run()
 		Context("with inexistent container id", func() {
-			It("should NOT return 0", func() {
-				Expect(ret).To(Equal(c.ExpectedExitCode))
+			It(fmt.Sprintf("should return '%d'", expectExitCode), func() {
+				Expect(expectExitCode).To(Equal(ret))
 			})
 			It("should report an error", func() {
 				Expect(c.Stderr.Len()).NotTo(Equal(0))
