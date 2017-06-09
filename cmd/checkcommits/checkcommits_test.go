@@ -16,13 +16,100 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
 )
 
+// An environment variable value. If set is true, set it,
+// else unset it (ignoring the value).
+type TestEnvVal struct {
+	value string
+	set   bool
+}
+
+type TestCIEnvData struct {
+	name              string
+	env               map[string]TestEnvVal
+	expectedCommit    string
+	expectedSrcBranch string
+	expectedDstBranch string
+}
+
 var fixesString string
 var fixesPattern *regexp.Regexp
+
+// List of variables to restore after the tests have run
+var restoreSet map[string]TestEnvVal
+
+var travisPREnv = map[string]TestEnvVal{
+	"TRAVIS":                     TestEnvVal{"true", true},
+	"TRAVIS_BRANCH":              TestEnvVal{"master", true},
+	"TRAVIS_COMMIT":              TestEnvVal{"travis-commit", true},
+	"TRAVIS_PULL_REQUEST_BRANCH": TestEnvVal{"travis-pr", true},
+}
+
+var travisNonPREnv = map[string]TestEnvVal{
+	"TRAVIS":                     TestEnvVal{"true", true},
+	"TRAVIS_BRANCH":              TestEnvVal{"master", true},
+	"TRAVIS_COMMIT":              TestEnvVal{"travis-commit", true},
+	"TRAVIS_PULL_REQUEST_BRANCH": TestEnvVal{"", true},
+}
+
+var semaphorePREnv = map[string]TestEnvVal{
+	"SEMAPHORE":           TestEnvVal{"true", true},
+	"BRANCH_NAME":         TestEnvVal{"semaphore-pr", true},
+	"REVISION":            TestEnvVal{"semaphore-commit", true},
+	"PULL_REQUEST_NUMBER": TestEnvVal{"semaphore-pr", true},
+}
+
+var semaphoreNonPREnv = map[string]TestEnvVal{
+	"SEMAPHORE":   TestEnvVal{"true", true},
+	"BRANCH_NAME": TestEnvVal{"master", true},
+	"REVISION":    TestEnvVal{"semaphore-commit", true},
+
+	// XXX: the odd one out - unset it
+	"PULL_REQUEST_NUMBER": TestEnvVal{"", false},
+}
+
+var testCIEnvData = []TestCIEnvData{
+	{
+		name:              "TravisCI PR branch",
+		env:               travisPREnv,
+		expectedCommit:    travisPREnv["TRAVIS_COMMIT"].value,
+		expectedSrcBranch: travisPREnv["TRAVIS_PULL_REQUEST_BRANCH"].value,
+		expectedDstBranch: travisPREnv["TRAVIS_BRANCH"].value,
+	},
+	{
+		name:              "TravisCI non-PR branch",
+		env:               travisNonPREnv,
+		expectedCommit:    travisNonPREnv["TRAVIS_COMMIT"].value,
+		expectedSrcBranch: travisNonPREnv["TRAVIS_PULL_REQUEST_BRANCH"].value,
+		expectedDstBranch: travisNonPREnv["TRAVIS_BRANCH"].value,
+	},
+	{
+		name:              "SemaphoreCI PR branch",
+		env:               semaphorePREnv,
+		expectedCommit:    semaphorePREnv["REVISION"].value,
+		expectedSrcBranch: semaphorePREnv["BRANCH_NAME"].value,
+		expectedDstBranch: "origin",
+	},
+	{
+		name:              "SemaphoreCI non-PR branch",
+		env:               semaphoreNonPREnv,
+		expectedCommit:    semaphoreNonPREnv["REVISION"].value,
+		expectedSrcBranch: "",
+		expectedDstBranch: semaphoreNonPREnv["BRANCH_NAME"].value,
+	},
+}
+
+func init() {
+	fixesString = "Fixes"
+	fixesPattern = regexp.MustCompile(fmt.Sprintf("(?i)%s:* *#\\d+", fixesString))
+
+	saveEnv()
+}
 
 func createCommitConfig() (config *CommitConfig) {
 	return NewCommitConfig(true, true,
@@ -32,9 +119,73 @@ func createCommitConfig() (config *CommitConfig) {
 		defaultMaxSubjectLineLength)
 }
 
-func init() {
-	fixesString = "Fixes"
-	fixesPattern = regexp.MustCompile(fmt.Sprintf("(?i)%s:* *#\\d+", fixesString))
+// Save the existing values of all variables that the tests will
+// manipulate. These can be restored at the end of the tests by calling
+// restoreEnv().
+func saveEnv() {
+	// Unique list of variables the tests manipulate
+	varNames := make(map[string]int)
+	restoreSet = make(map[string]TestEnvVal)
+
+	for _, d := range testCIEnvData {
+		for k, _ := range d.env {
+			varNames[k] = 1
+		}
+	}
+
+	for key, _ := range varNames {
+		// Determine if the variable is already set
+		value, set := os.LookupEnv(key)
+		restoreSet[key] = TestEnvVal{value, set}
+	}
+}
+
+// Apply the set of variables saved by a call to saveEnv() to the
+// environment.
+func restoreEnv() {
+	for key, envVal := range restoreSet {
+		var err error
+		if envVal.set {
+			err = os.Setenv(key, envVal.value)
+		} else {
+			err = os.Unsetenv(key)
+		}
+
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+// Apply a list of CI variables to the current environment. This will
+// involve either setting or unsetting variables.
+func setCIVariables(env map[string]TestEnvVal) (err error) {
+	for key, envVal := range env {
+
+		if envVal.set {
+			err = os.Setenv(key, envVal.value)
+		} else {
+			err = os.Unsetenv(key)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Undo the effects of setCIVariables().
+func unsetCIVariables(env map[string]TestEnvVal) (err error) {
+	for key, _ := range env {
+		err := os.Unsetenv(key)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func TestCheckCommits(t *testing.T) {
@@ -75,6 +226,14 @@ func TestCheckCommits(t *testing.T) {
 	err = checkCommits(config, invalidCommits)
 	if err == nil {
 		t.Fatalf("expected an error")
+	}
+
+	// Simulate a Travis build on the "master" branch
+	config.NeedFixes = true
+	config.NeedSOBS = true
+	err = checkCommits(config, []string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
@@ -342,4 +501,141 @@ func TestCheckCommitBody(t *testing.T) {
 			t.Errorf("Expected fixes to be found: %+v", d)
 		}
 	}
+}
+
+func TestIgnoreSrcBranch(t *testing.T) {
+	type testData struct {
+		commit           string
+		srcBranch        string
+		branchesToIgnore []string
+		expected         string
+	}
+
+	data := []testData{
+		{"", "", nil, ""},
+		{"", "", []string{}, ""},
+		{"commit", "", []string{}, ""},
+		{"commit", "", []string{""}, ""},
+		{"commit", "", []string{"", ""}, ""},
+		{"commit", "branch", []string{}, ""},
+		{"commit", "branch", []string{""}, ""},
+		{"commit", "branch", []string{"branch"}, "branch"},
+		{"commit", "branch", []string{"b.*"}, "b.*"},
+		{"commit", "branch", []string{"^b.*h$"}, "^b.*h$"},
+	}
+
+	for _, d := range data {
+		result := ignoreSrcBranch(d.commit, d.srcBranch, d.branchesToIgnore)
+		if result != d.expected {
+			t.Fatalf("Unexpected ignoreSrcBranch return value %v (params %+v)", result, d)
+		}
+	}
+}
+
+func TestDetectCIEnvironment(t *testing.T) {
+	for _, d := range testCIEnvData {
+		err := setCIVariables(d.env)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		commit, dstBranch, srcBranch := detectCIEnvironment()
+
+		if commit != d.expectedCommit {
+			t.Fatalf("Unexpected commit %v (%+v)", commit, d)
+		}
+
+		if dstBranch != d.expectedDstBranch {
+			t.Fatalf("Unexpected destination branch %v (%+v)", dstBranch, d)
+		}
+
+		if srcBranch != d.expectedSrcBranch {
+			t.Fatalf("Unexpected source branch %v (%+v)", srcBranch, d)
+		}
+
+		// Crudely undo the changes (it'll be fully undone later
+		// using restoreEnv() but this is required to avoid
+		// tests interfering with one another).
+		err = unsetCIVariables(d.env)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	restoreEnv()
+}
+
+func TestGetCommitAndBranch(t *testing.T) {
+	type testData struct {
+		args                []string
+		srcBranchesToIgnore []string
+		expectedCommit      string
+		expectedBranch      string
+		expectFail          bool
+	}
+
+	data := []testData{
+		{nil, nil, "", "", true},
+		{[]string{}, nil, "", "", true},
+		{nil, []string{}, "", "", true},
+		{[]string{}, []string{}, "HEAD", "master", false},
+		{[]string{"commit"}, []string{}, "commit", "master", false},
+		{[]string{"commit", "branch"}, []string{}, "commit", "branch", false},
+		{[]string{"too", "many", "args"}, []string{}, "commit", "branch", true},
+	}
+
+	for _, d := range data {
+		commit, branch, err := getCommitAndBranch(d.args, d.srcBranchesToIgnore)
+
+		if d.expectFail {
+			if err == nil {
+				t.Fatalf("Unexpected success: %+d", d)
+			}
+		} else {
+			if err != nil {
+				t.Fatalf("Unexpected failure: %+d: %v", d, err)
+			}
+		}
+
+		if d.expectFail {
+			continue
+		}
+
+		if commit != d.expectedCommit {
+			t.Fatalf("Unexpected commit %v (%+v)", commit, d)
+		}
+
+		if branch != d.expectedBranch {
+			t.Fatalf("Expected branch %v, got %v", d.expectedBranch, branch)
+		}
+	}
+
+	// Now deal with CI auto-detection
+	for _, d := range testCIEnvData {
+		err := setCIVariables(d.env)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// XXX: crucially, no arguments (to trigger the auto-detection)
+		commit, dstBranch, err := getCommitAndBranch([]string{}, []string{})
+
+		if commit != d.expectedCommit {
+			t.Fatalf("Unexpected commit %v (%+v)", commit, d)
+		}
+
+		if dstBranch != d.expectedDstBranch {
+			t.Fatalf("Unexpected destination branch %v (%+v)", dstBranch, d)
+		}
+
+		// Crudely undo the changes (it'll be fully undone later
+		// using restoreEnv() but this is required to avoid
+		// tests interfering with one another).
+		err = unsetCIVariables(d.env)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	restoreEnv()
 }
