@@ -106,8 +106,7 @@ var _ = Describe("run", func() {
 		},
 		withoutOption("--bundle", shouldFail),
 		withoutOption("-b", shouldFail),
-		// FIXME: uncomment once issue https://github.com/clearcontainers/runtime/issues/212 is fixed
-		// withoutOption("--pid-file", shouldFail),
+		withoutOption("--pid-file", shouldNotFail),
 		withoutOption("--console", shouldNotFail),
 	)
 })
