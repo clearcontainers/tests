@@ -1,4 +1,4 @@
-memo = "1ca7d968da0bc5d5cf2c1f42bbb651deb1f3fb4bbc3a0fae139ea0d9caf8ccea"
+memo = "7c08940c3b7a8bac4bcad3fc9843bf4110161e6229d2f8a560f40cd25d582328"
 
 [[projects]]
   name = "github.com/onsi/ginkgo"
@@ -11,6 +11,12 @@ memo = "1ca7d968da0bc5d5cf2c1f42bbb651deb1f3fb4bbc3a0fae139ea0d9caf8ccea"
   packages = [".","format","internal/assertion","internal/asyncassertion","internal/oraclematcher","internal/testingtsupport","matchers","matchers/support/goraph/bipartitegraph","matchers/support/goraph/edge","matchers/support/goraph/node","matchers/support/goraph/util","types"]
   revision = "334b8f472b3af5d541c5642701c1e29e2126f486"
   version = "v1.1.0"
+
+[[projects]]
+  name = "github.com/opencontainers/specs"
+  packages = ["specs-go"]
+  revision = "035da1dca3dfbb00d752eb58b0b158d6129f3776"
+  version = "v1.0.0-rc5"
 
 [[projects]]
   name = "github.com/urfave/cli"
