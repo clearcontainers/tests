@@ -14,31 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Setup workflow:
-# 1. setup environment (install qemu, kernel and image)
-# 2. Clone repos, fetch branches, build and install
-
 set -e
 
-cidir=$(dirname "$0")
-
-echo "Set up environment"
-bash -f ${cidir}/setup_env_ubuntu.sh
-
-echo "Install shim"
-bash -f ${cidir}/install_shim.sh
-
-echo "Install virtcontainers"
-bash -f ${cidir}/install_virtcontainers.sh
-
-echo "Install proxy"
-bash -f ${cidir}/install_proxy.sh
-
-echo "Install runtime"
-bash -f ${cidir}/install_runtime.sh
-
-echo "Install CNI plugins"
-bash -f ${cidir}/install_cni_plugins.sh
-
-echo "Install CRI-O"
-bash -f ${cidir}/install_crio.sh
+echo "Install BATS from sources"
+go get -d github.com/sstephenson/bats || true
+pushd $GOPATH/src/github.com/sstephenson/bats
+sudo -E PATH=$PATH sh -c "./install.sh /usr"
+popd

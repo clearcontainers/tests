@@ -18,6 +18,13 @@ CC_RUNTIME ?= cc-runtime
 # The time limit in seconds for each test
 TIMEOUT ?= 5
 
+CRIO_REPO_PATH="${GOPATH}/src/github.com/kubernetes-incubator/cri-o"
+crio:
+	bash .ci/install_bats.sh
+	ln -sf $(PWD)/integration/cri-o/crio.bats ${CRIO_REPO_PATH}/test
+	cd ${CRIO_REPO_PATH} && \
+	make localintegration RUNTIME=${CC_RUNTIME} TESTFLAGS="crio.bats"
+
 ginkgo:
 	ln -sf . vendor/src
 	GOPATH=$(PWD)/vendor go build ./vendor/github.com/onsi/ginkgo/ginkgo
@@ -26,7 +33,7 @@ ginkgo:
 functional: ginkgo
 	./ginkgo functional/ -- -runtime ${CC_RUNTIME} -timeout ${TIMEOUT}
 
-check:	functional
+check:	functional crio
 
 all: functional checkcommits
 
@@ -36,4 +43,4 @@ checkcommits:
 clean:
 	cd cmd/checkcommits && make clean
 
-.PHONY: functional check ginkgo
+.PHONY: functional check ginkgo crio
