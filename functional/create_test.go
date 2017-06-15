@@ -13,5 +13,3 @@
 // limitations under the License.
 
 package functional
-
-var _ = DescribeCommandWithoutID("create")

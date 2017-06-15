@@ -13,6 +13,3 @@
 // limitations under the License.
 
 package functional
-
-var _ = DescribeCommandWithoutID("state")
-var _ = DescribeCommandWithInexistentID("state")
