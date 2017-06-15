@@ -21,9 +21,9 @@ TIMEOUT ?= 5
 CRIO_REPO_PATH="${GOPATH}/src/github.com/kubernetes-incubator/cri-o"
 crio:
 	bash .ci/install_bats.sh
-	ln -sf $(PWD)/integration/cri-o/crio.bats ${CRIO_REPO_PATH}/test
+	cp $(PWD)/integration/cri-o/crio.bats ${CRIO_REPO_PATH}/test/
 	cd ${CRIO_REPO_PATH} && \
-	make localintegration RUNTIME=${CC_RUNTIME} TESTFLAGS="crio.bats"
+	RUNTIME=${CC_RUNTIME} ./test/test_runner.sh crio.bats
 
 ginkgo:
 	ln -sf . vendor/src
