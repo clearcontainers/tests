@@ -110,5 +110,3 @@ var _ = Describe("run", func() {
 		withoutOption("--console", shouldNotFail),
 	)
 })
-
-var _ = DescribeCommandWithoutID("run")
