@@ -176,6 +176,28 @@ func setCIVariables(env map[string]TestEnvVal) (err error) {
 	return nil
 }
 
+// XXX: This function *MUST* unset all variables for all supported CI
+// systems.
+//
+// XXX: Call saveEnv() prior to calling this function.
+func clearCIVariables() {
+	envVars := []string{
+		"TRAVIS",
+		"TRAVIS_BRANCH",
+		"TRAVIS_COMMIT",
+		"TRAVIS_PULL_REQUEST_BRANCH",
+
+		"SEMAPHORE",
+		"REVISION",
+		"BRANCH_NAME",
+		"PULL_REQUEST_NUMBER",
+	}
+
+	for _, envVar := range envVars {
+		os.Unsetenv(envVar)
+	}
+}
+
 // Undo the effects of setCIVariables().
 func unsetCIVariables(env map[string]TestEnvVal) (err error) {
 	for key, _ := range env {
@@ -566,6 +588,8 @@ func TestDetectCIEnvironment(t *testing.T) {
 }
 
 func TestGetCommitAndBranch(t *testing.T) {
+	clearCIVariables()
+
 	type testData struct {
 		args                []string
 		srcBranchesToIgnore []string
