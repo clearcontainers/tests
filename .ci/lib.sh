@@ -35,7 +35,7 @@ function clone_and_build() {
 		echo "Run autogen.sh to generate Makefile"
 		bash -f autogen.sh
 	fi
-	make ${make_target}
+	make -e ${make_target}
 
 	popd
 }
@@ -44,6 +44,6 @@ function clone_build_and_install() {
 	clone_and_build $1 $2
 	pushd "${GOPATH}/src/${1}"
 	echo "Install repository ${1}"
-	sudo make install
+	sudo -E make -e install
 	popd
 }

@@ -21,15 +21,25 @@ cidir=$(dirname "$0")
 
 source "${cidir}/lib.sh"
 
-runtime_dir="${GOPATH}/src/github.com/clearcontainers/runtime"
-runtime_config_path="/etc/clear-containers"
-runtime_config_file="configuration.toml"
+# Modify the runtimes build-time defaults
 
+# The OBS packages install qemu-lite here
+export QEMUBINDIR=/usr/bin
+
+# The runtimes config file should live here
+export SYSCONFDIR=/etc
+
+# Artifacts (kernel + image) live below here
+export SHAREDIR=/usr/share
+
+runtime_dir="${GOPATH}/src/github.com/clearcontainers/runtime"
+runtime_config_path="${SYSCONFDIR}/clear-containers/configuration.toml"
+
+# Note: This will also install the config file.
 clone_build_and_install "github.com/clearcontainers/runtime"
 
-echo "Install runtime ${runtime_config_file} to ${runtime_config_path}"
-sudo mkdir -p ${runtime_config_path}
-sed 's/^#\(\[runtime\]\|global_log_path =\)/\1/g' ${runtime_dir}/config/${runtime_config_file} | sudo tee ${runtime_config_path}/${runtime_config_file}
+echo "Enabling global logging for runtime in file ${runtime_config_path}"
+sudo sed -i -e 's/^#\(\[runtime\]\|global_log_path =\)/\1/g' "${runtime_config_path}"
 
 echo "Add runtime as a new/default Docker runtime. Docker version \"$(docker --version)\" could change according to Semaphore CI updates."
 sudo mkdir -p /etc/default
