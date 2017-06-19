@@ -33,7 +33,9 @@ ginkgo:
 functional: ginkgo
 	./ginkgo functional/ -- -runtime ${CC_RUNTIME} -timeout ${TIMEOUT}
 
-check:	functional crio
+# Add crio tests here when https://github.com/clearcontainers/runtime/issues/215
+# is fixed.
+check:	functional
 
 all: functional checkcommits
 
