@@ -47,6 +47,9 @@ runtime_config_path="${SYSCONFDIR}/clear-containers/configuration.toml"
 # Note: This will also install the config file.
 clone_build_and_install "github.com/clearcontainers/runtime"
 
+# Check system supports running Clear Containers
+cc-runtime cc-check
+
 echo "Enabling global logging for runtime in file ${runtime_config_path}"
 sudo sed -i -e 's/^#\(\[runtime\]\|global_log_path =\)/\1/g' "${runtime_config_path}"
 
