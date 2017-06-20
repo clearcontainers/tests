@@ -23,7 +23,7 @@ crio:
 	bash .ci/install_bats.sh
 	cp $(PWD)/integration/cri-o/crio.bats ${CRIO_REPO_PATH}/test/
 	cd ${CRIO_REPO_PATH} && \
-	RUNTIME=${CC_RUNTIME} ./test/test_runner.sh crio.bats
+	RUNTIME=${CC_RUNTIME} STORAGE_OPTS="--storage-driver=aufs" ./test/test_runner.sh crio.bats
 
 ginkgo:
 	ln -sf . vendor/src
@@ -35,7 +35,7 @@ functional: ginkgo
 
 # Add crio tests here when https://github.com/clearcontainers/runtime/issues/215
 # is fixed.
-check:	functional
+check: functional crio
 
 all: functional checkcommits
 
