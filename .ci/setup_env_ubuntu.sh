@@ -57,7 +57,7 @@ git clone git://git.kernel.org/pub/scm/utils/util-linux/util-linux.git
 pushd ${util_linux_path}
 ./autogen.sh
 ./configure --without-python --disable-all-programs --enable-nsenter
-make
+make nsenter
 sudo cp nsenter /usr/bin/
 popd
 rm -rf ${util_linux_path}
