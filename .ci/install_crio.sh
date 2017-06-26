@@ -26,8 +26,8 @@ pushd $GOPATH/src/github.com/kubernetes-incubator/cri-o
 echo "Installing CRI-O"
 make install.tools
 make
-sudo make install
-sudo make install.config
+sudo -E PATH=$PATH sh -c "make install"
+sudo -E PATH=$PATH sh -c "make install.config"
 
 echo "Setup cc-runtime as the runtime to use"
 sudo sed -i.bak 's/\/usr\/bin\/runc/\/usr\/local\/bin\/cc-runtime/g' /etc/crio/crio.conf
