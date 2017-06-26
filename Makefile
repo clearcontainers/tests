@@ -33,6 +33,9 @@ ginkgo:
 functional: ginkgo
 	./ginkgo functional/ -- -runtime ${CC_RUNTIME} -timeout ${TIMEOUT}
 
+metrics:
+	RUNTIME=${CC_RUNTIME} ./metrics/run_all_metrics.sh
+
 # Add crio tests here when https://github.com/clearcontainers/runtime/issues/215
 # is fixed.
 check: functional crio
@@ -45,4 +48,4 @@ checkcommits:
 clean:
 	cd cmd/checkcommits && make clean
 
-.PHONY: functional check ginkgo crio
+.PHONY: functional check ginkgo crio metrics
