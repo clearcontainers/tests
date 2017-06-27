@@ -20,6 +20,7 @@ cidir=$(dirname "$0")
 
 echo "Add clear containers sources to apt list"
 sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/clearlinux:/preview:/clear-containers-2.1/xUbuntu_16.10/ /' >> /etc/apt/sources.list.d/cc-oci-runtime.list"
+curl -fsSL http://download.opensuse.org/repositories/home:clearlinux:preview:clear-containers-2.1/xUbuntu_16.10/Release.key | sudo apt-key add -
 
 echo "Install chronic"
 sudo apt-get install -y moreutils
