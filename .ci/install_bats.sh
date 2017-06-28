@@ -16,6 +16,8 @@
 
 set -e
 
+which bats && exit
+
 echo "Install BATS from sources"
 go get -d github.com/sstephenson/bats || true
 pushd $GOPATH/src/github.com/sstephenson/bats
