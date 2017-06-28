@@ -1,0 +1,17 @@
+# This is an example TOML baseline metrics file for use with the checkmetrics
+# tool.
+# Note: The values in this file are:
+# - not representative, they are just for example
+# - will need to vary between systems, as different hardware and base installations
+# will act differently.
+#
+[[metric]]
+# The 'name' of the test - needs to match the CSV output file, minus the `.csv` extension
+name = "docker-run-time"
+description = "/bin/true cycle time"
+# The minimum and maximum numbers (range) you expect the median of the test results
+# to call within.
+# Notionally this test does not have a minimum - smaller is better - but, if we
+# get an unexpectedly low number then I think we'd like to know!
+minval = 0.5
+maxval = 1.5
