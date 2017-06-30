@@ -22,6 +22,10 @@ set -e
 
 cidir=$(dirname "$0")
 
+# If this script detects it is running in the repo it is hosted by,
+# perform setup for that repo (not repos that use this one).
+bash -f ${cidir}/setup_tests.sh
+
 echo "Set up environment"
 bash -f ${cidir}/setup_env_ubuntu.sh
 
