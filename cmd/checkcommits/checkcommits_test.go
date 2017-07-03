@@ -613,11 +613,11 @@ func TestGetCommitAndBranch(t *testing.T) {
 
 		if d.expectFail {
 			if err == nil {
-				t.Fatalf("Unexpected success: %+d", d)
+				t.Fatalf("Unexpected success: %+v", d)
 			}
 		} else {
 			if err != nil {
-				t.Fatalf("Unexpected failure: %+d: %v", d, err)
+				t.Fatalf("Unexpected failure: %+v: %v", d, err)
 			}
 		}
 
