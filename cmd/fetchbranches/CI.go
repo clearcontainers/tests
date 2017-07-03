@@ -18,7 +18,7 @@ package main
 
 import "os"
 
-// CI Continous Integration
+// CI Continuous Integration
 type CI interface {
 	// GetPR obtains the pull request number
 	GetPR() (*pr, error)
