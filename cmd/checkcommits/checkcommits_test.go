@@ -643,6 +643,9 @@ func TestGetCommitAndBranch(t *testing.T) {
 
 		// XXX: crucially, no arguments (to trigger the auto-detection)
 		commit, dstBranch, err := getCommitAndBranch([]string{}, []string{})
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		if commit != d.expectedCommit {
 			t.Fatalf("Unexpected commit %v (%+v)", commit, d)
