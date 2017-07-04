@@ -39,3 +39,16 @@ groups:
       - dlespiau
       - GabyCT
       - grahamwhaley
+
+  documentation:
+    conditions:
+      files:
+        include:
+          - "*.rst"
+          - "*.md"
+        exclude:
+          - "vendor/*"
+    required: 1
+    users:
+      - iphutch
+      - rcaballeromx
