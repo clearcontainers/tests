@@ -20,7 +20,7 @@ import (
 )
 
 func TestGetPR(t *testing.T) {
-	ci := &SemaphoreCI{}
+	ci := &semaphoreCI{}
 
 	os.Unsetenv(prEnvar)
 

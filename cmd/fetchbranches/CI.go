@@ -35,7 +35,7 @@ func NewCI() CI {
 	ci := os.Getenv(ciEnvar)
 	semaphore := os.Getenv(toolEnvar)
 	if ci == "true" && semaphore == "true" {
-		return &SemaphoreCI{}
+		return &semaphoreCI{}
 	}
 	return nil
 }
