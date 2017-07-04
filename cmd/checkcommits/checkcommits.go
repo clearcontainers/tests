@@ -540,6 +540,31 @@ func branchMatchesREList(branch string, branches []string) string {
 	return ""
 }
 
+// expandCommitAndBranch expands the specified commit and branch value,
+// resolving them to default values where appropriate
+func expandCommitAndBranch(originalCommit, originalBranch string) (commit, branch string) {
+	commit = originalCommit
+	branch = originalBranch
+
+	if commit == "" {
+		commit = defaultCommit
+
+		if verbose {
+			fmt.Printf("Defaulting commit to %s\n", commit)
+		}
+	}
+
+	if branch == "" {
+		branch = defaultBranch
+
+		if verbose {
+			fmt.Printf("Defaulting branch to %s\n", branch)
+		}
+	}
+
+	return commit, branch
+}
+
 // getCommitAndBranch determines the commit and branch to use.
 func getCommitAndBranch(args, srcBranchesToIgnore []string) (commit, branch string, err error) {
 	var srcBranch string
@@ -571,21 +596,7 @@ func getCommitAndBranch(args, srcBranchesToIgnore []string) (commit, branch stri
 		branch = args[1]
 	}
 
-	if commit == "" {
-		commit = defaultCommit
-
-		if verbose {
-			fmt.Printf("Defaulting commit to %s\n", commit)
-		}
-	}
-
-	if branch == "" {
-		branch = defaultBranch
-
-		if verbose {
-			fmt.Printf("Defaulting branch to %s\n", branch)
-		}
-	}
+	commit, branch = expandCommitAndBranch(commit, branch)
 
 	if srcBranch != "" {
 		match := ignoreSrcBranch(commit, srcBranch, srcBranchesToIgnore)
