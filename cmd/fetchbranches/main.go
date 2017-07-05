@@ -99,9 +99,8 @@ func fetchBranches(fetchMap map[string]string, pr pr) error {
 		fetchDirectory := filepath.Join(fullDirectory, pr.owner, branchRepo)
 		os.Chdir(fetchDirectory)
 
-		cmd = exec.Command("git", "fetch", "origin")
-		nameFetch := filepath.Join("origin", branchName)
-		cmd = exec.Command("git", "checkout", "-b", branchName, nameFetch)
+		nameFetch := strings.SplitN(branchURL, wordKey, 2)
+		cmd = exec.Command("git", "pull", "--no-edit", nameFetch[0], nameFetch[1])
 		err = cmd.Run()
 
 		if err != nil {
