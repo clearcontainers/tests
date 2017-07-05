@@ -115,7 +115,7 @@ func checkCommitSubject(config *CommitConfig, commit, subject string) error {
 			commit, config.MaxSubjectLineLength, length, subject)
 	}
 
-	if config.FixesString != "" && config.FixesPattern != nil {
+	if config.NeedFixes && config.FixesPattern != nil {
 		matches = config.FixesPattern.FindStringSubmatch(subject)
 
 		if matches != nil {
@@ -128,7 +128,8 @@ func checkCommitSubject(config *CommitConfig, commit, subject string) error {
 
 func checkCommitBodyLine(config *CommitConfig, commit string, line string,
 	lineNum int, nonWhitespaceOnlyLine *int,
-	sobPattern *regexp.Regexp, sobLine *int) error {
+	sobLine *int) error {
+
 	if config == nil {
 		return errNoConfig
 	}
@@ -151,9 +152,11 @@ func checkCommitBodyLine(config *CommitConfig, commit string, line string,
 		config.FoundFixes = true
 	}
 
-	sobMatch := sobPattern.FindStringSubmatch(line)
-	if sobMatch != nil {
-		*sobLine = lineNum
+	if config.NeedSOBS {
+		sobMatch := config.SobPattern.FindStringSubmatch(line)
+		if sobMatch != nil {
+			*sobLine = lineNum
+		}
 	}
 
 	// Note: SOB lines are *NOT* checked for max line
@@ -202,9 +205,6 @@ func checkCommitBody(config *CommitConfig, commit string, body []string) error {
 		return fmt.Errorf("Commit %v: empty body", commit)
 	}
 
-	// note that sign-off lines must start in the first column
-	sobPattern := regexp.MustCompile(fmt.Sprintf("^%s:", config.SobString))
-
 	// line number which contains a sign-off line.
 	sobLine := -1
 
@@ -213,7 +213,7 @@ func checkCommitBody(config *CommitConfig, commit string, body []string) error {
 
 	for i, line := range body {
 		err := checkCommitBodyLine(config, commit, line, i,
-			&nonWhitespaceOnlyLine, sobPattern, &sobLine)
+			&nonWhitespaceOnlyLine, &sobLine)
 		if err != nil {
 			return err
 		}
@@ -357,8 +357,6 @@ func checkCommits(config *CommitConfig, commits []string) error {
 		// Handle Travis builds on master
 		return nil
 	}
-
-	config.FixesPattern = regexp.MustCompile(fmt.Sprintf("%s:* *#\\d+", config.FixesString))
 
 	for _, commit := range commits {
 		if verbose {
@@ -516,6 +514,15 @@ func NewCommitConfig(needFixes, needSignOffs bool, fixesPrefix, signoffPrefix st
 
 	if signoffPrefix != "" {
 		config.SobString = signoffPrefix
+	}
+
+	if config.NeedFixes {
+		config.FixesPattern = regexp.MustCompile(fmt.Sprintf(`(?i:%s:* *#\d+)`, config.FixesString))
+	}
+
+	if config.NeedSOBS {
+		// note that sign-off lines must start in the first column
+		config.SobPattern = regexp.MustCompile(fmt.Sprintf("^%s:", config.SobString))
 	}
 
 	return config

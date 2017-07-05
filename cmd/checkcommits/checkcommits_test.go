@@ -17,10 +17,11 @@ package main
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 	"testing"
 )
+
+const testFixesString = "Fixes"
 
 // An environment variable value. If set is true, set it,
 // else unset it (ignoring the value).
@@ -36,9 +37,6 @@ type TestCIEnvData struct {
 	expectedSrcBranch string
 	expectedDstBranch string
 }
-
-var fixesString string
-var fixesPattern *regexp.Regexp
 
 // List of variables to restore after the tests have run
 var restoreSet map[string]TestEnvVal
@@ -105,15 +103,12 @@ var testCIEnvData = []TestCIEnvData{
 }
 
 func init() {
-	fixesString = "Fixes"
-	fixesPattern = regexp.MustCompile(fmt.Sprintf("(?i)%s:* *#\\d+", fixesString))
-
 	saveEnv()
 }
 
 func createCommitConfig() (config *CommitConfig) {
 	return NewCommitConfig(true, true,
-		fixesString,
+		testFixesString,
 		"Signed-off-by",
 		defaultMaxBodyLineLength,
 		defaultMaxSubjectLineLength)
@@ -339,8 +334,6 @@ func TestCheckCommitSubject(t *testing.T) {
 	for _, d := range data {
 
 		if d.config != nil {
-			d.config.FixesString = fixesString
-			d.config.FixesPattern = fixesPattern
 			d.config.FoundFixes = false
 		}
 
@@ -505,8 +498,6 @@ func TestCheckCommitBody(t *testing.T) {
 
 	for _, d := range data {
 		if d.config != nil {
-			d.config.FixesString = fixesString
-			d.config.FixesPattern = fixesPattern
 			d.config.FoundFixes = false
 		}
 
