@@ -1,5 +1,4 @@
-#!/bin/bash
-#
+
 # Copyright (c) 2017 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,31 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Setup workflow:
-# 1. setup environment (install qemu, kernel and image)
-# 2. Clone repos, fetch branches, build and install
+# This script is in charge of building the fetch branches tool
+# at clearcontainers/tests repository and then running it, in order to
+# fetch a particular branch.
 
 set -e
 
 cidir=$(dirname "$0")
 
-echo "Set up environment"
-bash -f ${cidir}/setup_env_ubuntu.sh
+github_repository="src/github.com/clearcontainers/tests/cmd/fetchbranches"
+tool_dir="${GOPATH}/${github_repository}"
 
-echo "Building and running the fetch branches tool"
-bash -f ${cidir}/run_fetch_branches_tool.sh
+pushd ${tool_dir} 
 
-echo "Install shim"
-bash -f ${cidir}/install_shim.sh
+# Building the fetch branches tool
+go build .
+# Running the fetch branches tool
+./fetchbranches
 
-echo "Install proxy"
-bash -f ${cidir}/install_proxy.sh
-
-echo "Install runtime"
-bash -f ${cidir}/install_runtime.sh
-
-echo "Install CNI plugins"
-bash -f ${cidir}/install_cni_plugins.sh
-
-echo "Install CRI-O"
-bash -f ${cidir}/install_crio.sh
+popd
