@@ -34,6 +34,8 @@ groups:
   approvers:
     required: 1
     users:
-      - GabyCT
       - chavafg
       - devimc
+      - dlespiau
+      - GabyCT
+      - grahamwhaley
