@@ -146,14 +146,6 @@ func checkCommitBodyLine(config *CommitConfig, commit string, line string,
 		}
 	}
 
-	// Check first character of line. If it's _not_
-	// alphabetic, length limits don't apply.
-	rune, _ := utf8.DecodeRune([]byte{line[0]})
-
-	if !unicode.IsLetter(rune) {
-		return nil
-	}
-
 	fixesMatches := config.FixesPattern.FindStringSubmatch(line)
 	if fixesMatches != nil {
 		config.FoundFixes = true
@@ -168,6 +160,14 @@ func checkCommitBodyLine(config *CommitConfig, commit string, line string,
 	// length: it isn't reasonable to penalise someone
 	// people with long names ;)
 	if *sobLine != -1 {
+		return nil
+	}
+
+	// Check first character of line. If it's _not_
+	// alphabetic, length limits don't apply.
+	rune, _ := utf8.DecodeRune([]byte{line[0]})
+
+	if !unicode.IsLetter(rune) {
 		return nil
 	}
 
