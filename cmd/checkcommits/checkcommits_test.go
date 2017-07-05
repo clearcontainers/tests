@@ -17,10 +17,11 @@ package main
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 	"testing"
 )
+
+const testFixesString = "Fixes"
 
 // An environment variable value. If set is true, set it,
 // else unset it (ignoring the value).
@@ -36,9 +37,6 @@ type TestCIEnvData struct {
 	expectedSrcBranch string
 	expectedDstBranch string
 }
-
-var fixesString string
-var fixesPattern *regexp.Regexp
 
 // List of variables to restore after the tests have run
 var restoreSet map[string]TestEnvVal
@@ -105,15 +103,12 @@ var testCIEnvData = []TestCIEnvData{
 }
 
 func init() {
-	fixesString = "Fixes"
-	fixesPattern = regexp.MustCompile(fmt.Sprintf("(?i)%s:* *#\\d+", fixesString))
-
 	saveEnv()
 }
 
 func createCommitConfig() (config *CommitConfig) {
 	return NewCommitConfig(true, true,
-		fixesString,
+		testFixesString,
 		"Signed-off-by",
 		defaultMaxBodyLineLength,
 		defaultMaxSubjectLineLength)
@@ -339,8 +334,6 @@ func TestCheckCommitSubject(t *testing.T) {
 	for _, d := range data {
 
 		if d.config != nil {
-			d.config.FixesString = fixesString
-			d.config.FixesPattern = fixesPattern
 			d.config.FoundFixes = false
 		}
 
@@ -363,6 +356,16 @@ func TestCheckCommitSubject(t *testing.T) {
 	}
 }
 
+func makeLongFixes(count int) string {
+	var fixes []string
+
+	for i := 0; i < count; i++ {
+		fixes = append(fixes, fmt.Sprintf("%s #%d", testFixesString, i))
+	}
+
+	return strings.Join(fixes, ", ")
+}
+
 func TestCheckCommitBody(t *testing.T) {
 	config := createCommitConfig()
 
@@ -373,6 +376,10 @@ func TestCheckCommitBody(t *testing.T) {
 		expectFail  bool
 		expectFixes bool
 	}
+
+	// create a string that is definately longer than
+	// the allowed line length
+	lotsOfFixes := makeLongFixes(defaultMaxBodyLineLength)
 
 	data := []testData{
 		// invalid commit
@@ -439,9 +446,20 @@ func TestCheckCommitBody(t *testing.T) {
 		{"HEAD", []string{"你好", "Fixes: #1", "Signed-off-by: me@foo.com"}, config, false, true},
 		{"HEAD", []string{"你好", "Fixes  # 1", "Signed-off-by: me@foo.com"}, config, false, false},
 		{"HEAD", []string{"你好", "Fixes  #999", "Signed-off-by: me@foo.com"}, config, false, true},
+		{"HEAD", []string{"bar1", "  Fixes  #999", "Signed-off-by: me@foo.com"}, config, false, true},
+		{"HEAD", []string{"bar2", "  fixes: #999", "Signed-off-by: me@foo.com"}, config, false, true},
+		{"HEAD", []string{"bar3", "	Fixes  #999", "Signed-off-by: me@foo.com"}, config, false, true},
+		{"HEAD", []string{"bar4", "	fixes  #999", "Signed-off-by: me@foo.com"}, config, false, true},
+		{"HEAD", []string{"bar5", "	fixes	#999", "Signed-off-by: me@foo.com"}, config, false, true},
+		{"HEAD", []string{"bar6", "	Fixes:	#999", "Signed-off-by: me@foo.com"}, config, false, true},
+		{"HEAD", []string{"bar7", "	Fixes:	 #999", "Signed-off-by: me@foo.com"}, config, false, true},
+		{"HEAD", []string{"bar8", "	Fixes:	  #999", "Signed-off-by: me@foo.com"}, config, false, true},
+		{"HEAD", []string{"bar9", "	Fixes: 	  #999", "Signed-off-by: me@foo.com"}, config, false, true},
 		{"HEAD", []string{"你好", "fixes: #999", "Signed-off-by: me@foo.com"}, config, false, true},
 		{"HEAD", []string{"你好", "fixes #19123", "Signed-off-by: me@foo.com"}, config, false, true},
 		{"HEAD", []string{"你好", "fixes #123, #234. Fixes: #3456.", "Signed-off-by: me@foo.com"}, config, false, true},
+		{"HEAD", []string{"moo", lotsOfFixes, "Signed-off-by: me@foo.com"}, config, false, true},
+		{"HEAD", []string{"moo", fmt.Sprintf("  %s", lotsOfFixes), "Signed-off-by: me@foo.com"}, config, false, true},
 
 		// SOB can be any length
 		{"HEAD", []string{"foo",
@@ -501,8 +519,6 @@ func TestCheckCommitBody(t *testing.T) {
 
 	for _, d := range data {
 		if d.config != nil {
-			d.config.FixesString = fixesString
-			d.config.FixesPattern = fixesPattern
 			d.config.FoundFixes = false
 		}
 
