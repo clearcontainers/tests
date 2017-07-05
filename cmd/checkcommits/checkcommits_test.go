@@ -356,6 +356,16 @@ func TestCheckCommitSubject(t *testing.T) {
 	}
 }
 
+func makeLongFixes(count int) string {
+	var fixes []string
+
+	for i := 0; i < count; i++ {
+		fixes = append(fixes, fmt.Sprintf("%s #%d", testFixesString, i))
+	}
+
+	return strings.Join(fixes, ", ")
+}
+
 func TestCheckCommitBody(t *testing.T) {
 	config := createCommitConfig()
 
@@ -366,6 +376,10 @@ func TestCheckCommitBody(t *testing.T) {
 		expectFail  bool
 		expectFixes bool
 	}
+
+	// create a string that is definately longer than
+	// the allowed line length
+	lotsOfFixes := makeLongFixes(defaultMaxBodyLineLength)
 
 	data := []testData{
 		// invalid commit
@@ -444,6 +458,8 @@ func TestCheckCommitBody(t *testing.T) {
 		{"HEAD", []string{"你好", "fixes: #999", "Signed-off-by: me@foo.com"}, config, false, true},
 		{"HEAD", []string{"你好", "fixes #19123", "Signed-off-by: me@foo.com"}, config, false, true},
 		{"HEAD", []string{"你好", "fixes #123, #234. Fixes: #3456.", "Signed-off-by: me@foo.com"}, config, false, true},
+		{"HEAD", []string{"moo", lotsOfFixes, "Signed-off-by: me@foo.com"}, config, false, true},
+		{"HEAD", []string{"moo", fmt.Sprintf("  %s", lotsOfFixes), "Signed-off-by: me@foo.com"}, config, false, true},
 
 		// SOB can be any length
 		{"HEAD", []string{"foo",
