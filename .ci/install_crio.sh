@@ -17,7 +17,7 @@
 set -e
 
 echo "Install dependencies: libglib2.0-dev libseccomp-dev libapparmor-dev libgpgme11-dev libdevmapper-dev btrfs-tools"
-sudo apt-get install -y libglib2.0-dev libseccomp-dev libapparmor-dev libgpgme11-dev libdevmapper-dev btrfs-tools
+sudo apt-get install -y libglib2.0-dev libseccomp-dev libapparmor-dev libgpgme11-dev libdevmapper-dev btrfs-tools btrfs-progs
 
 echo "Get CRI-O sources"
 go get -d github.com/kubernetes-incubator/cri-o || true
