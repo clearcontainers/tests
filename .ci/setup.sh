@@ -28,9 +28,6 @@ bash -f ${cidir}/setup_env_ubuntu.sh
 echo "Install shim"
 bash -f ${cidir}/install_shim.sh
 
-echo "Install virtcontainers"
-bash -f ${cidir}/install_virtcontainers.sh
-
 echo "Install proxy"
 bash -f ${cidir}/install_proxy.sh
 
