@@ -23,7 +23,7 @@ import (
 	"strings"
 )
 
-type SemaphoreCI struct{}
+type semaphoreCI struct{}
 
 const (
 	prEnvar   = "PULL_REQUEST_NUMBER"
@@ -31,7 +31,7 @@ const (
 )
 
 // GetPR retrieves the PR number from the Semaphore environment
-func (ci *SemaphoreCI) GetPR() (*pr, error) {
+func (ci *semaphoreCI) GetPR() (*pr, error) {
 	val := os.Getenv(prEnvar)
 
 	if val == "" {

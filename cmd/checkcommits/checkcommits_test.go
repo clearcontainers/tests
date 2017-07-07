@@ -42,33 +42,33 @@ type TestCIEnvData struct {
 var restoreSet map[string]TestEnvVal
 
 var travisPREnv = map[string]TestEnvVal{
-	"TRAVIS":                     TestEnvVal{"true", true},
-	"TRAVIS_BRANCH":              TestEnvVal{"master", true},
-	"TRAVIS_COMMIT":              TestEnvVal{"travis-commit", true},
-	"TRAVIS_PULL_REQUEST_BRANCH": TestEnvVal{"travis-pr", true},
+	"TRAVIS":                     {"true", true},
+	"TRAVIS_BRANCH":              {"master", true},
+	"TRAVIS_COMMIT":              {"travis-commit", true},
+	"TRAVIS_PULL_REQUEST_BRANCH": {"travis-pr", true},
 }
 
 var travisNonPREnv = map[string]TestEnvVal{
-	"TRAVIS":                     TestEnvVal{"true", true},
-	"TRAVIS_BRANCH":              TestEnvVal{"master", true},
-	"TRAVIS_COMMIT":              TestEnvVal{"travis-commit", true},
-	"TRAVIS_PULL_REQUEST_BRANCH": TestEnvVal{"", true},
+	"TRAVIS":                     {"true", true},
+	"TRAVIS_BRANCH":              {"master", true},
+	"TRAVIS_COMMIT":              {"travis-commit", true},
+	"TRAVIS_PULL_REQUEST_BRANCH": {"", true},
 }
 
 var semaphorePREnv = map[string]TestEnvVal{
-	"SEMAPHORE":           TestEnvVal{"true", true},
-	"BRANCH_NAME":         TestEnvVal{"semaphore-pr", true},
-	"REVISION":            TestEnvVal{"semaphore-commit", true},
-	"PULL_REQUEST_NUMBER": TestEnvVal{"semaphore-pr", true},
+	"SEMAPHORE":           {"true", true},
+	"BRANCH_NAME":         {"semaphore-pr", true},
+	"REVISION":            {"semaphore-commit", true},
+	"PULL_REQUEST_NUMBER": {"semaphore-pr", true},
 }
 
 var semaphoreNonPREnv = map[string]TestEnvVal{
-	"SEMAPHORE":   TestEnvVal{"true", true},
-	"BRANCH_NAME": TestEnvVal{"master", true},
-	"REVISION":    TestEnvVal{"semaphore-commit", true},
+	"SEMAPHORE":   {"true", true},
+	"BRANCH_NAME": {"master", true},
+	"REVISION":    {"semaphore-commit", true},
 
 	// XXX: the odd one out - unset it
-	"PULL_REQUEST_NUMBER": TestEnvVal{"", false},
+	"PULL_REQUEST_NUMBER": {"", false},
 }
 
 var testCIEnvData = []TestCIEnvData{
@@ -123,12 +123,12 @@ func saveEnv() {
 	restoreSet = make(map[string]TestEnvVal)
 
 	for _, d := range testCIEnvData {
-		for k, _ := range d.env {
+		for k := range d.env {
 			varNames[k] = 1
 		}
 	}
 
-	for key, _ := range varNames {
+	for key := range varNames {
 		// Determine if the variable is already set
 		value, set := os.LookupEnv(key)
 		restoreSet[key] = TestEnvVal{value, set}
@@ -195,7 +195,7 @@ func clearCIVariables() {
 
 // Undo the effects of setCIVariables().
 func unsetCIVariables(env map[string]TestEnvVal) (err error) {
-	for key, _ := range env {
+	for key := range env {
 		err := os.Unsetenv(key)
 		if err != nil {
 			return err
@@ -629,11 +629,11 @@ func TestGetCommitAndBranch(t *testing.T) {
 
 		if d.expectFail {
 			if err == nil {
-				t.Fatalf("Unexpected success: %+d", d)
+				t.Fatalf("Unexpected success: %+v", d)
 			}
 		} else {
 			if err != nil {
-				t.Fatalf("Unexpected failure: %+d: %v", d, err)
+				t.Fatalf("Unexpected failure: %+v: %v", d, err)
 			}
 		}
 
@@ -659,6 +659,9 @@ func TestGetCommitAndBranch(t *testing.T) {
 
 		// XXX: crucially, no arguments (to trigger the auto-detection)
 		commit, dstBranch, err := getCommitAndBranch([]string{}, []string{})
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		if commit != d.expectedCommit {
 			t.Fatalf("Unexpected commit %v (%+v)", commit, d)

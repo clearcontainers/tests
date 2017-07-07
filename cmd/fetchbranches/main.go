@@ -47,6 +47,10 @@ func main() {
 
 	// Shows author PR comments
 	comments, err := pr.GetAuthorComments()
+	if err != nil {
+		fmt.Printf("ERROR: %v\n", err)
+		os.Exit(1)
+	}
 	fmt.Printf("%#v\n", comments)
 
 	// Obtains the repo and the URL where a PR will be fetched
