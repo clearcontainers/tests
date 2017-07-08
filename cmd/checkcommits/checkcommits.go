@@ -416,6 +416,7 @@ func detectCIEnvironment() (commit, dstBranch, srcBranch string) {
 
 	if verbose && name != "" {
 		fmt.Printf("Detected %v Environment\n", name)
+		fmt.Printf("Using Commit %v, source branch %v, destination branch %v\n", commit, srcBranch, dstBranch)
 	}
 
 	return commit, dstBranch, srcBranch
