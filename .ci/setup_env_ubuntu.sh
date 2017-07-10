@@ -34,6 +34,28 @@ chronic sudo -E apt-get update
 echo "Install qemu-lite binary"
 chronic sudo -E apt-get install -y --force-yes qemu-lite
 
+echo "Install CRI-O dependencies"
+sudo -E apt-get install -y libglib2.0-dev libseccomp-dev libapparmor-dev libgpgme11-dev
+
+echo "Install libdevmapper"
+git clone http://sourceware.org/git/lvm2.git
+pushd lvm2
+./configure
+make -j$(nproc) libdm
+sudo -E PATH=$PATH sh -c "make libdm.install"
+popd
+
+echo "Install btrfs-tools"
+sudo -E apt-get install -y asciidoc xmlto --no-install-recommends
+sudo -E apt-get install -y uuid-dev libattr1-dev zlib1g-dev libacl1-dev e2fslibs-dev libblkid-dev liblzo2-dev
+git clone http://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+pushd btrfs-progs
+./autogen.sh
+./configure
+make -j$(nproc) btrfs
+sudo -E PATH=$PATH sh -c "make install btrfs"
+popd
+
 clear_release=$(curl -sL https://download.clearlinux.org/latest)
 cc_img_path="/usr/share/clear-containers"
 
