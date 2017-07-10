@@ -48,6 +48,7 @@ groups:
           - "*.md"
         exclude:
           - "vendor/*"
+          - "cmd/fetchbranches/vendor/*"
     required: 1
     users:
       - iphutch
