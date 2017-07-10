@@ -23,16 +23,16 @@ sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/clearlinux
 curl -fsSL http://download.opensuse.org/repositories/home:clearlinux:preview:clear-containers-2.1/xUbuntu_16.10/Release.key | sudo apt-key add -
 
 echo "Install chronic"
-sudo apt-get install -y moreutils
+sudo -E apt-get install -y moreutils
 
 echo "Install rpm2cpio"
-chronic sudo apt-get install -y rpm2cpio
+chronic sudo -E apt-get install -y rpm2cpio
 
 echo "Update apt repositories"
-chronic sudo apt-get update
+chronic sudo -E apt-get update
 
 echo "Install qemu-lite binary"
-chronic sudo apt-get install -y --force-yes qemu-lite
+chronic sudo -E apt-get install -y --force-yes qemu-lite
 
 clear_release=$(curl -sL https://download.clearlinux.org/latest)
 cc_img_path="/usr/share/clear-containers"
@@ -49,11 +49,11 @@ echo -e "WARNING:\n"
 "${cidir}/install_clear_kernel.sh" ${kernel_clear_release} ${kernel_version} "${cc_img_path}"
 
 echo "Install bison binary"
-chronic sudo apt-get install -y bison
+chronic sudo -E apt-get install -y bison
 
 echo "Install nsenter"
 util_linux_path="util-linux"
-chronic sudo apt-get install -y autopoint
+chronic sudo -E apt-get install -y autopoint
 git clone git://git.kernel.org/pub/scm/utils/util-linux/util-linux.git
 pushd ${util_linux_path}
 ./autogen.sh
