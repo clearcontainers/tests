@@ -377,7 +377,7 @@ func TestCheckCommitBody(t *testing.T) {
 		expectFixes bool
 	}
 
-	// create a string that is definately longer than
+	// create a string that is definitely longer than
 	// the allowed line length
 	lotsOfFixes := makeLongFixes(defaultMaxBodyLineLength)
 
