@@ -76,7 +76,7 @@ chronic sudo -E apt-get install -y bison
 echo "Install nsenter"
 util_linux_path="util-linux"
 chronic sudo -E apt-get install -y autopoint
-git clone git://git.kernel.org/pub/scm/utils/util-linux/util-linux.git
+git clone https://git.kernel.org/pub/scm/utils/util-linux/util-linux.git
 pushd ${util_linux_path}
 ./autogen.sh
 ./configure --without-python --disable-all-programs --enable-nsenter
