@@ -1,0 +1,26 @@
+# This section specifies information for
+# a SMTP server authentication as well as the
+# sender and receipts of the report email.
+# This is in order to send the obtained results
+# from checkmetrics to an email whitelist.
+# WARNING: The password for the SMTP authentication
+# will be in this text plane file.
+[mail]
+smtp = "myserver.smtp.com"
+port = "25"
+user = ""
+identity = ""
+password = ""
+from = "pnp@example.com"
+subject = "PnP failure Report <no-reply>"
+to = [ "maintainer@example.com",
+	"owner@example.com" ]
+cc = [ "contributor@example.com",
+	"developer@example.com" ]
+
+# This section specifies the arguments for
+# checkmetrics execution.
+[checkmetrics]
+cmd = "/usr/bin/checkmetrics"
+basefile = "/home/checkmetrics/conf.toml"
+metricsdir = "/home/checkmetrics/metricsdir"
