@@ -37,7 +37,7 @@ type CommitConfig struct {
 	// All commits must have a sign-off
 	NeedSOBS bool
 
-	// Atleast one commit must specify a bug that it fixes.
+	// At least one commit must specify a bug that it fixes.
 	NeedFixes bool
 
 	MaxSubjectLineLength int
@@ -644,7 +644,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
 			Name:  "need-fixes, f",
-			Usage: fmt.Sprintf("Ensure atleast one commit has a %q entry", defaultFixesString),
+			Usage: fmt.Sprintf("Ensure at least one commit has a %q entry", defaultFixesString),
 		},
 
 		cli.BoolFlag{

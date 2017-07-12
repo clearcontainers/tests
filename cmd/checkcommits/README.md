@@ -6,11 +6,11 @@ The `checkcommits` tool is used to perform basic checks on `git(1)`
 commits in a repository. It is designed to be run on pull request
 branches.
 
-By default, it will ensure ensure:
+By default, it will ensure:
 
 - A commit subject line is specified.
 
-- The commit subject containers a "subsystem" (adjust using `--subject-length=`).
+- The commit subject contains a "subsystem" (adjust using `--subject-length=`).
   A "subsystem" is simply one or more words followed by a colon at the
   start of the subject and designed to identify the area of the code the
   change applies to.
@@ -22,7 +22,7 @@ By default, it will ensure ensure:
 - No line in the commit body is overly long.
 
 Optionally, various other checks can be enabled (such as checking for
-atleast one "Fixes #XXX" entry in the commits and ensuring each commit
+at least one "Fixes #XXX" entry in the commits and ensuring each commit
 contains a developer sign-off).
 
 ## Handling long lines
