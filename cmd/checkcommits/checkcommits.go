@@ -274,6 +274,23 @@ func runGitLog(commit, prettyFormat string) ([]string, error) {
 	return runCommand(args)
 }
 
+// runGitLogDebug returns the log output for the 'n' last commits
+// The type of log can be varied with the prettyFormat argument
+func runGitLogDebug(n int, prettyFormat string) ([]string, error) {
+	if prettyFormat == "" {
+		return nil, errors.New("no pretty format")
+	}
+
+	var args []string
+
+	args = append(args, gitPath)
+	args = append(args, "log")
+	args = append(args, fmt.Sprintf("-%d", n))
+	args = append(args, fmt.Sprintf("--pretty=%s", prettyFormat))
+
+	return runCommand(args)
+}
+
 func getCommitSubject(commit string) (string, error) {
 	if commit == "" {
 		return "", errNoCommit
@@ -417,6 +434,18 @@ func detectCIEnvironment() (commit, dstBranch, srcBranch string) {
 	if verbose && name != "" {
 		fmt.Printf("Detected %v Environment\n", name)
 		fmt.Printf("Using Commit %v, source branch %v, destination branch %v\n", commit, srcBranch, dstBranch)
+		// We've seen a few niggles on Travis with the TRAVIS_COMMIT not being
+		// available in the checked out repo - let's dump a little more info
+		// to try and pre-emptively help debug if such issues arrise
+		log, err := runGitLogDebug(10, "fuller")
+		if err != nil {
+			fmt.Printf("Failed to get gitlog %v\n", err)
+		} else {
+			fmt.Printf("Dumping git log\n")
+			for _, line := range log {
+				fmt.Printf("\t%s\n", line)
+			}
+		}
 	}
 
 	return commit, dstBranch, srcBranch
