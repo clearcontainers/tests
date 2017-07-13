@@ -38,11 +38,11 @@ type Configuration struct {
 // by email. This information is parsed
 // from TOML input file.
 type MailConf struct {
-	Smtp     string   // SMTP server address
+	SMTP     string   // SMTP server address
 	Port     string   // SMTP port
 	User     string   // SMTP user
 	Password string   // SMTP password
-	Id       string   // SMTP indetity
+	ID       string   // SMTP indetity
 	From     string   // Sender
 	Subject  string   // Email msg subject
 	To       []string // Receipts
@@ -62,8 +62,8 @@ func main() {
 	var confFile string
 	var conf Configuration
 	var body string
-	var currentUid int
-	var ownerUid int
+	var currentUID int
+	var ownerUID int
 
 	// Checkmetrics conf vars
 	var cmd string
@@ -80,14 +80,14 @@ func main() {
 	}
 
 	// Owner verification
-	currentUid = os.Geteuid()
+	currentUID = os.Geteuid()
 	fStat := fileinfo.Sys().(*syscall.Stat_t)
-	ownerUid = int(fStat.Uid)
+	ownerUID = int(fStat.Uid)
 
-	if currentUid != ownerUid {
-		log.Fatal(currentUid,
+	if currentUID != ownerUID {
+		log.Fatal(currentUID,
 			" is not the owner of ", confFile,
-			" uid: ", ownerUid)
+			" uid: ", ownerUID)
 	}
 
 	// Parsing TOML configuration file
