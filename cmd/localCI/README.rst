@@ -41,6 +41,8 @@ Before running the commands of each stage, **localCI** exports the following env
 +---------------------+----------------------+-----------------------------------------------------+
 | LOCALCI_REPO_SLUG   | E.g foo/bar          | Repository owner / repository name                  |
 +---------------------+----------------------+-----------------------------------------------------+
+| LOCALCI_PR_NUMBER   | E.g 23               | Pull request number                                 |
++---------------------+----------------------+-----------------------------------------------------+
 
 
 Configuration file
