@@ -16,7 +16,9 @@
 
 set -e
 
+SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
+
 echo "Running all metrics tests"
 
 # Run the time tests
-bash metrics/time/docker_workload_time.sh true busybox $RUNTIME 100
+bash ${SCRIPT_PATH}/time/docker_workload_time.sh true busybox $RUNTIME 100
