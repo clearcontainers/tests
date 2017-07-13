@@ -1,0 +1,28 @@
+runTestsInParallel = true
+
+[[Repo]]
+url = "https://github.com/clearcontainers/runtime"
+pr = 505
+refreshTime = "30s"
+token = "ACCESS TOKEN"
+setup = [ ".ci/setup.sh" ]
+run = [ ".ci/run.sh" ]
+teardown = [ ".ci/teardown.sh" ]
+onSuccess = [ "echo success" ]
+onfailure = [ "echo failure" ]
+postOnSuccess = "qa-passed"
+postOnFailure = "qa-failed"
+useVM = true
+logDir = "/var/log/localCI"
+whitelist = "@"
+[Repo.language]
+  language = "Go"
+  version = "go1.8.3"
+[Repo.commentTrigger]
+  user = "QA-bot"
+  comment = "qa-passed"
+[Repo.logServer]
+  ip = "192.168.1.15"
+  user = "root"
+  dir = "/var/log/localCI"
+  publicKey = "ssh-rsa AAAAAAAnmcjdNoNksmUus84"

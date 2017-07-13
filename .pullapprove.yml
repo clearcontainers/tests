@@ -49,6 +49,7 @@ groups:
         exclude:
           - "vendor/*"
           - "cmd/fetchbranches/vendor/*"
+          - "cmd/localCI/vendor/*"
     required: 1
     users:
       - iphutch
