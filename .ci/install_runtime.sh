@@ -59,6 +59,13 @@ cat << EOF | sudo tee /etc/default/docker
 DOCKER_OPTS="-D --add-runtime cc30=/usr/local/bin/cc-runtime --default-runtime=cc30"
 EOF
 
+start_docker_cmd="sudo systemctl start docker"
+stop_docker_cmd="sudo systemctl stop docker"
+if [[ ! $(ps -p 1 | grep systemd) ]]; then
+	start_docker_cmd="sudo service docker start"
+	stop_docker_cmd="sudo service docker stop"
+fi
+
 echo "Restart docker service"
-sudo service docker stop
-sudo service docker start
+eval $stop_docker_cmd
+eval $start_docker_cmd

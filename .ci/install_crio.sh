@@ -16,6 +16,8 @@
 
 set -e
 
+cidir=$(dirname "$0")
+
 echo "Get CRI-O sources"
 go get -d github.com/kubernetes-incubator/cri-o || true
 pushd $GOPATH/src/github.com/kubernetes-incubator/cri-o
@@ -34,10 +36,22 @@ sudo sed -i.bak 's/storage_driver = \"\"/storage_driver = \"aufs\"/g' /etc/crio/
 
 popd
 
-upstart_services_path="/etc/init"
-crio_service_file="crio.conf"
-echo "Install crio service (${upstart_services_path}/${crio_service_file})"
-sudo cp ".ci/upstart-services/${crio_service_file}" "${upstart_services_path}/${crio_service_file}"
+service_path=""
+crio_service_file=""
+start_crio_cmd=""
+
+if [[ $(ps -p 1 | grep systemd) ]]; then
+	service_path="/etc/systemd/system"
+	crio_service_file="${cidir}/data/crio.service"
+	start_crio_cmd="sudo systemctl start crio"
+else
+	service_path="/etc/init"
+	crio_service_file="${cidir}/data/crio.conf"
+	start_crio_cmd="sudo service crio start"
+fi
+
+echo "Install crio service (${crio_service_file})"
+sudo cp "${crio_service_file}" "${service_path}"
 
 echo "Start crio service"
-sudo service crio start
+eval $start_crio_cmd

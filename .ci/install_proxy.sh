@@ -22,9 +22,14 @@ cidir=$(dirname "$0")
 source "${cidir}/lib.sh"
 
 clone_build_and_install "github.com/clearcontainers/proxy"
+start_proxy_cmd="sudo systemctl start cc-proxy"
 
-echo "Install proxy service (/etc/init/cc-proxy.conf)"
-sudo cp "${cidir}/upstart-services/cc-proxy.conf" /etc/init/
+if [[ ! $(ps -p 1 | grep systemd) ]]; then
+	echo "Install proxy service (/etc/init/cc-proxy.conf)"
+	sudo cp "${cidir}/data/cc-proxy.conf" /etc/init/
+
+	start_proxy_cmd="sudo service cc-proxy start"
+fi
 
 echo "Start proxy service"
-sudo service cc-proxy start
+eval $start_proxy_cmd

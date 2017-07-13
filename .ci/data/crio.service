@@ -1,0 +1,9 @@
+[Unit]
+Description=CRI-O daemon
+Documentation=https://github.com/kubernetes-incubator/cri-o
+
+[Service]
+ExecStart=/usr/local/bin/crio --debug
+
+[Install]
+WantedBy=multi-user.target
