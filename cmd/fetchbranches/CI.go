@@ -26,8 +26,9 @@ type CI interface {
 
 // Semaphore environment variables
 const (
-	ciEnvar   = "CI"
-	toolEnvar = "SEMAPHORE"
+	ciEnvar      = "CI"
+	toolEnvar    = "SEMAPHORE"
+	localCIEnvar = "LOCALCI"
 )
 
 // NewCI verifies that the testing environment is using Semaphore
@@ -37,5 +38,11 @@ func NewCI() CI {
 	if ci == "true" && semaphore == "true" {
 		return &semaphoreCI{}
 	}
+
+	localci := os.Getenv(localCIEnvar)
+	if ci == "true" && localci == "true" {
+		return &localCI{}
+	}
+
 	return nil
 }
