@@ -25,8 +25,13 @@ cidir=$(dirname "$0")
 echo "Set up environment"
 bash -f ${cidir}/setup_env_ubuntu.sh
 
-echo "Building and running the fetch branches tool"
-bash -f ${cidir}/run_fetch_branches_tool.sh
+# This should only run when running tests for a PR
+# since it looks for PULL_REQUEST_NUMBER environment
+# variable.
+if [ -n "$PULL_REQUEST_NUMBER" ]; then
+	echo "Building and running the fetch branches tool"
+	bash -f "${cidir}/run_fetch_branches_tool.sh"
+fi
 
 echo "Install shim"
 bash -f ${cidir}/install_shim.sh
