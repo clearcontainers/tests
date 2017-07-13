@@ -22,6 +22,9 @@ echo "Add clear containers sources to apt list"
 sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/clearlinux:/preview:/clear-containers-2.1/xUbuntu_16.10/ /' >> /etc/apt/sources.list.d/cc-oci-runtime.list"
 curl -fsSL http://download.opensuse.org/repositories/home:clearlinux:preview:clear-containers-2.1/xUbuntu_16.10/Release.key | sudo apt-key add -
 
+echo "Install clear containers dependencies"
+sudo -E apt-get install -y libtool automake autotools-dev autoconf bc
+
 echo "Install chronic"
 sudo -E apt-get install -y moreutils
 
@@ -38,12 +41,15 @@ echo "Install CRI-O dependencies"
 sudo -E apt-get install -y libglib2.0-dev libseccomp-dev libapparmor-dev libgpgme11-dev
 
 echo "Install libdevmapper"
-git clone http://sourceware.org/git/lvm2.git
-pushd lvm2
+devmapper_version="2.02.172"
+curl -LOk ftp://sources.redhat.com/pub/lvm2/LVM2.${devmapper_version}.tgz
+tar -xf LVM2.${devmapper_version}.tgz
+pushd LVM2.${devmapper_version}/
 ./configure
 make -j$(nproc) libdm
 sudo -E PATH=$PATH sh -c "make libdm.install"
 popd
+rm -rf LVM2.${devmapper_version}/ LVM2.${devmapper_version}.tgz
 
 echo "Install btrfs-tools"
 sudo -E apt-get install -y asciidoc xmlto --no-install-recommends
@@ -74,13 +80,14 @@ echo "Install bison binary"
 chronic sudo -E apt-get install -y bison
 
 echo "Install nsenter"
-util_linux_path="util-linux"
+nsenter_version="2.30"
 chronic sudo -E apt-get install -y autopoint
-git clone https://git.kernel.org/pub/scm/utils/util-linux/util-linux.git
-pushd ${util_linux_path}
+curl -LOk https://www.kernel.org/pub/linux/utils/util-linux/v${nsenter_version}/util-linux-${nsenter_version}.tar.xz
+tar -xf util-linux-${nsenter_version}.tar.xz
+pushd util-linux-${nsenter_version}/
 ./autogen.sh
 ./configure --without-python --disable-all-programs --enable-nsenter
 make nsenter
 sudo cp nsenter /usr/bin/
 popd
-rm -rf ${util_linux_path}
+rm -rf util-linux-${nsenter_version}/ util-linux-${nsenter_version}.tar.xz
