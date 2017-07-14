@@ -185,7 +185,7 @@ func (r *Repo) setup() error {
 	// add environment variables
 	r.env = os.Environ()
 	r.env = append(r.env, defaultEnv...)
-	repoSlug := fmt.Sprintf("LOCALCI_REPO_SLUG=\"%s/%s\"", r.cvr.getOwner(), r.cvr.getRepo())
+	repoSlug := fmt.Sprintf("LOCALCI_REPO_SLUG=%s/%s", r.cvr.getOwner(), r.cvr.getRepo())
 	r.env = append(r.env, repoSlug)
 
 	return nil
@@ -409,6 +409,9 @@ func (r *Repo) runTest(pr *PullRequest) error {
 	if len(langEnv) > 0 {
 		pr.Env = append(pr.Env, langEnv...)
 	}
+
+	// appends other environment variables
+	prNumber := fmt.Sprintf("LOCALCI_PR_NUMBER=%d", pr.Number)
 
 	// run stages
 	stages := []struct {
