@@ -46,19 +46,32 @@ type Container struct {
 	// if nil then try to run the container without --log option
 	LogFile *string
 
+	// Detach allows to run the process detached from the shell
+	Detach bool
+
 	// ID of the container
 	// if nil then try to run the container without container ID
 	ID *string
 }
 
+// Process describes a process to be executed on a running container.
+type Process struct {
+	ContainerID *string
+	Console     *string
+	Tty         *string
+	Detach      bool
+	Workload    []string
+}
+
 // NewContainer returns a new Container
-func NewContainer(workload []string) (*Container, error) {
+func NewContainer(workload []string, detach bool) (*Container, error) {
 	b, err := NewBundle(workload)
 	if err != nil {
 		return nil, err
 	}
 
-	console := "/dev/ptmx"
+	console := ""
+
 	pidFile := filepath.Join(b.Path, "pid")
 	logFile := filepath.Join(b.Path, "log")
 	id := RandID(20)
@@ -69,6 +82,7 @@ func NewContainer(workload []string) (*Container, error) {
 		PidFile: &pidFile,
 		Debug:   true,
 		LogFile: &logFile,
+		Detach:  detach,
 		ID:      &id,
 	}, nil
 }
@@ -98,6 +112,10 @@ func (c *Container) Run() (bytes.Buffer, bytes.Buffer, int) {
 
 	if c.PidFile != nil {
 		args = append(args, "--pid-file", *c.PidFile)
+	}
+
+	if c.Detach {
+		args = append(args, "--detach")
 	}
 
 	if c.ID != nil {
@@ -148,6 +166,45 @@ func (c *Container) Kill(all bool, signal interface{}) (bytes.Buffer, bytes.Buff
 	case string:
 		args = append(args, t)
 	}
+
+	cmd := NewCommand(Runtime, args...)
+	ret := cmd.Run()
+
+	return cmd.Stdout, cmd.Stderr, ret
+}
+
+// Exec the container
+// calls into exec command returning its stdout, stderr and exit code
+func (c *Container) Exec(process Process) (bytes.Buffer, bytes.Buffer, int) {
+	args := []string{}
+
+	if c.Debug {
+		args = append(args, "--debug")
+	}
+
+	if c.LogFile != nil {
+		args = append(args, "--log", *c.LogFile)
+	}
+
+	args = append(args, "exec")
+
+	if process.Console != nil {
+		args = append(args, "--console", *process.Console)
+	}
+
+	if process.Tty != nil {
+		args = append(args, "--tty", *process.Tty)
+	}
+
+	if process.Detach {
+		args = append(args, "--detach")
+	}
+
+	if process.ContainerID != nil {
+		args = append(args, *process.ContainerID)
+	}
+
+	args = append(args, process.Workload...)
 
 	cmd := NewCommand(Runtime, args...)
 	ret := cmd.Run()

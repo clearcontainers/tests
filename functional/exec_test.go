@@ -13,3 +13,104 @@
 // limitations under the License.
 
 package functional
+
+import (
+	"fmt"
+	"time"
+
+	. "github.com/clearcontainers/tests"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/gomega"
+)
+
+var sleepingContainerWorkload = []string{"sh", "-c", "sleep 1000"}
+
+func execDetachTiming(detach bool) TableEntry {
+	comparator := ">="
+	if detach {
+		comparator = "<"
+	}
+
+	timeout := 1
+
+	process := Process{
+		Workload: []string{"sleep", fmt.Sprintf("%d", timeout)},
+		Detach:   detach,
+	}
+
+	return Entry(fmt.Sprintf("check time as detach=%t", detach), process, comparator, timeout)
+}
+
+func execDetachOutput(detach bool) TableEntry {
+	output := "HelloWorld"
+
+	process := Process{
+		Workload: []string{"echo", output},
+		Detach:   detach,
+	}
+
+	expectedOutput := output
+	if detach {
+		expectedOutput = ""
+	}
+
+	return Entry(fmt.Sprintf("check output as detach=%t", detach), process, expectedOutput)
+}
+
+var _ = Describe("exec", func() {
+	var (
+		container *Container
+		exitCode  int
+		err       error
+	)
+
+	BeforeEach(func() {
+		container, err = NewContainer(sleepingContainerWorkload, true)
+		Expect(container).ShouldNot(BeNil())
+		Expect(err).ShouldNot(HaveOccurred())
+		_, _, exitCode := container.Run()
+		Expect(exitCode).Should(Equal(0))
+	})
+
+	AfterEach(func() {
+		Expect(container.Exist()).Should(BeTrue())
+		_, _, exitCode = container.Delete(true)
+		Expect(exitCode).Should(Equal(0))
+		Expect(container.Cleanup()).Should(Succeed())
+	})
+
+	DescribeTable("container",
+		func(process Process, comparator string, timeout int) {
+			process.ContainerID = container.ID
+			tInit := time.Now()
+
+			_, _, exitCode = container.Exec(process)
+			Expect(exitCode).Should(Equal(0))
+
+			duration := time.Since(tInit)
+			Expect(duration.Seconds()).Should(BeNumerically(comparator, timeout))
+		},
+		execDetachTiming(false),
+		execDetachTiming(true),
+	)
+
+	DescribeTable("container",
+		func(process Process, expectedOutput string) {
+			process.ContainerID = container.ID
+
+			stdout, stderr, exitCode := container.Exec(process)
+			Expect(exitCode).Should(Equal(0))
+
+			if expectedOutput != "" {
+				Expect(stdout.String()).Should(ContainSubstring(expectedOutput))
+			} else {
+				Expect(stdout.String()).Should(BeEmpty())
+			}
+
+			Expect(stderr.String()).Should(BeEmpty())
+		},
+		execDetachOutput(false),
+		execDetachOutput(true),
+	)
+})
