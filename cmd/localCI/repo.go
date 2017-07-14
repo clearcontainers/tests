@@ -416,6 +416,7 @@ func (r *Repo) runTest(pr *PullRequest) error {
 
 	// appends other environment variables
 	prNumber := fmt.Sprintf("LOCALCI_PR_NUMBER=%d", pr.Number)
+	pr.Env = append(pr.Env, prNumber)
 
 	// run stages
 	stages := []struct {
