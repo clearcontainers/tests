@@ -63,13 +63,13 @@ func SendByEmail(conf Configuration, body string) {
 	msg = header + body
 
 	auth = smtp.PlainAuth(
-		conf.Mail.Id,       // SMTP identity
+		conf.Mail.ID,       // SMTP identity
 		conf.Mail.User,     // SMTP user
 		conf.Mail.Password, // SMTP Server password
-		conf.Mail.Smtp,     // SMTP server address
+		conf.Mail.SMTP,     // SMTP server address
 	)
 
-	server = conf.Mail.Smtp + ":" + conf.Mail.Port
+	server = conf.Mail.SMTP + ":" + conf.Mail.Port
 
 	// Connection/Authentication step
 	err := smtp.SendMail(
