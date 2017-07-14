@@ -26,9 +26,9 @@ echo "Set up environment"
 bash -f ${cidir}/setup_env_ubuntu.sh
 
 # This should only run when running tests for a PR
-# since it looks for PULL_REQUEST_NUMBER environment
+# since it looks for PULL_REQUEST_NUMBER or LOCALCI_PR_NUMBER environment
 # variable.
-if [ -n "$PULL_REQUEST_NUMBER" ]; then
+if [ -n "$PULL_REQUEST_NUMBER" ] || [ -n "$LOCALCI_PR_NUMBER" ]; then
 	echo "Building and running the fetch branches tool"
 	bash -f "${cidir}/run_fetch_branches_tool.sh"
 fi
