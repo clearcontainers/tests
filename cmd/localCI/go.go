@@ -56,6 +56,10 @@ func newGoLanguage(r Repo) (Language, error) {
 
 	cloneDir := filepath.Join(goPath, "src", r.cvr.getDomain(), r.cvr.getOwner())
 
+	if err := os.MkdirAll(cloneDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create clone directory %s", err)
+	}
+
 	return &Go{
 		downloadURL: url,
 		tarFile:     tarFile,
