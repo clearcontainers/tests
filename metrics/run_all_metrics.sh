@@ -17,6 +17,14 @@
 set -e
 
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
+source "${SCRIPT_PATH}/lib/common.bash"
+
+# Check arguments
+if [[ ! -v RUNTIME ]]; then
+    die Variable RUNTIME must be set to the name of your CC runtime
+fi
+
+SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 
 echo "Running all metrics tests"
 
