@@ -66,4 +66,16 @@ func TestNewCI(t *testing.T) {
 		t.Fatal("expected an error")
 	}
 
+	// check localCI
+	os.Unsetenv(toolEnvar)
+	os.Setenv(ciEnvar, "true")
+	os.Setenv(localCIEnvar, "false")
+	if ci := NewCI(); ci != nil {
+		t.Fatal("expected an error")
+	}
+
+	os.Setenv(localCIEnvar, "true")
+	if ci := NewCI(); ci == nil {
+		t.Fatal("expected no error")
+	}
 }
