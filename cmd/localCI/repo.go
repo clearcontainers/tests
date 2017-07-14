@@ -171,8 +171,12 @@ func (r *Repo) setup() error {
 			return fmt.Errorf("missing server ip")
 		}
 
-		if len(r.LogServer.PublicKey) == 0 {
-			return fmt.Errorf("missing server public key")
+		if len(r.LogServer.User) == 0 {
+			r.LogServer.User = "root"
+		}
+
+		if len(r.LogServer.Dir) == 0 {
+			r.LogServer.Dir = "/var/log/localCI"
 		}
 	}
 
@@ -423,7 +427,14 @@ func (r *Repo) runTest(pr *PullRequest) error {
 		{name: "teardown", commands: r.Teardown},
 	}
 
-	//FIXME: defer to copy logs
+	if !reflect.DeepEqual(r.LogServer, LogServer{}) {
+		defer func() {
+			err = r.LogServer.copy(pr.LogDir)
+			if err != nil {
+				ciLog.Errorf("failed to copy log dir %s to server %+v", pr.LogDir, r.LogServer)
+			}
+		}()
+	}
 
 	ciLog.Debugf("testing pull request: %+v", pr)
 
@@ -440,12 +451,12 @@ func (r *Repo) runTest(pr *PullRequest) error {
 				continue
 			}
 
-			if err = r.cvr.createComment(pr.Number, r.PostOnFailure); err != nil {
-				return fmt.Errorf("failed to create comment '%s' on pull request %d", r.PostOnFailure, pr.Number)
-			}
-
 			if e := pr.runStage("onFailure", r.OnFailure); e != nil {
 				ciLog.Errorf("faile to run 'onFailure' stage: %s", err)
+			}
+
+			if err = r.cvr.createComment(pr.Number, r.PostOnFailure); err != nil {
+				return fmt.Errorf("failed to create comment '%s' on pull request %d", r.PostOnFailure, pr.Number)
 			}
 
 			return err

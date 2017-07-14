@@ -25,4 +25,8 @@ whitelist = "@"
   ip = "192.168.1.15"
   user = "root"
   dir = "/var/log/localCI"
-  publicKey = "ssh-rsa AAAAAAAnmcjdNoNksmUus84"
+  key = """
+-----BEGIN OPENSSH PRIVATE KEY-----
+YOUR PRIVATE SSH KEY
+-----END OPENSSH PRIVATE KEY-----
+"""

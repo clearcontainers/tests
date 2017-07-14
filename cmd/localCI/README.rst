@@ -107,8 +107,8 @@ and have next sub-sections
 
   - ``ip [string] (mandatory)``: the server IP.
   - ``user [string] (optional)``: the server user. By default this value is ``root``.
-  - ``dir [string] (optional)``: the server directory where the logs are copied. By default this values is ``/var/log``.
-  - ``publicKey [string] (mandatory)``: the public key to login into the server.
+  - ``dir [string] (optional)``: the server directory where the logs are copied. By default this values is ``/var/log/localCI``.
+  - ``key [string] (optional)``: the private key to login into the server.
 
 
 Configuration file example
@@ -142,7 +142,11 @@ Configuration file example
 	 ip = "192.168.1.15"
 	 user = "USER"
 	 dir = "/var/log/localCI"
-	 publicKey = "YOUR SSH KEY"
+	 key = """
+	 -----BEGIN OPENSSH PRIVATE KEY-----
+	 YOUR PRIVATE SSH KEY
+	 -----END OPENSSH PRIVATE KEY-----
+	 """
 
 Supported languages
 -------------------
