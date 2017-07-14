@@ -14,10 +14,61 @@
 
 package main
 
+import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+)
+
+const (
+	sshDirMode  = 0700
+	sshFileMode = 0600
+)
+
 // LogServer represents the server where the logs are copied
 type LogServer struct {
-	IP        string
-	User      string
-	Dir       string
-	PublicKey string
+	IP   string
+	User string
+	Dir  string
+	Key  string
+}
+
+// copy path to the log server
+func (l *LogServer) copy(path string) error {
+	cmd := []string{"-r", "-o", "UserKnownHostsFile=/dev/null", "-o", "StrictHostKeyChecking=no"}
+
+	if len(l.Key) > 0 {
+		sshDir, err := ioutil.TempDir(pkgLibDir, ".ssh")
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(sshDir)
+
+		err = os.Chmod(sshDir, sshDirMode)
+		if err != nil {
+			return err
+		}
+
+		sshFile := filepath.Join(sshDir, "key")
+		err = ioutil.WriteFile(sshFile, []byte(l.Key), sshFileMode)
+		if err != nil {
+			return err
+		}
+
+		// append ssh key
+		cmd = append(cmd, "-i", sshFile)
+	}
+
+	// append path to copy
+	cmd = append(cmd, path)
+
+	//append user, ip and destination
+	cmd = append(cmd, fmt.Sprintf("%s@%s:%s", l.User, l.IP, l.Dir))
+
+	ciLog.Debugf("log server copy command: scp %+v", cmd)
+
+	command := exec.Command("scp", cmd...)
+	return command.Run()
 }
