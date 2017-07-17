@@ -31,8 +31,11 @@ sudo -E PATH=$PATH sh -c "make install.config"
 echo "Setup cc-runtime as the runtime to use"
 sudo sed -i.bak 's/\/usr\/bin\/runc/\/usr\/local\/bin\/cc-runtime/g' /etc/crio/crio.conf
 
-echo "Setup aufs as the storage driver"
-sudo sed -i.bak 's/storage_driver = \"\"/storage_driver = \"aufs\"/g' /etc/crio/crio.conf
+# do not use aufs in localCI
+if [ -z "$LOCALCI" ]; then
+	echo "Setup aufs as the storage driver"
+	sudo sed -i.bak 's/storage_driver = \"\"/storage_driver = \"aufs\"/g' /etc/crio/crio.conf
+fi
 
 popd
 
