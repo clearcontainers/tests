@@ -147,9 +147,11 @@ func checkCommitBodyLine(config *CommitConfig, commit string, line string,
 		}
 	}
 
-	fixesMatches := config.FixesPattern.FindStringSubmatch(line)
-	if fixesMatches != nil {
-		config.FoundFixes = true
+	if config.NeedFixes && config.FixesPattern != nil {
+		fixesMatches := config.FixesPattern.FindStringSubmatch(line)
+		if fixesMatches != nil {
+			config.FoundFixes = true
+		}
 	}
 
 	if config.NeedSOBS {
