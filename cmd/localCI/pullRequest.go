@@ -48,6 +48,9 @@ type PullRequest struct {
 	// Author of the pull request
 	Author string
 
+	// Mergeable specify if the pull request can be merged
+	Mergeable bool
+
 	// CommentTrigger is the comment that must be present to trigger the test
 	// also it is used to ensure that the pull request is tested only when
 	// the comment appears after the list of commits
@@ -68,6 +71,10 @@ type PullRequest struct {
 
 // canBeTested returns an error if the pull request cannot be tested
 func (pr *PullRequest) canBeTested() error {
+	if !pr.Mergeable {
+		return fmt.Errorf("the pull request is not mergeable")
+	}
+
 	commitsLen := len(pr.Commits)
 	if commitsLen == 0 {
 		return fmt.Errorf("there are no commits to test")

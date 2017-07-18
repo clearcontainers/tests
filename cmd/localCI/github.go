@@ -155,9 +155,10 @@ func (g *Github) getPullRequest(pr int) (*PullRequest, error) {
 	}
 
 	return &PullRequest{
-		Number:  pr,
-		Commits: commits,
-		Author:  *pullRequest.User.Login,
+		Number:    pr,
+		Commits:   commits,
+		Author:    *pullRequest.User.Login,
+		Mergeable: *pullRequest.Mergeable,
 	}, nil
 }
 
