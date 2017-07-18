@@ -15,6 +15,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -208,16 +209,21 @@ func (g *Github) downloadPullRequest(pr int, workingDirectory string) (string, e
 		return "", fmt.Errorf("failed to create project directory %s", err)
 	}
 
+	var stderr bytes.Buffer
+
 	cmd := exec.Command("git", "clone", g.url, ".")
 	cmd.Dir = projectDirectory
+	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("failed to clone project %s", err)
+		return "", fmt.Errorf("failed to run git clone %s %s", stderr.String(), err)
 	}
 
+	stderr.Reset()
 	cmd = exec.Command("git", "pull", "--no-edit", "origin", fmt.Sprintf("pull/%d/head", pr))
 	cmd.Dir = projectDirectory
+	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("failed to pull request %s", err)
+		return "", fmt.Errorf("failed to run git pull %s %s", stderr.String(), err)
 	}
 
 	return projectDirectory, nil
