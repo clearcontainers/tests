@@ -21,6 +21,11 @@ import (
 	"testing"
 )
 
+const (
+	shouldFail    = true
+	shouldNotFail = false
+)
+
 func TestFunctional(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Functional Suite")
