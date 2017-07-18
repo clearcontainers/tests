@@ -112,14 +112,14 @@ func (pr *PullRequest) Equal(rpr PullRequest) bool {
 // runStage runs a specific stage with the specific commands
 func (pr *PullRequest) runStage(stage string, commands []string) error {
 	stdoutFile := filepath.Join(pr.LogDir, fmt.Sprintf("%s.stdout", stage))
-	stdout, err := os.OpenFile(stdoutFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0640)
+	stdout, err := os.OpenFile(stdoutFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, logFileMode)
 	if err != nil {
 		return err
 	}
 	defer stdout.Close()
 
 	stderrFile := filepath.Join(pr.LogDir, fmt.Sprintf("%s.stderr", stage))
-	stderr, err := os.OpenFile(stderrFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0640)
+	stderr, err := os.OpenFile(stderrFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, logFileMode)
 	if err != nil {
 		return err
 	}
