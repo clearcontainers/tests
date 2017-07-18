@@ -54,7 +54,7 @@ git checkout qemu-lite-v2.9.0
 	--enable-cap-ng --target-list=x86_64-softmmu
 make -j$(nproc)
 sudo -E PATH=$PATH sh -c "make install"
-sudo -E mv $(which qemu-system-x86_64) /usr/local/bin/qemu-q35-system-x86_64
+sudo -E mv $(which qemu-system-x86_64) /usr/bin/qemu-q35-system-x86_64
 popd
 rm -rf ${qemu_dir}
 
