@@ -2,16 +2,16 @@
 
 
 [[projects]]
+  branch = "master"
   name = "github.com/BurntSushi/toml"
   packages = ["."]
-  revision = "b26d9c308763d68093482582cea63d69be07a0f0"
-  version = "v0.3.0"
+  revision = "a368813c5e648fee92e5f6c30e3944ff9d5e8895"
 
 [[projects]]
+  branch = "master"
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  revision = "a3f95b5c423586578a4e099b11a46c2479628cac"
-  version = "1.0.2"
+  revision = "e49c59d69b89746796d48156991108c80faf1d7d"
 
 [[projects]]
   name = "github.com/mattn/go-runewidth"
@@ -20,32 +20,32 @@
   version = "v0.0.2"
 
 [[projects]]
+  branch = "master"
   name = "github.com/montanaflynn/stats"
   packages = ["."]
-  revision = "eeaced052adbcfeea372c749c281099ed7fdaa38"
-  version = "0.2.0"
+  revision = "41c34e4914ec3c05d485e564d9028d8861d5d9ad"
 
 [[projects]]
   branch = "master"
   name = "github.com/olekukonko/tablewriter"
   packages = ["."]
-  revision = "febf2d34b54a69ce7530036c7503b1c9fbfdf0bb"
+  revision = "be5337e7b39e64e5f91445ce7e721888dbab7387"
 
 [[projects]]
+  branch = "master"
   name = "github.com/urfave/cli"
   packages = ["."]
-  revision = "0bdeddeeb0f650497d603c4ad7b20cfe685682f6"
-  version = "v1.19.1"
+  revision = "4b90d79a682b4bf685762c7452db20f2a676ecb2"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "4cd6d1a821c7175768725b55ca82f14683a29ea4"
+  revision = "cd2c276457edda6df7fb04895d3fd6a6add42926"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9ab6b639deb8d53c5160c773582ddc1b2acc67d6b8acb1e54f0527175c9a8686"
+  inputs-digest = "cbf08a2529cd66a68269451ef798f3a5362fbc02349f9d1ed07fc87a9c04b508"
   solver-name = "gps-cdcl"
   solver-version = 1
