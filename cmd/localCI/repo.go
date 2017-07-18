@@ -98,7 +98,8 @@ type Repo struct {
 const (
 	defaultLogDir      = "/var/log/localCI"
 	defaultRefreshTime = "30s"
-	logDirMode         = 0640
+	logDirMode         = 0755
+	logFileMode        = 0664
 )
 
 var defaultEnv = []string{"CI=true", "LOCALCI=true"}
