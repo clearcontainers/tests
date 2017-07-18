@@ -219,7 +219,8 @@ func (g *Github) downloadPullRequest(pr int, workingDirectory string) (string, e
 	}
 
 	stderr.Reset()
-	cmd = exec.Command("git", "pull", "--no-edit", "origin", fmt.Sprintf("pull/%d/head", pr))
+	cmd = exec.Command("git", "-c", "user.name='Foo Bar'", "-c", "user.email='foo@bar.com'",
+		"pull", "--no-edit", "origin", fmt.Sprintf("pull/%d/head", pr))
 	cmd.Dir = projectDirectory
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
