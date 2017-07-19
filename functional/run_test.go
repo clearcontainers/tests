@@ -23,11 +23,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const (
-	shouldFail    = true
-	shouldNotFail = false
-)
-
 func withWorkload(workload string, expectedExitCode int) TableEntry {
 	w := []string{"sh", "-c", workload}
 	return Entry(fmt.Sprintf("with '%v' as workload", w), w, expectedExitCode)
