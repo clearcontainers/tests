@@ -111,24 +111,17 @@ func (pr *PullRequest) Equal(rpr PullRequest) bool {
 
 // runStage runs a specific stage with the specific commands
 func (pr *PullRequest) runStage(stage string, commands []string) error {
-	stdoutFile := filepath.Join(pr.LogDir, fmt.Sprintf("%s.stdout", stage))
-	stdout, err := os.OpenFile(stdoutFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, logFileMode)
+	outFile := filepath.Join(pr.LogDir, stage)
+	output, err := os.OpenFile(outFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, logFileMode)
 	if err != nil {
 		return err
 	}
-	defer stdout.Close()
-
-	stderrFile := filepath.Join(pr.LogDir, fmt.Sprintf("%s.stderr", stage))
-	stderr, err := os.OpenFile(stderrFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, logFileMode)
-	if err != nil {
-		return err
-	}
-	defer stderr.Close()
+	defer output.Close()
 
 	for _, c := range commands {
 		cmd := exec.Command("bash", "-c", c)
-		cmd.Stdout = stdout
-		cmd.Stderr = stderr
+		cmd.Stdout = output
+		cmd.Stderr = output
 		cmd.Env = pr.Env
 		cmd.Dir = pr.WorkingDir
 
