@@ -47,9 +47,12 @@ groups:
           - "*.rst"
           - "*.md"
         exclude:
+# Don't include the vendor subdirs for docs review, as the docs files
+# in those trees our not under our control.
+# Exclude the main top level vendor dir, and all vendor dirs in all
+# sub projects.
           - "vendor/*"
-          - "cmd/fetchbranches/vendor/*"
-          - "cmd/localCI/vendor/*"
+          - "*/vendor/*"
     required: 1
     users:
       - iphutch
