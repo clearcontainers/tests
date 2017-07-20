@@ -51,6 +51,9 @@ type PullRequest struct {
 	// Mergeable specify if the pull request can be merged
 	Mergeable bool
 
+	// BranchName of the pull request
+	BranchName string
+
 	// CommentTrigger is the comment that must be present to trigger the test
 	// also it is used to ensure that the pull request is tested only when
 	// the comment appears after the list of commits

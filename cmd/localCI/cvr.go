@@ -44,7 +44,7 @@ type CVR interface {
 	getLatestPullRequestComment(pr int, comment PullRequestComment) (*PullRequestComment, error)
 
 	// downloadPullRequest downloads a specific pull request in the specified workingDirectory
-	downloadPullRequest(pr int, workingDirectory string) (string, error)
+	downloadPullRequest(pr PullRequest, workingDirectory string) (string, error)
 
 	// createComment creates a comment in the specific pr
 	createComment(pr int, comment string) error
