@@ -116,13 +116,18 @@ func (g *Github) getOpenPullRequests() (map[string]*PullRequest, error) {
 	prs := make(map[string]*PullRequest)
 
 	for _, pr := range pullRequests {
-		pullRequest, err := g.getPullRequest(*pr.Number)
+		if pr == nil || pr.Number == nil {
+			continue
+		}
+		number := *pr.Number
+
+		pullRequest, err := g.getPullRequest(number)
 		if err != nil {
-			ciLog.Errorf("failed to get pull request %d: %s", *pr.Number, err)
+			ciLog.Errorf("failed to get pull request %d: %s", number, err)
 			continue
 		}
 
-		prs[strconv.Itoa(*pr.Number)] = pullRequest
+		prs[strconv.Itoa(number)] = pullRequest
 	}
 
 	return prs, nil
@@ -141,10 +146,24 @@ func (g *Github) getPullRequest(pr int) (*PullRequest, error) {
 
 	var commits []PullRequestCommit
 	for _, c := range listCommits {
+		if c == nil {
+			return nil, fmt.Errorf("failed to get all commits of the pull request %d", pr)
+		}
+
+		if c.SHA == nil {
+			return nil, fmt.Errorf("failed to get commit SHA of the pull request %d", pr)
+		}
+		sha := *c.SHA
+
+		if c.Commit == nil || c.Commit.Committer == nil || c.Commit.Committer.Date == nil {
+			return nil, fmt.Errorf("failed to get commit time of the pull request %d", pr)
+		}
+		time := *c.Commit.Committer.Date
+
 		commits = append(commits,
 			PullRequestCommit{
-				Sha:  *c.SHA,
-				Time: *c.Commit.Committer.Date,
+				Sha:  sha,
+				Time: time,
 			},
 		)
 	}
@@ -154,11 +173,28 @@ func (g *Github) getPullRequest(pr int) (*PullRequest, error) {
 		return nil, err
 	}
 
+	// check the integrity of the pullRuest object before use it
+	if pullRequest == nil {
+		return nil, fmt.Errorf("failed to get pull request %d", pr)
+	}
+
+	if pullRequest.User == nil || pullRequest.User.Login == nil {
+		return nil, fmt.Errorf("failed to get the author of the pull request %d", pr)
+	}
+
+	author := *pullRequest.User.Login
+
+	if pullRequest.Mergeable == nil {
+		return nil, fmt.Errorf("Unable to know if the pull request %d is mergeable", pr)
+	}
+
+	mergeable := *pullRequest.Mergeable
+
 	return &PullRequest{
 		Number:    pr,
 		Commits:   commits,
-		Author:    *pullRequest.User.Login,
-		Mergeable: *pullRequest.Mergeable,
+		Author:    author,
+		Mergeable: mergeable,
 	}, nil
 }
 
