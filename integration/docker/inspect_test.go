@@ -23,11 +23,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func inspectFormatOptions (formatOption string) TableEntry {
+func inspectFormatOptions(formatOption string) TableEntry {
 	return Entry(fmt.Sprintf("inspect with %s", formatOption), formatOption)
 }
 
-var _= Describe ("inspect", func() {
+var _ = Describe("inspect", func() {
 	var (
 		args []string
 		id   string
@@ -57,7 +57,7 @@ var _= Describe ("inspect", func() {
 			exitCode := command.Run()
 			Expect(exitCode).To(Equal(0))
 			Expect(command.Stdout.String()).To(ContainSubstring(Image))
- 			Expect(command.Stdout.String()).NotTo(BeEmpty())
+			Expect(command.Stdout.String()).NotTo(BeEmpty())
 		},
 		inspectFormatOptions("'{{.Config.Image}}'"),
 		inspectFormatOptions("'{{json .Config}}'"),
