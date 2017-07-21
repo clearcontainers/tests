@@ -15,9 +15,9 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -34,11 +34,8 @@ type stageTest struct {
 	// fail is true if the stage must fail, else false
 	fail bool
 
-	// stderr is the text that the stderr file must contain
-	stderr string
-
-	// stdout is the text that the stdout file must contain
-	stdout string
+	// output is the text that the output file must contain
+	output string
 }
 
 func TestCanBeTested(t *testing.T) {
@@ -79,7 +76,7 @@ func TestEqual(t *testing.T) {
 
 func TestRunStage(t *testing.T) {
 	var err error
-	var stdout, stderr []byte
+	var output []byte
 	assert := assert.New(t)
 
 	pr := &PullRequest{}
@@ -93,29 +90,25 @@ func TestRunStage(t *testing.T) {
 			name:     "1",
 			commands: []string{"echo -n 1"},
 			fail:     false,
-			stderr:   "",
-			stdout:   "1",
+			output:   "1",
 		},
 		{
 			name:     "2",
 			commands: []string{"(echo -n 2 >&2)"},
 			fail:     false,
-			stderr:   "2",
-			stdout:   "",
+			output:   "2",
 		},
 		{
 			name:     "3",
 			commands: []string{"(echo -n 3 >&2 && exit 1)"},
 			fail:     true,
-			stderr:   "3",
-			stdout:   "",
+			output:   "3",
 		},
 		{
 			name:     "4",
 			commands: []string{"(echo -n 4 && exit 1)"},
 			fail:     true,
-			stderr:   "",
-			stdout:   "4",
+			output:   "4",
 		},
 	}
 
@@ -127,12 +120,8 @@ func TestRunStage(t *testing.T) {
 			assert.NoError(err, "stage: %+v", t)
 		}
 
-		stderr, err = ioutil.ReadFile(fmt.Sprintf("%s/%s.stderr", pr.LogDir, t.name))
+		output, err = ioutil.ReadFile(filepath.Join(pr.LogDir, t.name))
 		assert.NoError(err)
-		assert.Equal(t.stderr, string(stderr))
-
-		stdout, err = ioutil.ReadFile(fmt.Sprintf("%s/%s.stdout", pr.LogDir, t.name))
-		assert.NoError(err)
-		assert.Equal(t.stdout, string(stdout))
+		assert.Equal(t.output, string(output))
 	}
 }
