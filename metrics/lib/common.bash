@@ -42,6 +42,23 @@ function save_results(){
 	bash $LIB_DIR/send_results.sh -n "$1" -a "$2" -r "$3" -u "$4"
 }
 
+# This function checks existence of commands.
+# They can be received standalone or as an array, e.g.
+#
+# cmds=(“cmd1” “cmd2”)
+# check_cmds "${cmds[@]}"
+function check_cmds()
+{
+	local cmd req_cmds=( "$@" )
+	for cmd in "${req_cmds[@]}"; do
+		if ! command -v "$cmd" > /dev/null 2>&1; then
+			die "command $cmd not available"
+			exit 1;
+		fi
+		echo "command: $cmd: yes"
+	done
+}
+
 function get_hypervisor_from_toml(){
     ## Regular expressions used for TOML parsing
     # Matches a section header
