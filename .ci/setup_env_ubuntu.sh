@@ -63,7 +63,7 @@ sudo -E apt-get install -y libglib2.0-dev libseccomp-dev libapparmor-dev libgpgm
 
 echo "Install libdevmapper"
 devmapper_version="2.02.172"
-curl -LOk ftp://sources.redhat.com/pub/lvm2/LVM2.${devmapper_version}.tgz
+curl -LOk ftp://sources.redhat.com/pub/lvm2/releases/LVM2.${devmapper_version}.tgz
 tar -xf LVM2.${devmapper_version}.tgz
 pushd LVM2.${devmapper_version}/
 ./configure
