@@ -17,9 +17,9 @@ package functional
 import (
 	"fmt"
 
-	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/clearcontainers/tests"
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -28,7 +28,7 @@ func withOption(option string, fail bool) TableEntry {
 	return Entry(fmt.Sprintf("with option '%s'", option), command, fail)
 }
 
-var _ = Describe ("global options", func() {
+var _ = Describe("global options", func() {
 	DescribeTable("option",
 		func(command *Command, fail bool) {
 			exitCode := command.Run()
