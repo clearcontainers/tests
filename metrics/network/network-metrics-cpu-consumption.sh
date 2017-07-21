@@ -19,19 +19,22 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 # Description:
-#  Measures Proportional Set Size memory while running an 
-#  inter (docker<->docker) network bandwidth using iperf2
+#  Measures cpu % consumption using an inter (docker<->docker) 
+#  network bandwidth using iperf2
 
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 
 source "${SCRIPT_PATH}/lib/network-test-common.bash"
 
+# Set QEMU_PATH unless it's already set
+QEMU_PATH=${QEMU_PATH:-$(get_qemu_path)}
+
 # This script will perform all the measurements using a local setup
 
-# Measures PSS memory while running bandwidth measurements
+# Measures cpu % consumption while running bandwidth measurements
 # using iperf2
 
-function pss_memory {
+function cpu_consumption {
 	# Port number where the server will run
 	local port=5001:5001
 	# Using this image as iperf is not working
@@ -40,12 +43,12 @@ function pss_memory {
 	local image=gabyct/network
 	# Total measurement time (seconds)
 	# This is required in order to reduce standard deviation
-	local total_time=10
+	local total_time=16
 	# This time (seconds) is required when
 	# server and client are more stable, we need to
 	# have server and client running for sometime and we
 	# need to avoid to measure at the beginning of the running
-	local middle_time=5
+	local middle_time=8
 	# Name of the containers
 	local server_name="network-server"
 	local client_name="network-client"
@@ -62,12 +65,14 @@ function pss_memory {
 	# Measurement after client and server are more stable
 	echo >&2 "WARNING: sleeping for $middle_time seconds in order to have server and client stable"
 	sleep ${middle_time}
-	smem -c "pss" -P @QEMU_PATH@ | tail -n 2 > "$result"
-	local total_pss_memory=$(awk '{ total += $1 } END { print total/NR }' "$result")
-	echo "The PSS memory is : $total_pss_memory Kb"
+	qemu_pids=$(pidof ${QEMU_PATH})
+	ps --no-headers -o %cpu -p "$qemu_pids" > "$result"
+	sed -i 's/ //g' "$result"
+	local total_cpu_consumption=$(awk '{ total += $1 } END { print total/NR }' "$result")
+	echo "The cpu % consumption is : $total_cpu_consumption"
 
 	clean_environment "$server_name"
 	$DOCKER_EXE rm -f ${client_name} > /dev/null
 }
 
-pss_memory
+cpu_consumption

@@ -19,9 +19,9 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 # Description:
-#  Measures Proportional Set Size  memory while running an
+#  Measures Resident Set Size memory while running an
 #  inter (docker<->docker) 1 Gb tranfer rate using nuttcp.
-#  The selection of 1 Gb as a tranfer rate is because that is
+#  The selection of 1 Gb as a tranfer rate is because that is 
 #  the maximum that we can be handle in our testing infrastructure.
 
 set -e
@@ -30,26 +30,29 @@ SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 
 source "${SCRIPT_PATH}/lib/network-test-common.bash"
 
-function pss_memory {
+# Set QEMU_PATH unless it's already set
+QEMU_PATH=${QEMU_PATH:-$(get_qemu_path)}
+
+function rss_memory {
 	# Currently default nuttcp has a bug
 	# see https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=745051
 	# Image name
 	local image=gabyct/nuttcp
 	# We wait for the test system to settle into a steady mode before we
-	# measure the PSS. Thus, we have two times - the length of the time the
-	# test runs for, and the time after which we sample the PSS
+	# measure the RSS. Thus, we have two times - the length of the time the 
+	# test runs for, and the time after which we sample the RSS
 	# Time for the test to run (seconds)
 	local total_time=6
 	# Time in which we sample the PSS (seconds)
 	local middle_time=3
 	# Rate limit (speed at which transmitter send data, megabytes)
-	# We will measure PSS with a specific transfer rate
+	# We will measure RSS with a specific transfer rate
 	local rate_limit=1000
 	# Name of the containers
-	local server_name="network-server"
-	local client_name="network-client"
-	# Arguments to run the client
-	local extra_args="-d"
+ 	local server_name="network-server"
+ 	local client_name="network-client"
+ 	# Arguments to run the client
+ 	local extra_args="-d"
 
 	setup
 	local server_command="sleep 30"
@@ -60,18 +63,18 @@ function pss_memory {
 	$DOCKER_EXE exec ${server_name} sh -c "${server_command}"
 	start_client "$extra_args" "$client_name" "$image" "$client_command" > /dev/null
 
-	# Time when we are taking our PSS measurement
-	echo >&2 "WARNING: sleeping for $middle_time seconds in order to sample the PSS"
+	# Time when we are taking our RSS measurement
+	echo >&2 "WARNING: sleeping for $middle_time seconds in order to sample the RSS"
 	sleep ${middle_time}
 
-	local memory_command="smem -c pss"
-	${memory_command} -P @QEMU_PATH@ | tail -n 2 > "$result"
+	local memory_command="smem -c rss"
+	${memory_command} -P ${QEMU_PATH} | tail -n 2 > "$result"
 	local memory=$(awk '{ total += $1 } END { print total/NR }' "$result")
-	echo "The PSS memory is : $memory Kb"
-
+	echo "The RSS memory is : $memory Kb"
+	
 	echo >&2 "WARNING: This test is being affected by https://github.com/01org/cc-oci-runtime/issues/795"
 	clean_environment "$server_name"
 	$DOCKER_EXE rm -f ${client_name} > /dev/null
 }
 
-pss_memory
+rss_memory
