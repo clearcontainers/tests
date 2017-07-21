@@ -59,6 +59,30 @@ function check_cmds()
 	done
 }
 
+# Initialization/verification environment. This function makes
+# minimal steps for metrics/tests execution.
+function init_env()
+{
+	cmd=("docker")
+	contr_running=$(docker ps -qa)
+
+	check_cmds "${cmd[@]}"
+
+	# Verify containers running
+	if [ ! -z "$contr_running" ];then
+		docker rm -f $(docker ps -qa)
+	fi
+
+	# Restart services
+	systemctl restart docker
+	runtime=$(docker info | grep -w "Default Runtime:" \
+			| awk '{print $3}')
+
+	if [ "$runtime" == "cor" ];then
+		systemctl restart cc-proxy
+	fi
+}
+
 function get_hypervisor_from_toml(){
     ## Regular expressions used for TOML parsing
     # Matches a section header
