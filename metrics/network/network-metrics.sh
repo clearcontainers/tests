@@ -23,7 +23,6 @@
 
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 
-source "${SCRIPT_PATH}/../../lib/test-common.bash"
 source "${SCRIPT_PATH}/lib/network-test-common.bash"
 
 set -e

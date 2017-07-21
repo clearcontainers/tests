@@ -23,7 +23,7 @@
 # tests that are using nuttcp and iperf
 
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
-source "${SCRIPT_PATH}/../../lib/test-common.bash"
+source "${SCRIPT_PATH}/../lib/common.bash"
 
 # This function will setup cor as a runtime, clean up the
 # environment and create a temporary file where networking

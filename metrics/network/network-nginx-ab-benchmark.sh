@@ -26,7 +26,7 @@
 
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 
-source "${SCRIPT_PATH}/../../lib/test-common.bash"
+source "${SCRIPT_PATH}/../lib/common.bash"
 
 # Ports where it will run
 port=80:80

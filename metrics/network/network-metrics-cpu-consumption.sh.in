@@ -24,7 +24,6 @@
 
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 
-source "${SCRIPT_PATH}/../../lib/test-common.bash"
 source "${SCRIPT_PATH}/lib/network-test-common.bash"
 
 # This script will perform all the measurements using a local setup
