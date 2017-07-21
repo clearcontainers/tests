@@ -190,11 +190,18 @@ func (g *Github) getPullRequest(pr int) (*PullRequest, error) {
 
 	mergeable := *pullRequest.Mergeable
 
+	if pullRequest.Head == nil || pullRequest.Head.Ref == nil {
+		return nil, fmt.Errorf("failed to get the branch name of the pull request %d", pr)
+	}
+
+	branchName := *pullRequest.Head.Ref
+
 	return &PullRequest{
-		Number:    pr,
-		Commits:   commits,
-		Author:    author,
-		Mergeable: mergeable,
+		Number:     pr,
+		Commits:    commits,
+		Author:     author,
+		Mergeable:  mergeable,
+		BranchName: branchName,
 	}, nil
 }
 
@@ -235,7 +242,7 @@ func (g *Github) getLatestPullRequestComment(pr int, comment PullRequestComment)
 	return nil, fmt.Errorf("comment '%+v' not found", comment)
 }
 
-func (g *Github) downloadPullRequest(pr int, workingDirectory string) (string, error) {
+func (g *Github) downloadPullRequest(pr PullRequest, workingDirectory string) (string, error) {
 	projectDirectory, err := filepath.Abs(workingDirectory)
 	if err != nil {
 		return "", err
@@ -248,6 +255,7 @@ func (g *Github) downloadPullRequest(pr int, workingDirectory string) (string, e
 
 	var stderr bytes.Buffer
 
+	// clone the project
 	cmd := exec.Command("git", "clone", g.url, ".")
 	cmd.Dir = projectDirectory
 	cmd.Stderr = &stderr
@@ -255,13 +263,22 @@ func (g *Github) downloadPullRequest(pr int, workingDirectory string) (string, e
 		return "", fmt.Errorf("failed to run git clone %s %s", stderr.String(), err)
 	}
 
+	// fetch the branch
 	stderr.Reset()
-	cmd = exec.Command("git", "-c", "user.name='Foo Bar'", "-c", "user.email='foo@bar.com'",
-		"pull", "--no-edit", "origin", fmt.Sprintf("pull/%d/head", pr))
+	cmd = exec.Command("git", "fetch", "origin", fmt.Sprintf("pull/%d/head:%s", pr.Number, pr.BranchName))
 	cmd.Dir = projectDirectory
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("failed to run git pull %s %s", stderr.String(), err)
+		return "", fmt.Errorf("failed to run git fetch %s %s", stderr.String(), err)
+	}
+
+	// checkout the branch
+	stderr.Reset()
+	cmd = exec.Command("git", "checkout", pr.BranchName)
+	cmd.Dir = projectDirectory
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("failed to run git checkout %s %s", stderr.String(), err)
 	}
 
 	return projectDirectory, nil

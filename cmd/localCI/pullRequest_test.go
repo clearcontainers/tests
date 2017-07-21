@@ -48,9 +48,12 @@ func TestCanBeTested(t *testing.T) {
 	assert.Error(pr.canBeTested())
 
 	pr.Commits = append(pr.Commits, PullRequestCommit{})
-	assert.NoError(pr.canBeTested())
+	assert.Error(pr.canBeTested())
 
 	pr.CommentTrigger = &PullRequestComment{}
+	assert.Error(pr.canBeTested())
+
+	pr.Mergeable = true
 	assert.NoError(pr.canBeTested())
 
 	pr.Commits[0].Time = time.Now()

@@ -388,7 +388,7 @@ func (r *Repo) runTest(pr *PullRequest) error {
 
 	// clone the project
 	ciLog.Debugf("downloading pull request: %+v", pr)
-	pr.WorkingDir, err = r.cvr.downloadPullRequest(pr.Number, r.language.getCloneDir())
+	pr.WorkingDir, err = r.cvr.downloadPullRequest(*pr, r.language.getCloneDir())
 	if err != nil {
 		return err
 	}
