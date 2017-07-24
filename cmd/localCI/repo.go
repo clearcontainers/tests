@@ -108,16 +108,8 @@ var runTestsInParallel bool
 
 var testLock sync.Mutex
 
-// setup the repository. This method MUST BE called before use any other
-func (r *Repo) setup() error {
+func (r *Repo) setupCvr() error {
 	var err error
-
-	// validate comment trigger
-	if !reflect.DeepEqual(r.CommentTrigger, PullRequestComment{}) {
-		if len(r.CommentTrigger.Comment) == 0 {
-			return fmt.Errorf("missing comment trigger")
-		}
-	}
 
 	// validate url
 	r.URL = strings.TrimSpace(r.URL)
@@ -127,21 +119,47 @@ func (r *Repo) setup() error {
 
 	// get the control version repository
 	r.cvr, err = newCvr(r.URL, r.Token)
-	if err != nil {
+
+	return err
+}
+
+func (r *Repo) setupLogServer() error {
+	if reflect.DeepEqual(r.LogServer, LogServer{}) {
+		return nil
+	}
+
+	if len(r.LogServer.IP) == 0 {
+		return fmt.Errorf("missing server ip")
+	}
+
+	if len(r.LogServer.User) == 0 {
+		r.LogServer.User = "root"
+	}
+
+	if len(r.LogServer.Dir) == 0 {
+		r.LogServer.Dir = "/var/log/localCI"
+	}
+
+	return nil
+}
+
+func (r *Repo) setupLogDir() error {
+	// validate log directory
+	r.LogDir = strings.TrimSpace(r.LogDir)
+	if len(r.LogDir) == 0 {
+		r.LogDir = defaultLogDir
+	}
+
+	// create log directory
+	if err := os.MkdirAll(r.LogDir, logDirMode); err != nil {
 		return err
 	}
 
-	ciLog.Debugf("Using control version repository the %#v", r.cvr)
+	return nil
+}
 
-	//validate language
-	if r.language, err = r.Language.getLanguage(*r); err != nil {
-		return err
-	}
-
-	// validate run commands
-	if len(r.Run) == 0 {
-		return fmt.Errorf("missing run commands")
-	}
+func (r *Repo) setupRefreshTime() error {
+	var err error
 
 	// set default refreshTime
 	r.RefreshTime = strings.TrimSpace(r.RefreshTime)
@@ -155,31 +173,50 @@ func (r *Repo) setup() error {
 		return fmt.Errorf("failed to parse refresh time '%s' %s", r.RefreshTime, err)
 	}
 
-	// set default log directory
-	r.LogDir = strings.TrimSpace(r.LogDir)
-	if len(r.LogDir) == 0 {
-		r.LogDir = defaultLogDir
+	return nil
+}
+
+func (r *Repo) setupCommentTrigger() error {
+	if reflect.DeepEqual(r.CommentTrigger, PullRequestComment{}) {
+		return nil
 	}
 
-	// create log directory
-	if err = os.MkdirAll(r.LogDir, logDirMode); err != nil {
-		return err
+	if len(r.CommentTrigger.Comment) == 0 {
+		return fmt.Errorf("missing comment trigger")
 	}
 
-	// validate log server
-	if !reflect.DeepEqual(r.LogServer, LogServer{}) {
-		if len(r.LogServer.IP) == 0 {
-			return fmt.Errorf("missing server ip")
-		}
+	return nil
+}
 
-		if len(r.LogServer.User) == 0 {
-			r.LogServer.User = "root"
-		}
+// setup the repository. This method MUST BE called before use any other
+func (r *Repo) setup() error {
+	var err error
 
-		if len(r.LogServer.Dir) == 0 {
-			r.LogServer.Dir = "/var/log/localCI"
+	setupFuncs := []func() error{
+		r.setupCvr,
+		r.setupRefreshTime,
+		r.setupLogDir,
+		r.setupLogServer,
+		r.setupCommentTrigger,
+		func() (err error) {
+			r.language, err = r.Language.getLanguage(*r)
+			return
+		},
+		func() error {
+			if len(r.Run) == 0 {
+				return fmt.Errorf("missing run commands")
+			}
+			return nil
+		},
+	}
+
+	for _, setupFunc := range setupFuncs {
+		if err = setupFunc(); err != nil {
+			return err
 		}
 	}
+
+	ciLog.Debugf("Using control version repository the %#v", r.cvr)
 
 	// get the list of users
 	r.whitelistUsers = append(r.whitelistUsers, "*")
@@ -419,7 +456,23 @@ func (r *Repo) runTest(pr *PullRequest) error {
 	prNumber := fmt.Sprintf("LOCALCI_PR_NUMBER=%d", pr.Number)
 	pr.Env = append(pr.Env, prNumber)
 
+	// copy logs to server if we have an IP address
+	if len(r.LogServer.IP) != 0 {
+		defer func() {
+			err = r.LogServer.copy(pr.LogDir)
+			if err != nil {
+				ciLog.Errorf("failed to copy log dir %s to server %+v", pr.LogDir, r.LogServer)
+			}
+		}()
+	}
+
 	// run stages
+	return r.runStages(pr)
+}
+
+func (r *Repo) runStages(pr *PullRequest) error {
+	var err error
+
 	stages := []struct {
 		name     string
 		commands []string
@@ -427,15 +480,6 @@ func (r *Repo) runTest(pr *PullRequest) error {
 		{name: "setup", commands: r.Setup},
 		{name: "run", commands: r.Run},
 		{name: "teardown", commands: r.Teardown},
-	}
-
-	if !reflect.DeepEqual(r.LogServer, LogServer{}) {
-		defer func() {
-			err = r.LogServer.copy(pr.LogDir)
-			if err != nil {
-				ciLog.Errorf("failed to copy log dir %s to server %+v", pr.LogDir, r.LogServer)
-			}
-		}()
 	}
 
 	ciLog.Debugf("testing pull request: %+v", pr)
@@ -447,18 +491,17 @@ func (r *Repo) runTest(pr *PullRequest) error {
 		}
 
 		ciLog.Debugf("running stage %+v", s)
+
 		if err = pr.runStage(s.name, s.commands); err != nil {
 			ciLog.Errorf("failed to run stage '%s': %s", s.name, err)
-			if len(r.PostOnFailure) == 0 {
-				continue
+			if len(r.PostOnFailure) != 0 {
+				if err = r.cvr.createComment(pr.Number, r.PostOnFailure); err != nil {
+					ciLog.Errorf("failed to create comment '%s' on pull request %d", r.PostOnFailure, pr.Number)
+				}
 			}
 
 			if e := pr.runStage("onFailure", r.OnFailure); e != nil {
 				ciLog.Errorf("faile to run 'onFailure' stage: %s", err)
-			}
-
-			if err = r.cvr.createComment(pr.Number, r.PostOnFailure); err != nil {
-				return fmt.Errorf("failed to create comment '%s' on pull request %d", r.PostOnFailure, pr.Number)
 			}
 
 			return err
@@ -467,10 +510,12 @@ func (r *Repo) runTest(pr *PullRequest) error {
 
 	// check if there are commands to run onSuccess
 	if len(r.OnSuccess) != 0 {
-		// run 'onSuccess' stage
-		if err = pr.runStage("onSuccess", r.OnSuccess); err != nil {
-			ciLog.Errorf("failed to run 'onSuccess' stage: %s", err)
-		}
+		defer func() {
+			// run 'onSuccess' stage
+			if err := pr.runStage("onSuccess", r.OnSuccess); err != nil {
+				ciLog.Errorf("failed to run 'onSuccess' stage: %s", err)
+			}
+		}()
 	}
 
 	// check if there is a comment to create on success
