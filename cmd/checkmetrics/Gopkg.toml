@@ -23,20 +23,20 @@
 
 [[constraint]]
   name = "github.com/BurntSushi/toml"
-  version = "0.3.0"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/Sirupsen/logrus"
-  version = "1.0.2"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/montanaflynn/stats"
-  version = "0.2.0"
+  branch = "master"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/olekukonko/tablewriter"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/urfave/cli"
-  version = "1.19.1"
+  branch = "master"
