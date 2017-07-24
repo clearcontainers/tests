@@ -112,3 +112,15 @@ make nsenter
 sudo cp nsenter /usr/bin/
 popd
 rm -rf util-linux-${nsenter_version}/ util-linux-${nsenter_version}.tar.xz
+
+echo "Install ostree"
+ostree_dir="ostree"
+chronic sudo -E apt-get install -y liblzma-dev e2p-dev libfuse-dev gtk-doc-tools
+git clone https://github.com/ostreedev/ostree.git
+pushd ${ostree_dir}
+env NOCONFIGURE=1 ./autogen.sh
+./configure --prefix=/usr
+make -j4
+sudo -E PATH=$PATH sh -c "make install"
+popd
+rm -rf ${ostree_dir}
