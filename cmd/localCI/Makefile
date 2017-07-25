@@ -93,4 +93,4 @@ check: $(GENERATED_FILES) Makefile
 	$(QUIET_CHECK)go test .
 
 clean:
-	rm -f $(TARGET) $(UNIT_FILES)
+	rm -f $(TARGET) $(UNIT_FILES) $(GENERATED_FILES)
