@@ -93,5 +93,4 @@ echo "Install repo inside nested VM"
 ssh $ssh_options -i "$ssh_key" "$USER@$vm_ip" -p "$vm_port" "$(typeset -f); install_repo_inside_vm"
 
 echo "Install dependencies inside the VM"
-ssh $ssh_options -i "$ssh_key" "$USER@$vm_ip" -p "$vm_port" "${cidir}/ciao_down_setup_env_ubuntu.sh"
-ssh $ssh_options -i "$ssh_key" "$USER@$vm_ip" -p "$vm_port" "${cidir}/ciao_down_setup_cc3.sh"
+ssh $ssh_options -i "$ssh_key" "$USER@$vm_ip" -p "$vm_port" "${cidir}/setup.sh"
