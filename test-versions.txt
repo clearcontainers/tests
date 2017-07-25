@@ -1,0 +1,2 @@
+#well known working crio tag/commit/branch
+crio_version=065960386fce7088bab3fc22af44ebbbf75d3641
