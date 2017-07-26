@@ -18,9 +18,13 @@ set -e
 
 cidir=$(dirname "$0")
 
+source "${cidir}/../test-versions.txt"
+
 echo "Get CRI-O sources"
 go get -d github.com/kubernetes-incubator/cri-o || true
 pushd $GOPATH/src/github.com/kubernetes-incubator/cri-o
+git fetch
+git checkout "${crio_version}"
 
 echo "Installing CRI-O"
 make install.tools
