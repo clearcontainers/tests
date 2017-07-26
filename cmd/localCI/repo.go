@@ -254,7 +254,7 @@ func (r *Repo) loop() {
 
 		if err != nil {
 			ciLog.Errorf("failed to get pull requests: %s", err)
-			continue
+			goto sleep
 		}
 
 		for number, prToTest := range prsToTest {
@@ -262,18 +262,18 @@ func (r *Repo) loop() {
 			if prTested != nil {
 				if prToTest.Equal(*prTested) {
 					ciLog.Debugf("pr %+v was already tested", prToTest)
-					continue
+					goto sleep
 				}
 				// checking if the old version of the PR is being tested
 				if prTested.BeingTested {
 					ciLog.Debugf("pr %+v is being tested", prTested)
-					continue
+					goto sleep
 				}
 			}
 
 			if err := r.testPullRequest(prToTest); err != nil {
 				ciLog.Errorf("failed to test pull request %+v: %s", prToTest, err)
-				continue
+				goto sleep
 			}
 
 			// copy the PR that was tested
@@ -281,6 +281,7 @@ func (r *Repo) loop() {
 			prsTested[number] = prToTest
 		}
 
+	sleep:
 		time.Sleep(r.refresh)
 	}
 }
