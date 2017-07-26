@@ -41,7 +41,6 @@ export PKGLIBEXECDIR=/usr/libexec/clear-containers
 # For the pause bundle
 export LOCALSTATEDIR=/var
 
-runtime_dir="${GOPATH}/src/github.com/clearcontainers/runtime"
 runtime_config_path="${SYSCONFDIR}/clear-containers/configuration.toml"
 
 # Note: This will also install the config file.
@@ -54,18 +53,24 @@ echo "Enabling global logging for runtime in file ${runtime_config_path}"
 sudo sed -i -e 's/^#\(\[runtime\]\|global_log_path =\)/\1/g' "${runtime_config_path}"
 
 echo "Add runtime as a new/default Docker runtime. Docker version \"$(docker --version)\" could change according to Semaphore CI updates."
-sudo mkdir -p /etc/default
-cat << EOF | sudo tee /etc/default/docker
-DOCKER_OPTS="-D --add-runtime cc30=/usr/local/bin/cc-runtime --default-runtime=cc30"
-EOF
-
-start_docker_cmd="sudo systemctl start docker"
-stop_docker_cmd="sudo systemctl stop docker"
+docker_options="-D --add-runtime cc30=/usr/local/bin/cc-runtime --default-runtime=cc30"
 if [[ ! $(ps -p 1 | grep systemd) ]]; then
-	start_docker_cmd="sudo service docker start"
-	stop_docker_cmd="sudo service docker stop"
+	config_path="/etc/default"
+	sudo mkdir -p /etc/default
+	cat << EOF | sudo tee $config_path/docker
+DOCKER_OPTS="$docker_options"
+EOF
+	echo "Restart docker service"
+	sudo service docker restart
+else
+	config_path="/etc/systemd/system/docker.service.d/"
+	sudo mkdir -p "$config_path"
+	cat << EOF | sudo tee $config_path/cc.conf
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd $docker_options
+EOF
+	echo "Restart docker service"
+	sudo systemctl daemon-reload
+	sudo systemctl restart docker
 fi
-
-echo "Restart docker service"
-eval $stop_docker_cmd
-eval $start_docker_cmd
