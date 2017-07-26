@@ -220,6 +220,55 @@ function teardown() {
 	stop_crio
 }
 
+@test "ctr logging [tty=true]" {
+	start_crio
+	run crioctl pod run --config "$TESTDATA"/sandbox_config.json
+	echo "$output"
+	[ "$status" -eq 0 ]
+	pod_id="$output"
+	run crioctl pod list
+	echo "$output"
+	[ "$status" -eq 0 ]
+
+	# Create a new container.
+	newconfig=$(mktemp --tmpdir crio-config.XXXXXX.json)
+	cp "$TESTDATA"/container_config_logging.json "$newconfig"
+	sed -i 's|"%shellcommand%"|"echo here is some output"|' "$newconfig"
+	sed -i 's|"tty": false,|"tty": true,|' "$newconfig"
+	run crioctl ctr create --config "$newconfig" --pod "$pod_id"
+	echo "$output"
+	[ "$status" -eq 0 ]
+	ctr_id="$output"
+	run crioctl ctr start --id "$ctr_id"
+	echo "$output"
+	[ "$status" -eq 0 ]
+	run crioctl ctr stop --id "$ctr_id"
+	echo "$output"
+	# Ignore errors on stop.
+	run crioctl ctr status --id "$ctr_id"
+	[ "$status" -eq 0 ]
+	run crioctl ctr remove --id "$ctr_id"
+	echo "$output"
+	[ "$status" -eq 0 ]
+
+	# Check that the output is what we expect.
+	logpath="$DEFAULT_LOG_PATH/$pod_id/$ctr_id.log"
+	[ -f "$logpath" ]
+	echo "$logpath :: $(cat "$logpath")"
+	grep --binary -P "^[^\n]+ stdout here is some output\x0d$" "$logpath"
+
+	run crioctl pod stop --id "$pod_id"
+	echo "$output"
+	[ "$status" -eq 0 ]
+	run crioctl pod remove --id "$pod_id"
+	echo "$output"
+	[ "$status" -eq 0 ]
+
+	cleanup_ctrs
+	cleanup_pods
+	stop_crio
+}
+
 @test "ctr list filtering" {
 	start_crio
 	run crioctl pod run --config "$TESTDATA"/sandbox_config.json --name pod1
@@ -484,6 +533,28 @@ function teardown() {
 	run crioctl pod remove --id "$pod_id"
 	echo "$output"
 	[ "$status" -eq 0 ]
+	cleanup_ctrs
+	cleanup_pods
+	stop_crio
+}
+
+@test "ctr execsync failure" {
+	start_crio
+	run crioctl pod run --config "$TESTDATA"/sandbox_config.json
+	echo "$output"
+	[ "$status" -eq 0 ]
+	pod_id="$output"
+	run crioctl ctr create --config "$TESTDATA"/container_redis.json --pod "$pod_id"
+	echo "$output"
+	[ "$status" -eq 0 ]
+	ctr_id="$output"
+	run crioctl ctr start --id "$ctr_id"
+	echo "$output"
+	[ "$status" -eq 0 ]
+	run crioctl ctr execsync --id "$ctr_id" doesnotexist
+	echo "$output"
+	[ "$status" -ne 0 ]
+
 	cleanup_ctrs
 	cleanup_pods
 	stop_crio
