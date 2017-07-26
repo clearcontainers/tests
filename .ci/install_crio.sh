@@ -57,5 +57,10 @@ fi
 echo "Install crio service (${crio_service_file})"
 sudo cp "${crio_service_file}" "${service_path}"
 
+if [[ $(ps -p 1 | grep systemd) ]]; then
+	echo "Reload systemd services"
+	sudo systemctl daemon-reload
+fi
+
 echo "Start crio service"
 eval $start_crio_cmd
