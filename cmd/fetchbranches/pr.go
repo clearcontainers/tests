@@ -17,6 +17,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+
+	"golang.org/x/oauth2"
 
 	"github.com/google/go-github/github"
 )
@@ -29,9 +34,30 @@ type pr struct {
 	repo   string
 }
 
+const accessTokenFile = "/etc/fetchbranches/token"
+
+func getHTTPClient() *http.Client {
+	if _, err := os.Stat(accessTokenFile); os.IsNotExist(err) {
+		return nil
+	}
+
+	token, err := ioutil.ReadFile(accessTokenFile)
+	if err != nil {
+		// is not fatal because to use the github API a token is not needed
+		fmt.Printf("WARNING: failed to read access token file %s", err)
+		return nil
+	}
+
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: string(token)},
+	)
+	return oauth2.NewClient(context.Background(), ts)
+}
+
 func (p *pr) GetAuthorComments() ([]string, error) {
 	var comments []string
-	client := github.NewClient(nil)
+
+	client := github.NewClient(getHTTPClient())
 
 	// Retrieves the commit message from the PR
 	message, _, err := client.PullRequests.Get(context.Background(), p.owner, p.repo, p.number)
