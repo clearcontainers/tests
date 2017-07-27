@@ -75,12 +75,16 @@ type PullRequest struct {
 // canBeTested returns an error if the pull request cannot be tested
 func (pr *PullRequest) canBeTested() error {
 	if !pr.Mergeable {
-		return fmt.Errorf("the pull request is not mergeable")
+		err := fmt.Errorf("the pull request is not mergeable")
+		ciLog.Debug(err.Error())
+		return err
 	}
 
 	commitsLen := len(pr.Commits)
 	if commitsLen == 0 {
-		return fmt.Errorf("there are no commits to test")
+		err := fmt.Errorf("there are no commits to test")
+		ciLog.Debug(err.Error())
+		return err
 	}
 
 	// there is no comment trigger so we can test
@@ -91,7 +95,9 @@ func (pr *PullRequest) canBeTested() error {
 
 	latestCommit := pr.Commits[commitsLen-1]
 	if pr.CommentTrigger.time.Unix() < latestCommit.Time.Unix() {
-		return fmt.Errorf("there are new commits after latest comment trigger %+v", pr.CommentTrigger)
+		err := fmt.Errorf("there are new commits after latest comment trigger %+v", pr.CommentTrigger)
+		ciLog.Debugf(err.Error())
+		return err
 	}
 
 	return nil

@@ -246,9 +246,11 @@ func (r *Repo) loop() {
 		if r.PR != 0 {
 			prsToTest = make(map[string]*PullRequest)
 			var pr *PullRequest
+			ciLog.Debugf("requesting single PR %#v", r.PR)
 			pr, err = r.cvr.getPullRequest(r.PR)
 			prsToTest[strconv.Itoa(r.PR)] = pr
 		} else {
+			ciLog.Debug("requesting list of PRs")
 			prsToTest, err = r.cvr.getOpenPullRequests()
 		}
 
@@ -257,7 +259,10 @@ func (r *Repo) loop() {
 			goto sleep
 		}
 
+		ciLog.Debugf("got %d PRs to process", len(prsToTest))
+
 		for number, prToTest := range prsToTest {
+			ciLog.Debugf("checking pr %+v", prToTest)
 			prTested := prsTested[number]
 			if prTested != nil {
 				if prToTest.Equal(*prTested) {
@@ -282,6 +287,7 @@ func (r *Repo) loop() {
 		}
 
 	sleep:
+		ciLog.Debugf("napping for %s", r.RefreshTime)
 		time.Sleep(r.refresh)
 	}
 }
@@ -312,12 +318,15 @@ func (r *Repo) test() error {
 func (r *Repo) testPullRequest(pr *PullRequest) error {
 	var err error
 
+	ciLog.Debugf("testing PR %+v", pr)
 	// before check if the PR can be tested we have to set the
 	// comment trigger
 	if len(r.CommentTrigger.Comment) != 0 {
 		pr.CommentTrigger, err = r.cvr.getLatestPullRequestComment(pr.Number, r.CommentTrigger)
 		if err != nil {
-			return fmt.Errorf("missing comment trigger in pull request %s", err)
+			reterr := fmt.Errorf("missing comment trigger in pull request %s", err)
+			ciLog.Debugf(reterr.Error())
+			return reterr
 		}
 	}
 
