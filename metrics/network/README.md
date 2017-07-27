@@ -74,20 +74,10 @@ using smem while running a transfer of one Gb with nuttcp.
 
 ## Running the networking tests
 
-Before the network tests can be run, some files must be pre-processed. The
-following command will both pre-process the required files and then run the
-tests:
+Individual tests may be run by hand, for example:
 
 ```
-$ sudo -E make metrics-tests
-
-```
-
-Once the necessary files have been pre-processed via the above command,
-individual tests may be run by hand, for example:
-
-```
-$ cd tests/metrics
+$ cd metrics
 $ bash network/network-metrics.sh
 
 ```
