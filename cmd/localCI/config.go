@@ -43,7 +43,5 @@ func newConfig(file string) (*config, error) {
 		return nil, err
 	}
 
-	ciLog.Debugf("configuration %+v", c)
-
 	return &c, nil
 }

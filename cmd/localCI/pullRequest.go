@@ -83,12 +83,6 @@ func (pr *PullRequest) canBeTested() error {
 		return fmt.Errorf("there are no commits to test")
 	}
 
-	// there is no comment trigger so we can test
-	if pr.CommentTrigger == nil {
-		ciLog.Debugf("comment trigger of pull request %+v is empty", pr)
-		return nil
-	}
-
 	latestCommit := pr.Commits[commitsLen-1]
 	if pr.CommentTrigger.time.Unix() < latestCommit.Time.Unix() {
 		return fmt.Errorf("there are new commits after latest comment trigger %+v", pr.CommentTrigger)

@@ -23,6 +23,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/Sirupsen/logrus"
 )
 
 // Repo represents the repository under test
@@ -93,6 +95,9 @@ type Repo struct {
 
 	// whitelistUsers is the whitelist once parsed
 	whitelistUsers []string
+
+	// logger of the repository
+	logger *logrus.Entry
 }
 
 const (
@@ -117,8 +122,14 @@ func (r *Repo) setupCvr() error {
 		return fmt.Errorf("missing repository url")
 	}
 
+	// set repository logger
+	r.logger = ciLog.WithFields(logrus.Fields{
+		"Repo": r.URL,
+	})
+
 	// get the control version repository
 	r.cvr, err = newCvr(r.URL, r.Token)
+	r.logger.Debugf("control version repository: %#v", r.cvr)
 
 	return err
 }
@@ -216,7 +227,7 @@ func (r *Repo) setup() error {
 		}
 	}
 
-	ciLog.Debugf("Using control version repository the %#v", r.cvr)
+	r.logger.Debugf("control version repository: %#v", r.cvr)
 
 	// get the list of users
 	r.whitelistUsers = append(r.whitelistUsers, "*")
@@ -239,21 +250,23 @@ func (r *Repo) loop() {
 	var prsToTest map[string]*PullRequest
 	prsTested := make(map[string]*PullRequest)
 
-	ciLog.Debugf("monitoring in a loop the repository %#v", r)
+	r.logger.Debugf("monitoring in a loop the repository: %#v", r)
 
 	for {
 		// if PR is not 0 then we have to monitor just one PR
 		if r.PR != 0 {
 			prsToTest = make(map[string]*PullRequest)
 			var pr *PullRequest
+			r.logger.Debugf("requesting single pull request %d", r.PR)
 			pr, err = r.cvr.getPullRequest(r.PR)
 			prsToTest[strconv.Itoa(r.PR)] = pr
 		} else {
+			r.logger.Debugf("requesting open pull requests")
 			prsToTest, err = r.cvr.getOpenPullRequests()
 		}
 
 		if err != nil {
-			ciLog.Errorf("failed to get pull requests: %s", err)
+			r.logger.Errorf("failed to get pull requests: %s", err)
 			goto sleep
 		}
 
@@ -261,18 +274,18 @@ func (r *Repo) loop() {
 			prTested := prsTested[number]
 			if prTested != nil {
 				if prToTest.Equal(*prTested) {
-					ciLog.Debugf("pr %+v was already tested", prToTest)
+					r.logger.Debugf("pull request was already tested: %+v", prToTest)
 					goto sleep
 				}
 				// checking if the old version of the PR is being tested
 				if prTested.BeingTested {
-					ciLog.Debugf("pr %+v is being tested", prTested)
+					r.logger.Debugf("pull request is being tested: %+v", prTested)
 					goto sleep
 				}
 			}
 
 			if err := r.testPullRequest(prToTest); err != nil {
-				ciLog.Errorf("failed to test pull request %+v: %s", prToTest, err)
+				r.logger.Errorf("failed to test pull request %+v: %s", prToTest, err)
 				goto sleep
 			}
 
@@ -282,6 +295,7 @@ func (r *Repo) loop() {
 		}
 
 	sleep:
+		r.logger.Debugf("going to sleep")
 		time.Sleep(r.refresh)
 	}
 }
@@ -289,7 +303,7 @@ func (r *Repo) loop() {
 // test the pull request specified in the configuration file
 // if pr does not exist an error is returned
 func (r *Repo) test() error {
-	ciLog.Debugf("testing the repository %+v", r)
+	r.logger.Debugf("testing the repository: %#v", r)
 
 	if r.PR == 0 {
 		return fmt.Errorf("Missing pull request number in configuration file")
@@ -323,6 +337,7 @@ func (r *Repo) testPullRequest(pr *PullRequest) error {
 
 	// check if the PR can be tested
 	if err = pr.canBeTested(); err != nil {
+		r.logger.Debugf("pull request %d cannot be tested: %s", pr.Number, err)
 		return err
 	}
 
@@ -374,7 +389,7 @@ func (r *Repo) testPullRequest(pr *PullRequest) error {
 	go func() {
 		err := testFunc()
 		if err != nil {
-			ciLog.Errorf("failed to test pull request %+v: %s", *pr, err)
+			r.logger.Errorf("failed to test pull request %#v: %s", pr, err)
 		}
 	}()
 
@@ -413,19 +428,19 @@ func (r *Repo) runTest(pr *PullRequest) error {
 	var err error
 
 	// setup the language
-	ciLog.Debugf("setting up language: %+v", r.language)
+	r.logger.Debugf("setting up language: %+v", r.language)
 	if err = r.language.setup(); err != nil {
 		return err
 	}
 	defer func() {
 		err = r.language.teardown()
 		if err != nil {
-			ciLog.Errorf("failed to teardown the language: %s", err)
+			r.logger.Errorf("failed to teardown the language: %s", err)
 		}
 	}()
 
 	// clone the project
-	ciLog.Debugf("downloading pull request: %+v", pr)
+	r.logger.Debugf("downloading pull request: %+v", *pr)
 	pr.WorkingDir, err = r.cvr.downloadPullRequest(*pr, r.language.getCloneDir())
 	if err != nil {
 		return err
@@ -433,7 +448,7 @@ func (r *Repo) runTest(pr *PullRequest) error {
 	defer func() {
 		err = os.RemoveAll(pr.WorkingDir)
 		if err != nil {
-			ciLog.Errorf("failed to remove the working directory '%s': %s", pr.WorkingDir, err)
+			r.logger.Errorf("failed to remove the working directory '%s': %s", pr.WorkingDir, err)
 		}
 	}()
 
@@ -462,7 +477,7 @@ func (r *Repo) runTest(pr *PullRequest) error {
 		defer func() {
 			err = r.LogServer.copy(pr.LogDir)
 			if err != nil {
-				ciLog.Errorf("failed to copy log dir %s to server %+v", pr.LogDir, r.LogServer)
+				r.logger.Errorf("failed to copy log dir %s to server %+v", pr.LogDir, r.LogServer)
 			}
 		}()
 	}
@@ -483,26 +498,28 @@ func (r *Repo) runStages(pr *PullRequest) error {
 		{name: "teardown", commands: r.Teardown},
 	}
 
-	ciLog.Debugf("testing pull request: %+v", pr)
+	r.logger.Debugf("testing pull request: %+v", *pr)
 
 	for _, s := range stages {
 		if len(s.commands) == 0 {
-			ciLog.Debugf("there are not commands for the stage '%s'", s.name)
+			r.logger.Debugf("there are not commands for the stage '%s'", s.name)
 			continue
 		}
 
-		ciLog.Debugf("running stage %+v", s)
+		r.logger.Debugf("running stage: %+v", s)
 
 		if err = pr.runStage(s.name, s.commands); err != nil {
-			ciLog.Errorf("failed to run stage '%s': %s", s.name, err)
+			r.logger.Errorf("failed to run stage '%s': %s", s.name, err)
 			if len(r.PostOnFailure) != 0 {
 				if err = r.cvr.createComment(pr.Number, r.PostOnFailure); err != nil {
-					ciLog.Errorf("failed to create comment '%s' on pull request %d", r.PostOnFailure, pr.Number)
+					r.logger.Errorf("failed to create comment '%s' on pull request %d", r.PostOnFailure, pr.Number)
 				}
 			}
 
+			r.logger.Debugf("running 'onFailure' stage")
+
 			if e := pr.runStage("onFailure", r.OnFailure); e != nil {
-				ciLog.Errorf("faile to run 'onFailure' stage: %s", err)
+				r.logger.Errorf("failed to run 'onFailure' stage: %s", err)
 			}
 
 			return err
@@ -512,9 +529,11 @@ func (r *Repo) runStages(pr *PullRequest) error {
 	// check if there are commands to run onSuccess
 	if len(r.OnSuccess) != 0 {
 		defer func() {
+			r.logger.Debugf("running 'onSuccess' stage")
+
 			// run 'onSuccess' stage
 			if err := pr.runStage("onSuccess", r.OnSuccess); err != nil {
-				ciLog.Errorf("failed to run 'onSuccess' stage: %s", err)
+				r.logger.Errorf("failed to run 'onSuccess' stage: %s", err)
 			}
 		}()
 	}
