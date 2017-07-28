@@ -78,7 +78,6 @@ func newCvr(url, token string) (CVR, error) {
 		if v.MatchString(url) {
 			switch k {
 			case githubDomain:
-				ciLog.Debugf("using github cvr for: %s", url)
 				return newGithub(url, token)
 			}
 		}

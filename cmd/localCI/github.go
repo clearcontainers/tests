@@ -109,8 +109,7 @@ func (g *Github) getOpenPullRequests() (map[string]*PullRequest, error) {
 
 	pullRequests, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, nil)
 	if err != nil {
-		ciLog.Errorf("failed to list pull requests: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to list pull requests %s", err)
 	}
 
 	prs := make(map[string]*PullRequest)
@@ -123,7 +122,6 @@ func (g *Github) getOpenPullRequests() (map[string]*PullRequest, error) {
 
 		pullRequest, err := g.getPullRequest(number)
 		if err != nil {
-			ciLog.Errorf("failed to get pull request %d: %s", number, err)
 			continue
 		}
 

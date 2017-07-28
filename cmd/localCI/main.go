@@ -116,6 +116,7 @@ func main() {
 		if err != nil {
 			return err
 		}
+		ciLog.Debugf("configuration %+v", config)
 
 		runTestsInParallel = config.RunTestsInParallel
 
