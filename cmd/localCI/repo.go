@@ -188,6 +188,41 @@ func (r *Repo) setupCommentTrigger() error {
 	return nil
 }
 
+func (r *Repo) setupLanguage() error {
+	var err error
+
+	r.language, err = r.Language.getLanguage(*r)
+	return err
+}
+
+func (r *Repo) setupStages() error {
+	if len(r.Run) == 0 {
+		return fmt.Errorf("missing run commands")
+	}
+
+	return nil
+}
+
+func (r *Repo) setupWhitelist() error {
+	// get the list of users
+	r.whitelistUsers = append(r.whitelistUsers, "*")
+	if len(r.Whitelist) != 0 {
+		r.whitelistUsers = strings.Split(r.Whitelist, ",")
+	}
+
+	return nil
+}
+
+func (r *Repo) setupEnvars() error {
+	// add environment variables
+	r.env = os.Environ()
+	r.env = append(r.env, defaultEnv...)
+	repoSlug := fmt.Sprintf("LOCALCI_REPO_SLUG=%s/%s", r.cvr.getOwner(), r.cvr.getRepo())
+	r.env = append(r.env, repoSlug)
+
+	return nil
+}
+
 // setup the repository. This method MUST BE called before use any other
 func (r *Repo) setup() error {
 	var err error
@@ -198,16 +233,10 @@ func (r *Repo) setup() error {
 		r.setupLogDir,
 		r.setupLogServer,
 		r.setupCommentTrigger,
-		func() (err error) {
-			r.language, err = r.Language.getLanguage(*r)
-			return
-		},
-		func() error {
-			if len(r.Run) == 0 {
-				return fmt.Errorf("missing run commands")
-			}
-			return nil
-		},
+		r.setupLanguage,
+		r.setupStages,
+		r.setupWhitelist,
+		r.setupEnvars,
 	}
 
 	for _, setupFunc := range setupFuncs {
@@ -217,18 +246,6 @@ func (r *Repo) setup() error {
 	}
 
 	ciLog.Debugf("Using control version repository the %#v", r.cvr)
-
-	// get the list of users
-	r.whitelistUsers = append(r.whitelistUsers, "*")
-	if len(r.Whitelist) != 0 {
-		r.whitelistUsers = strings.Split(r.Whitelist, ",")
-	}
-
-	// add environment variables
-	r.env = os.Environ()
-	r.env = append(r.env, defaultEnv...)
-	repoSlug := fmt.Sprintf("LOCALCI_REPO_SLUG=%s/%s", r.cvr.getOwner(), r.cvr.getRepo())
-	r.env = append(r.env, repoSlug)
 
 	return nil
 }
