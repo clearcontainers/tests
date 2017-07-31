@@ -78,7 +78,6 @@ This section have next keys:
   If this key is not present or is an empty string no mesage is posted.
 - ``postOnFailure [string] (optional)``: message to be posted in the pull request if any of ``setup``, ``run`` or ``teardown`` fail.
   If this key is not present or is an empty string no mesage is posted.
-- ``useVM [bool] (optional)``: specify if **localCI** should use virtual machines to test the pull requests. By default this value is ``false``.
 - ``logDir [string] (optional)``: the directory where the logs are placed. By default this value is ``/var/log/localCI``
 - ``whitelist [string] (optional)``: a comma-separated list of the users whose pull requests can be tested. This key has two wildcards ``*`` and ``@``.
   ``*`` means that the pull request of any user can be tested and ``@`` means that the pull request of any user belonging to the organization can be tested, any
@@ -129,7 +128,6 @@ Configuration file example
    onfailure = [ "echo failure" ]
    postOnSuccess = "qa-passed"
    postOnFailure = "qa-failed"
-   useVM = false
    logDir = "/var/log/localCI"
    whitelist = "@"
    [Repo.language]
