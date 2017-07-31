@@ -21,7 +21,7 @@ LIB_DIR="${SCRIPT_PATH}/../lib"
 # Set variables to reasonable defaults if unset or empty
 DOCKER_EXE="${DOCKER_EXE:-docker}"
 RUNTIME="${RUNTIME:-cc-runtime}"
-CC_SHIM_PATH="${CC_SHIM_PATH:-/usr/libexec/cc-shim}"
+CC_SHIM_PATH="${CC_SHIM_PATH:-/usr/libexec/clear-containers/cc-shim}"
 
 # If we fail for any reason, exit through here and we should log that to the correct
 # place and return the correct code to halt the run
@@ -182,8 +182,6 @@ function check_active_process() {
 # This function checks if there are containers or
 # cc-shim and qemu-lite processes up, if found, they are
 # killed to start test with clean environment.
-# The function is intended to be used in the setup() of
-# the docker integration tests for cc-oci-runtime.
 function kill_processes_before_start() {
 	DOCKER_PROCS=$(${DOCKER_EXE} ps -q)
 	[[ -n "${DOCKER_PROCS}" ]] && "${DOCKER_EXE}" kill ${DOCKER_PROCS}

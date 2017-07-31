@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#  This file is part of cc-oci-runtime.
-#
 #  Copyright (C) 2017 Intel Corporation
 #
 #  This program is free software; you can redistribute it and/or
