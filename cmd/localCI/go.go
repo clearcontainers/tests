@@ -94,11 +94,6 @@ func (g *Go) setup() error {
 	return nil
 }
 
-func (g *Go) setupOnVM() error {
-	//FIXME: implement
-	return nil
-}
-
 func (g *Go) getCloneDir() string {
 	return g.cloneDir
 }

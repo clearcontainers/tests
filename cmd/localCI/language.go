@@ -27,9 +27,6 @@ type Language interface {
 	// setup the language, install, download, etc.
 	setup() error
 
-	// setup the language on a VM
-	setupOnVM() error
-
 	// getCloneDir returns the directory where the project must be cloned
 	getCloneDir() string
 

@@ -63,9 +63,6 @@ type Repo struct {
 	// PostOnFailure is the comment to be posted if the test fails
 	PostOnFailure string
 
-	// UseVM specify if VMs must be used to test the pull request
-	UseVM bool
-
 	// LogDir is the logs directory
 	LogDir string
 
@@ -369,10 +366,6 @@ func (r *Repo) testPullRequest(pr *PullRequest) error {
 		defer testLock.Unlock()
 	}
 
-	if r.UseVM {
-		return r.testPROnVM(pr)
-	}
-
 	// change the pr state before start the test
 	pr.BeingTested = true
 
@@ -393,25 +386,6 @@ func (r *Repo) testPullRequest(pr *PullRequest) error {
 		}
 	}()
 
-	return nil
-}
-
-func (r *Repo) testPROnVM(pr *PullRequest) error {
-	//FIXME: This function has to:
-	// - start a VM
-	// - install localCI
-	// - create a configuration file to test a specific PR
-	// - run localCI as workload
-	//FIXME: Install go before spawn the VM
-
-	if runTestsInParallel {
-		//FIXME: setup and spawn a VM using a goroutine
-		return nil
-	}
-
-	//FIXME: setup and spawn VM and wait
-	//FIXME: set pr.BeingTested
-	//FIXME: add WaitGroup
 	return nil
 }
 

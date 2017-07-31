@@ -12,7 +12,6 @@ onSuccess = [ "echo success" ]
 onfailure = [ "echo failure" ]
 postOnSuccess = "qa-passed"
 postOnFailure = "qa-failed"
-useVM = true
 logDir = "/var/log/localCI"
 whitelist = "@"
 [Repo.language]
