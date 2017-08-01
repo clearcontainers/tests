@@ -18,12 +18,17 @@ SCRIPT_PATH=$(dirname $(readlink -f $0))
 RESULT_DIR="${SCRIPT_PATH}/../results"
 LIB_DIR="${SCRIPT_PATH}/../lib"
 
+# Set variables to reasonable defaults if unset or empty
+DOCKER_EXE="${DOCKER_EXE:-docker}"
+RUNTIME="${RUNTIME:-cc-runtime}"
+CC_SHIM_PATH="${CC_SHIM_PATH:-/usr/libexec/clear-containers/cc-shim}"
+
 # If we fail for any reason, exit through here and we should log that to the correct
 # place and return the correct code to halt the run
 die(){
-        msg="$*"
-        echo "ERROR: $msg" >&2
-        exit 1
+	msg="$*"
+	echo "ERROR: $msg" >&2
+	exit 1
 }
 
 # Save a test/metric result.
@@ -84,74 +89,103 @@ function init_env()
 }
 
 function get_hypervisor_from_toml(){
-    ## Regular expressions used for TOML parsing
-    # Matches a section header
-    section_re="^\s*\[(\S+)]"
-    # Matches the name of the hypervisor section
-    hypervisor_re="^hypervisor(\..*)?"
-    # Matches the variable containing the qemu path
-    qemu_re="^\s*path\s*=\s*\"([^\"]+)"
+	## Regular expressions used for TOML parsing
+	# Matches a section header
+	section_re="^\s*\[(\S+)]"
+	# Matches the name of the hypervisor section
+	hypervisor_re="^hypervisor(\..*)?"
+	# Matches the variable containing the qemu path
+	qemu_re="^\s*path\s*=\s*\"([^\"]+)"
 
-    # Case insensitive
-    shopt -s nocasematch
+	# Case insensitive
+	shopt -s nocasematch
 
-    for line in "$@"; do
-        if [[ $line =~ $section_re ]]; then
-            # New section
-            section=${BASH_REMATCH[1]}
-        elif [[ $section =~ $hypervisor_re ]]; then
-            # Look for qemu path
-            if [[ $line =~ $qemu_re ]]; then
-                # Found it
-                qemu_path="${BASH_REMATCH[1]}"
-                echo "${qemu_path}"
-                break;
-            fi
-        fi
-    done
+	for line in "$@"; do
+		if [[ $line =~ $section_re ]]; then
+			# New section
+			section=${BASH_REMATCH[1]}
+		elif [[ $section =~ $hypervisor_re ]]; then
+			# Look for qemu path
+			if [[ $line =~ $qemu_re ]]; then
+				# Found it
+				qemu_path="${BASH_REMATCH[1]}"
+				echo "${qemu_path}"
+				break;
+			fi
+		fi
+	done
 }
 
 # Find a reasonable path to the hypervisor on this system
 function get_qemu_path(){
-   # Create a list of potential configuration files
-    declare -a conf_files
+	# Create a list of potential configuration files
+	declare -a conf_files
 
-    # Use cc-env, if available
-    CC_RUNTIME=$(command -v cc-runtime)
-    if [[ $? -eq 0 ]] && [[ -n ${CC_RUNTIME} ]]; then
-        cc_env_tmp=$(mktemp cc-env.XXXX)
-        ${CC_RUNTIME} cc-env > "${cc_env_tmp}"
-        conf_files+=("${cc_env_tmp}")
-    fi
+	# Use cc-env, if available
+	CC_RUNTIME=$(command -v cc-runtime)
+	if [[ $? -eq 0 ]] && [[ -n ${CC_RUNTIME} ]]; then
+		cc_env_tmp=$(mktemp cc-env.XXXX)
+		${CC_RUNTIME} cc-env > "${cc_env_tmp}"
+		conf_files+=("${cc_env_tmp}")
+	fi
 
-    # Search for other configuration files
-    conf_files+=("${LIB_DIR}/../../../runtime/config/configuration.toml")
-    conf_files+=($(find /etc -type f -name configuration.toml -exec \
-        grep -l 'hypervisor.qemu' {} + 2>/dev/null))
+	# Search for other configuration files
+	conf_files+=("${LIB_DIR}/../../../runtime/config/configuration.toml")
+	conf_files+=($(find /etc -type f -name configuration.toml -exec \
+		grep -l 'hypervisor.qemu' {} + 2>/dev/null))
 
-    # Check the potential files sequentially
-    for conf_file in "${conf_files[@]}"; do
-        [[ -f "${conf_file}" ]] || continue
+	# Check the potential files sequentially
+	for conf_file in "${conf_files[@]}"; do
+		[[ -f "${conf_file}" ]] || continue
 
-        # Attempt to parse the found config file (TOML)
-        declare -a config
-        while read line; do
-            config+=("$line")
-        done < "${conf_file}"
-        qemu_path=$(get_hypervisor_from_toml "${config[@]}")
+		# Attempt to parse the found config file (TOML)
+		declare -a config
+		while read line; do
+			config+=("$line")
+		done < "${conf_file}"
+		qemu_path=$(get_hypervisor_from_toml "${config[@]}")
 
-        # Got one?
-        [[ -n "${qemu_path}" ]] || continue;
-        [[ -x "${qemu_path}" ]] && break;
-    done
+		# Got one?
+		[[ -n "${qemu_path}" ]] || continue;
+		[[ -x "${qemu_path}" ]] && break;
+	done
 
-    # Cleanup
-    [[ -n "${cc_env_tmp}" ]] && rm "${cc_env_tmp}"
+	# Cleanup
+	[[ -n "${cc_env_tmp}" ]] && rm "${cc_env_tmp}"
 
-    # Check whether we got a good result
-    [[ -n "$qemu_path" ]] || die Failed to find qemu path in $conf_file
-    [[ -f "$qemu_path" ]] || die "$qemu_path does not exist"
-    [[ -x "$qemu_path" ]] || die "$qemu_path is not executable"
+	# Check whether we got a good result
+	[[ -n "$qemu_path" ]] || die Failed to find qemu path in $conf_file
+	[[ -f "$qemu_path" ]] || die "$qemu_path does not exist"
+	[[ -x "$qemu_path" ]] || die "$qemu_path is not executable"
 
-    echo "$qemu_path"
+	echo "$qemu_path"
+}
+
+# Checking that default runtime is appropriate
+function runtime_docker(){
+	default_runtime=$(${DOCKER_EXE} info 2>/dev/null | grep "^Default Runtime" \
+		| cut -d: -f2 | tr -d '[[:space:]]')
+	if [ "$default_runtime" != "${RUNTIME}" ]; then
+		die "Tests need to run with ${RUNTIME} runtime (currently ${default_runtime})"
+	fi
+}
+
+function check_active_process() {
+	process=$1
+	if pgrep -f "$process" > /dev/null; then
+		return 1
+	else
+		return 0
+	fi
+}
+
+# This function checks if there are containers or
+# cc-shim and qemu-lite processes up, if found, they are
+# killed to start test with clean environment.
+function kill_processes_before_start() {
+	DOCKER_PROCS=$(${DOCKER_EXE} ps -q)
+	[[ -n "${DOCKER_PROCS}" ]] && "${DOCKER_EXE}" kill ${DOCKER_PROCS}
+	HYPERVISOR_PATH="$(get_qemu_path)"
+	check_active_process "$HYPERVISOR_PATH" || killall "$HYPERVISOR_PATH"
+	check_active_process "$CC_SHIM_PATH" || killall "$CC_SHIM_PATH"
 }
