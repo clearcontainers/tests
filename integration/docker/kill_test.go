@@ -22,18 +22,9 @@ import (
 
 var _ = Describe("kill", func() {
 	var (
-		args     []string
-		id       string
-		exitCode int
-		command  *Command
+		args []string
+		id   string
 	)
-
-	runCommand := func(args []string, expectedExitCode int) {
-		command = NewCommand(Docker, args...)
-		Expect(command).ToNot(BeNil())
-		exitCode = command.Run()
-		Expect(exitCode).To(Equal(expectedExitCode))
-	}
 
 	AfterEach(func() {
 		Expect(ContainerRemove(id)).To(BeTrue())
@@ -43,18 +34,18 @@ var _ = Describe("kill", func() {
 	Describe("kill with docker", func() {
 		Context("kill a container", func() {
 			It("should assigned exited status", func() {
-				id = RandID(30)
+				id = randomDockerName()
 				args = []string{"run", "-td", "--name", id, Image, "sh"}
-				runCommand(args, 0)
+				runDockerCommand(0, args...)
 				args = []string{"inspect", "--format='{{.State.Running}}'", id}
-				runCommand(args, 0)
-				Expect(command.Stdout.String()).To(ContainSubstring("true"))
+				stdout := runDockerCommand(0, args...)
+				Expect(stdout).To(ContainSubstring("true"))
 				args = []string{"kill", id}
-				runCommand(args, 0)
-				Expect(command.Stdout.String()).To(ContainSubstring(id))
+				stdout = runDockerCommand(0, args...)
+				Expect(stdout).To(ContainSubstring(id))
 				args = []string{"inspect", "--format='{{.State.Running}}'", id}
-				runCommand(args, 0)
-				Expect(command.Stdout.String()).To(ContainSubstring("false"))
+				stdout = runDockerCommand(0, args...)
+				Expect(stdout).To(ContainSubstring("false"))
 			})
 		})
 	})

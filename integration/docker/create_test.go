@@ -22,18 +22,9 @@ import (
 
 var _ = Describe("create", func() {
 	var (
-		args     []string
-		id       string
-		exitCode int
-		command  *Command
+		args []string
+		id   string
 	)
-
-	runCommand := func(args []string, expectedExitCode int) {
-		command = NewCommand(Docker, args...)
-		Expect(command).ToNot(BeNil())
-		exitCode = command.Run()
-		Expect(exitCode).To(Equal(expectedExitCode))
-	}
 
 	AfterEach(func() {
 		Expect(ContainerRemove(id)).To(BeTrue())
@@ -43,12 +34,12 @@ var _ = Describe("create", func() {
 	Describe("create with docker", func() {
 		Context("check create functionality", func() {
 			It("create a container", func() {
-				id = RandID(30)
+				id = randomDockerName()
 				args = []string{"create", "-t", "--name", id, Image}
-				runCommand(args, 0)
+				runDockerCommand(0, args...)
 				args = []string{"ps", "--filter", "status=created"}
-				runCommand(args, 0)
-				Expect(command.Stdout.String()).To(ContainSubstring(id))
+				stdout := runDockerCommand(0, args...)
+				Expect(stdout).To(ContainSubstring(id))
 			})
 		})
 	})

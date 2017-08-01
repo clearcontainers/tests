@@ -22,23 +22,14 @@ import (
 
 var _ = Describe("port", func() {
 	var (
-		args     []string
-		id       string
-		exitCode int
-		command  *Command
+		args []string
+		id   string
 	)
 
-	runCommand := func(args []string, expectedExitCode int) {
-		command = NewCommand(Docker, args...)
-		Expect(command).ToNot(BeNil())
-		exitCode = command.Run()
-		Expect(exitCode).To(Equal(expectedExitCode))
-	}
-
 	BeforeEach(func() {
-		id = RandID(30)
+		id = randomDockerName()
 		args = []string{"run", "-td", "-p", "8080:8080", "--name", id, Image}
-		runCommand(args, 0)
+		runDockerCommand(0, args...)
 	})
 
 	AfterEach(func() {
@@ -50,8 +41,8 @@ var _ = Describe("port", func() {
 		Context("specify a port in a container", func() {
 			It("should return assigned port", func() {
 				args = []string{"port", id, "8080/tcp"}
-				runCommand(args, 0)
-				Expect(command.Stdout.String()).To(ContainSubstring("8080"))
+				stdout := runDockerCommand(0, args...)
+				Expect(stdout).To(ContainSubstring("8080"))
 			})
 		})
 	})

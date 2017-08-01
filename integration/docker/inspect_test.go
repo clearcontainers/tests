@@ -34,12 +34,9 @@ var _ = Describe("inspect", func() {
 	)
 
 	BeforeEach(func() {
-		id = RandID(30)
+		id = randomDockerName()
 		args = []string{"run", "-t", "--name", id, Image, "true"}
-		command := NewCommand(Docker, args...)
-		Expect(command).ToNot(BeNil())
-		exitCode := command.Run()
-		Expect(exitCode).To(Equal(0))
+		runDockerCommand(0, args...)
 
 	})
 
@@ -52,12 +49,8 @@ var _ = Describe("inspect", func() {
 		func(formatOption string) {
 			args = []string{"inspect", id, "--format"}
 			args = append(args, formatOption)
-
-			command := NewCommand(Docker, args...)
-			exitCode := command.Run()
-			Expect(exitCode).To(Equal(0))
-			Expect(command.Stdout.String()).To(ContainSubstring(Image))
-			Expect(command.Stdout.String()).NotTo(BeEmpty())
+			stdout := runDockerCommand(0, args...)
+			Expect(stdout).To(ContainSubstring(Image))
 		},
 		inspectFormatOptions("'{{.Config.Image}}'"),
 		inspectFormatOptions("'{{json .Config}}'"),
