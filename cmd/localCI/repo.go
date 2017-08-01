@@ -84,9 +84,6 @@ type Repo struct {
 	// refresh is RefreshTime once parsed
 	refresh time.Duration
 
-	// language is the language of the repository
-	language Language
-
 	// env contains the environment variables to be used in each stage
 	env []string
 
@@ -95,6 +92,9 @@ type Repo struct {
 
 	// logger of the repository
 	logger *logrus.Entry
+
+	// projectSlug contains cvr domain, owner and repo name separated by '/'
+	projectSlug string
 }
 
 const (
@@ -127,6 +127,10 @@ func (r *Repo) setupCvr() error {
 	// get the control version repository
 	r.cvr, err = newCvr(r.URL, r.Token)
 	r.logger.Debugf("control version repository: %#v", r.cvr)
+
+	// set projectSlug
+	slug := []string{r.cvr.getDomain(), r.cvr.getOwner(), r.cvr.getDomain()}
+	r.projectSlug = strings.Join(slug, "/")
 
 	return err
 }
@@ -197,10 +201,7 @@ func (r *Repo) setupCommentTrigger() error {
 }
 
 func (r *Repo) setupLanguage() error {
-	var err error
-
-	r.language, err = r.Language.getLanguage(*r)
-	return err
+	return r.Language.setup()
 }
 
 func (r *Repo) setupStages() error {
@@ -407,7 +408,7 @@ func (r *Repo) testPullRequest(pr *PullRequest) error {
 }
 
 // Steps to test a pull request:
-// - setup the project language
+// - generate a new language environment to test the project
 // - download the pull request
 // - run stages (setup, run and teardown)
 // - if any stage fails then 'PostOnFailure' and run 'onFailure' commands
@@ -416,32 +417,32 @@ func (r *Repo) testPullRequest(pr *PullRequest) error {
 // - remove working directory
 // - copy logs to the server
 func (r *Repo) runTest(pr *PullRequest) error {
-	var err error
-
-	// setup the language
-	r.logger.Debugf("setting up language: %+v", r.language)
-	if err = r.language.setup(); err != nil {
-		return err
-	}
-	defer func() {
-		err = r.language.teardown()
-		if err != nil {
-			r.logger.Errorf("failed to teardown the language: %s", err)
-		}
-	}()
-
-	// clone the project
-	r.logger.Debugf("downloading pull request: %+v", *pr)
-	pr.WorkingDir, err = r.cvr.downloadPullRequest(*pr, r.language.getCloneDir())
+	langEnv, err := r.Language.generateEnvironment(r.projectSlug)
 	if err != nil {
 		return err
 	}
+
+	// cleanup task
 	defer func() {
-		err = os.RemoveAll(pr.WorkingDir)
+		err = os.RemoveAll(langEnv.workingDir)
 		if err != nil {
-			r.logger.Errorf("failed to remove the working directory '%s': %s", pr.WorkingDir, err)
+			r.logger.Errorf("failed to remove the working directory '%s': %s", langEnv.workingDir, err)
+		}
+
+		err = os.RemoveAll(langEnv.tempDir)
+		if err != nil {
+			r.logger.Errorf("failed to remove the temporal directory '%s': %s", langEnv.tempDir, err)
 		}
 	}()
+
+	pr.WorkingDir = langEnv.workingDir
+
+	// clone the project
+	r.logger.Debugf("downloading pull request: %+v", *pr)
+	err = r.cvr.downloadPullRequest(*pr, pr.WorkingDir)
+	if err != nil {
+		return err
+	}
 
 	// cleanup and set the log directory of the pull request
 	pr.LogDir = filepath.Join(r.LogDir, strconv.Itoa(pr.Number))
@@ -454,9 +455,8 @@ func (r *Repo) runTest(pr *PullRequest) error {
 	pr.Env = r.env
 
 	// appends language environment variables
-	langEnv := r.language.getEnv()
-	if len(langEnv) > 0 {
-		pr.Env = append(pr.Env, langEnv...)
+	if len(langEnv.env) > 0 {
+		pr.Env = append(pr.Env, langEnv.env...)
 	}
 
 	// appends other environment variables

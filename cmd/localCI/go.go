@@ -25,11 +25,7 @@ import (
 
 // Go programming language
 type Go struct {
-	downloadURL string
-	tarFile     string
-	goRoot      string
-	goPath      string
-	cloneDir    string
+	goRoot string
 }
 
 var goDownloadURL = "https://storage.googleapis.com/golang"
@@ -38,80 +34,68 @@ var goDownloadURL = "https://storage.googleapis.com/golang"
 var goLock sync.Mutex
 
 // newGoLanguage returns a new instance of Go
-func newGoLanguage(r Repo) (Language, error) {
-	goVersion := r.Language.Version
-
-	url := fmt.Sprintf("%s/%s.linux-amd64.tar.gz", goDownloadURL, goVersion)
-	tarFile := filepath.Join(languagesDir, fmt.Sprintf("%s.tar.gz", goVersion))
+func newGoLanguage(goVersion string) (language, error) {
+	// setup GOROOT
 	goRoot := filepath.Join(languagesDir, goVersion)
-
 	if err := os.MkdirAll(goRoot, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create go root directory %s", err)
 	}
 
-	goPath, err := ioutil.TempDir(pkgLibDir, "gopath")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create go path directory %s", err)
-	}
-
-	cloneDir := filepath.Join(goPath, "src", r.cvr.getDomain(), r.cvr.getOwner())
-
-	if err := os.MkdirAll(cloneDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create clone directory %s", err)
-	}
-
-	return &Go{
-		downloadURL: url,
-		tarFile:     tarFile,
-		goRoot:      goRoot,
-		goPath:      goPath,
-		cloneDir:    cloneDir,
-	}, nil
-}
-
-func (g *Go) setup() error {
 	goLock.Lock()
 	defer goLock.Unlock()
 
 	// download tar if not exist
-	if _, err := os.Stat(g.tarFile); os.IsNotExist(err) {
-		if err = download(g.downloadURL, g.tarFile); err != nil {
-			return fmt.Errorf("failed to download go compiler %s", err)
+	url := fmt.Sprintf("%s/%s.linux-amd64.tar.gz", goDownloadURL, goVersion)
+	tarFile := filepath.Join(languagesDir, fmt.Sprintf("%s.tar.gz", goVersion))
+
+	if _, err := os.Stat(tarFile); os.IsNotExist(err) {
+		if err = downloadFile(url, tarFile); err != nil {
+			return nil, fmt.Errorf("failed to download go compiler %s", err)
 		}
 	}
 
-	goBin := filepath.Join(g.goRoot, "bin", "go")
-	if _, err := os.Stat(goBin); err == nil {
-		return nil
+	// untar go.tar if go binary does not exist
+	goBin := filepath.Join(goRoot, "bin", "go")
+	if _, err := os.Stat(goBin); os.IsNotExist(err) {
+		untarCmd := exec.Command("tar", "-C", goRoot, "--strip-components", "1", "-xf", tarFile)
+		if err := untarCmd.Run(); err != nil {
+			return nil, fmt.Errorf("failed to untar go compiler %s", err)
+		}
 	}
 
-	// untar
-	untarCmd := exec.Command("tar", "-C", g.goRoot, "--strip-components", "1", "-xf", g.tarFile)
-	if err := untarCmd.Run(); err != nil {
-		return fmt.Errorf("failed to untar go compiler %s", err)
+	return &Go{
+		goRoot: goRoot,
+	}, nil
+}
+
+func (g *Go) generateConfig(projectSlug string) (languageConfig, error) {
+	l := languageConfig{}
+
+	// setup GOPATH
+	goPath, err := ioutil.TempDir(languagesDir, "gopath")
+	if err != nil {
+		return l, fmt.Errorf("failed to create go path directory %s", err)
 	}
 
-	return nil
-}
-
-func (g *Go) getCloneDir() string {
-	return g.cloneDir
-}
-
-func (g *Go) getEnv() []string {
 	gobin := filepath.Join(g.goRoot, "bin")
-	gopathbin := filepath.Join(g.goPath, "bin")
+	gopathbin := filepath.Join(goPath, "bin")
 	path := fmt.Sprintf("%s:%s:%s", gopathbin, gobin, os.Getenv("PATH"))
 
 	env := []string{
 		fmt.Sprintf("GOROOT=%s", g.goRoot),
-		fmt.Sprintf("GOPATH=%s", g.goPath),
+		fmt.Sprintf("GOPATH=%s", goPath),
 		fmt.Sprintf("PATH=%s", path),
 	}
 
-	return env
-}
+	workingDir := filepath.Join(goPath, "src", projectSlug)
+	err = os.MkdirAll(workingDir, logDirMode)
+	if err != nil {
+		return l, err
+	}
 
-func (g *Go) teardown() error {
-	return os.RemoveAll(g.goPath)
+	return languageConfig{
+		tempDir:    goPath,
+		workingDir: workingDir,
+		env:        env,
+	}, nil
 }

@@ -15,6 +15,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -29,7 +30,9 @@ func TestNewGoLanguage(t *testing.T) {
 	var cvr CVR
 	assert := assert.New(t)
 
-	url := "https://github.com/clearcontainers/tests"
+	projectSlug := "github.com/clearcontainers/tests"
+	url := "https://" + projectSlug
+	goVersion := "go1.8.3"
 
 	cvr, err = newCvr(url, "")
 	assert.NoError(err)
@@ -43,48 +46,61 @@ func TestNewGoLanguage(t *testing.T) {
 	assert.NoError(err)
 	defer os.RemoveAll(pkgLibDir)
 
-	r := Repo{
-		Language: RepoLanguage{
-			Language: "Go",
-			Version:  "go1.8.3",
-		},
-		cvr: cvr,
-	}
+	// create fake tar file, to avoid download the tar
+	tarPath := filepath.Join(languagesDir, fmt.Sprintf("%s.tar.gz", goVersion))
+	tarFile, err := os.Create(tarPath)
+	assert.NoError(err)
+	assert.NoError(tarFile.Close())
 
-	l, err := newGoLanguage(r)
+	// create fake go binary
+	goBinDir := filepath.Join(languagesDir, goVersion, "bin")
+	assert.NoError(os.MkdirAll(goBinDir, 0755))
+
+	goBinPath := filepath.Join(goBinDir, "go")
+	goBinFile, err := os.Create(goBinPath)
+	assert.NoError(err)
+	assert.NoError(goBinFile.Close())
+
+	l, err := newGoLanguage(goVersion)
 	assert.NoError(err)
 
 	goLanguage, ok := l.(*Go)
 	assert.True(ok)
 
-	assert.NotEmpty(goLanguage.downloadURL)
-	assert.NotEmpty(goLanguage.tarFile)
 	assert.NotEmpty(goLanguage.goRoot)
-	assert.NotEmpty(goLanguage.goPath)
-	assert.NotEmpty(goLanguage.cloneDir)
 
 	// check go root exists
 	_, err = os.Stat(goLanguage.goRoot)
 	assert.False(os.IsNotExist(err))
 
-	// check go path exists
-	_, err = os.Stat(goLanguage.goPath)
+	langEnv, err := goLanguage.generateConfig(projectSlug)
+	assert.NoError(err)
+	assert.NotEmpty(langEnv.tempDir)
+	assert.NotEmpty(langEnv.workingDir)
+	assert.NotEmpty(langEnv.env)
+
+	// check temp directory exist
+	_, err = os.Stat(langEnv.tempDir)
 	assert.False(os.IsNotExist(err))
 
-	// check clone directory
-	cloneDir := filepath.Join(goLanguage.goPath, "src/github.com/clearcontainers")
-	assert.Equal(goLanguage.getCloneDir(), cloneDir)
+	// check working directory exist
+	_, err = os.Stat(langEnv.workingDir)
+	assert.False(os.IsNotExist(err))
 
 	// check environment
 	noGopath := true
 	noGoRoot := true
-	for _, e := range goLanguage.getEnv() {
+	noPath := true
+	for _, e := range langEnv.env {
 		if strings.HasPrefix(e, "GOROOT") {
 			noGoRoot = false
 		} else if strings.HasPrefix(e, "GOPATH") {
 			noGopath = false
+		} else if strings.HasPrefix(e, "PATH") {
+			noPath = false
 		}
 	}
 	assert.False(noGopath)
 	assert.False(noGoRoot)
+	assert.False(noPath)
 }

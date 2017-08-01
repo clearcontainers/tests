@@ -19,9 +19,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -241,46 +239,36 @@ func (g *Github) getLatestPullRequestComment(pr int, comment PullRequestComment)
 	return nil, fmt.Errorf("comment '%+v' not found", comment)
 }
 
-func (g *Github) downloadPullRequest(pr PullRequest, workingDirectory string) (string, error) {
-	projectDirectory, err := filepath.Abs(workingDirectory)
-	if err != nil {
-		return "", err
-	}
-
-	projectDirectory = filepath.Join(projectDirectory, g.repo)
-	if err := os.MkdirAll(projectDirectory, 0755); err != nil {
-		return "", fmt.Errorf("failed to create project directory %s", err)
-	}
-
+func (g *Github) downloadPullRequest(pr PullRequest, workingDirectory string) error {
 	var stderr bytes.Buffer
 
 	// clone the project
 	cmd := exec.Command("git", "clone", g.url, ".")
-	cmd.Dir = projectDirectory
+	cmd.Dir = workingDirectory
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("failed to run git clone %s %s", stderr.String(), err)
+		return fmt.Errorf("failed to run git clone %s %s", stderr.String(), err)
 	}
 
 	// fetch the branch
 	stderr.Reset()
 	cmd = exec.Command("git", "fetch", "origin", fmt.Sprintf("pull/%d/head:%s", pr.Number, pr.BranchName))
-	cmd.Dir = projectDirectory
+	cmd.Dir = workingDirectory
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("failed to run git fetch %s %s", stderr.String(), err)
+		return fmt.Errorf("failed to run git fetch %s %s", stderr.String(), err)
 	}
 
 	// checkout the branch
 	stderr.Reset()
 	cmd = exec.Command("git", "checkout", pr.BranchName)
-	cmd.Dir = projectDirectory
+	cmd.Dir = workingDirectory
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("failed to run git checkout %s %s", stderr.String(), err)
+		return fmt.Errorf("failed to run git checkout %s %s", stderr.String(), err)
 	}
 
-	return projectDirectory, nil
+	return nil
 }
 
 // createComment creates a comment in the specific pr
