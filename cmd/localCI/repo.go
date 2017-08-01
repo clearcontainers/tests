@@ -439,7 +439,7 @@ func (r *Repo) runTest(pr *PullRequest) error {
 
 	// clone the project
 	r.logger.Debugf("downloading pull request: %+v", *pr)
-	err = r.cvr.downloadPullRequest(*pr, pr.WorkingDir)
+	err = r.cvr.downloadPullRequest(pr.Number, pr.BranchName, langEnv.workingDir)
 	if err != nil {
 		return err
 	}

@@ -43,8 +43,8 @@ type CVR interface {
 	// string an error is returned.
 	getLatestPullRequestComment(pr int, comment PullRequestComment) (*PullRequestComment, error)
 
-	// downloadPullRequest downloads a specific pull request in the specified workingDirectory
-	downloadPullRequest(pr PullRequest, workingDirectory string) error
+	// downloadPullRequest downloads a specific pull request in the specified workingDir
+	downloadPullRequest(pr int, branchName string, workingDir string) error
 
 	// createComment creates a comment in the specific pr
 	createComment(pr int, comment string) error

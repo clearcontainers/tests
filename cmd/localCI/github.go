@@ -239,12 +239,12 @@ func (g *Github) getLatestPullRequestComment(pr int, comment PullRequestComment)
 	return nil, fmt.Errorf("comment '%+v' not found", comment)
 }
 
-func (g *Github) downloadPullRequest(pr PullRequest, workingDirectory string) error {
+func (g *Github) downloadPullRequest(pr int, branchName string, workingDir string) error {
 	var stderr bytes.Buffer
 
 	// clone the project
 	cmd := exec.Command("git", "clone", g.url, ".")
-	cmd.Dir = workingDirectory
+	cmd.Dir = workingDir
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to run git clone %s %s", stderr.String(), err)
@@ -252,8 +252,8 @@ func (g *Github) downloadPullRequest(pr PullRequest, workingDirectory string) er
 
 	// fetch the branch
 	stderr.Reset()
-	cmd = exec.Command("git", "fetch", "origin", fmt.Sprintf("pull/%d/head:%s", pr.Number, pr.BranchName))
-	cmd.Dir = workingDirectory
+	cmd = exec.Command("git", "fetch", "origin", fmt.Sprintf("pull/%d/head:%s", pr, branchName))
+	cmd.Dir = workingDir
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to run git fetch %s %s", stderr.String(), err)
@@ -261,8 +261,8 @@ func (g *Github) downloadPullRequest(pr PullRequest, workingDirectory string) er
 
 	// checkout the branch
 	stderr.Reset()
-	cmd = exec.Command("git", "checkout", pr.BranchName)
-	cmd.Dir = workingDirectory
+	cmd = exec.Command("git", "checkout", branchName)
+	cmd.Dir = workingDir
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to run git checkout %s %s", stderr.String(), err)
