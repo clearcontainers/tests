@@ -22,23 +22,14 @@ import (
 
 var _ = Describe("commit", func() {
 	var (
-		args     []string
-		id       string
-		exitCode int
-		command  *Command
+		args []string
+		id   string
 	)
 
-	runCommand := func(args []string, expectedExitCode int) {
-		command = NewCommand(Docker, args...)
-		Expect(command).ToNot(BeNil())
-		exitCode = command.Run()
-		Expect(exitCode).To(Equal(expectedExitCode))
-	}
-
 	BeforeEach(func() {
-		id = RandID(30)
+		id = randomDockerName()
 		args = []string{"run", "-td", "--name", id, Image, "sh"}
-		runCommand(args, 0)
+		runDockerCommand(0, args...)
 	})
 
 	AfterEach(func() {
@@ -51,15 +42,13 @@ var _ = Describe("commit", func() {
 			It("should have the new configurations", func() {
 				imageName := "test/container-test"
 				args = []string{"commit", "-m", "test_commit", id, imageName}
-				runCommand(args, 0)
-				args = []string{"images"}
-				runCommand(args, 0)
-				Expect(command.Stdout.String()).To(ContainSubstring(imageName))
+				runDockerCommand(0, args...)
+				stdout := runDockerCommand(0, "images")
+				Expect(stdout).To(ContainSubstring(imageName))
 				args = []string{"rmi", imageName}
-				runCommand(args, 0)
-				args = []string{"images"}
-				runCommand(args, 0)
-				Expect(command.Stdout.String()).NotTo(ContainSubstring(imageName))
+				runDockerCommand(0, args...)
+				stdout = runDockerCommand(0, "images")
+				Expect(stdout).NotTo(ContainSubstring(imageName))
 			})
 		})
 	})

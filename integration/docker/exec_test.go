@@ -22,23 +22,14 @@ import (
 
 var _ = Describe("exec", func() {
 	var (
-		args     []string
-		id       string
-		exitCode int
-		command  *Command
+		args []string
+		id   string
 	)
 
-	runCommand := func(args []string, expectedExitCode int) {
-		command = NewCommand(Docker, args...)
-		Expect(command).ToNot(BeNil())
-		exitCode = command.Run()
-		Expect(exitCode).To(Equal(expectedExitCode))
-	}
-
 	BeforeEach(func() {
-		id = RandID(30)
+		id = randomDockerName()
 		args = []string{"run", "-td", "--name", id, Image, "sh"}
-		runCommand(args, 0)
+		runDockerCommand(0, args...)
 	})
 
 	AfterEach(func() {
@@ -50,33 +41,33 @@ var _ = Describe("exec", func() {
 		Context("modifying a container with exec", func() {
 			It("should have the changes", func() {
 				args = []string{"exec", "-d", id, "sh", "-c", "echo 'hello world' > file"}
-				runCommand(args, 0)
+				runDockerCommand(0, args...)
 				args = []string{"exec", id, "sh", "-c", "cat /file"}
-				runCommand(args, 0)
-				Expect(command.Stdout.String()).NotTo(BeEmpty())
-				Expect(command.Stdout.String()).To(ContainSubstring("hello world"))
+				stdout := runDockerCommand(0, args...)
+				Expect(stdout).NotTo(BeEmpty())
+				Expect(stdout).To(ContainSubstring("hello world"))
 			})
 		})
 
 		Context("check exit code using exec", func() {
 			It("should have the value assigned", func() {
 				args = []string{"exec", id, "sh", "-c", "exit 42"}
-				runCommand(args, 42)
+				runDockerCommand(42, args...)
 			})
 		})
 
 		Context("check stdout forwarded using exec", func() {
 			It("should displayed it", func() {
 				args = []string{"exec", id, "sh", "-c", "ls /etc/resolv.conf 2>/dev/null"}
-				runCommand(args, 0)
-				Expect(command.Stdout.String()).To(ContainSubstring("/etc/resolv.conf"))
+				stdout := runDockerCommand(0, args...)
+				Expect(stdout).To(ContainSubstring("/etc/resolv.conf"))
 			})
 		})
 
 		Context("check stderr forwarded using exec", func() {
 			It("should not exist", func() {
 				args = []string{"exec", id, "sh", "-c", "ls /etc/foo >/dev/null"}
-				runCommand(args, 1)
+				runDockerCommand(1, args...)
 			})
 		})
 	})

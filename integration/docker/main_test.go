@@ -22,6 +22,18 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+func randomDockerName() string {
+	return RandID(30)
+}
+
+func runDockerCommand(expectedExitCode int, args ...string) string {
+	cmd := NewCommand(Docker, args...)
+	Expect(cmd).ToNot(BeNil())
+	LogIfFail(cmd.Stderr.String())
+	Expect(cmd.Run()).To(Equal(expectedExitCode))
+	return cmd.Stdout.String()
+}
+
 func TestIntegration(t *testing.T) {
 	// before start we have to download the docker image
 	cmd := NewCommand(Docker, "pull", Image)
