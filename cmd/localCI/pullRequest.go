@@ -84,7 +84,7 @@ func (pr *PullRequest) canBeTested() error {
 	}
 
 	latestCommit := pr.Commits[commitsLen-1]
-	if pr.CommentTrigger.time.Unix() < latestCommit.Time.Unix() {
+	if pr.CommentTrigger != nil && pr.CommentTrigger.time.Unix() < latestCommit.Time.Unix() {
 		return fmt.Errorf("there are new commits after latest comment trigger %+v", pr.CommentTrigger)
 	}
 
