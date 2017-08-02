@@ -182,11 +182,12 @@ func (g *Github) getPullRequest(pr int) (*PullRequest, error) {
 
 	author := *pullRequest.User.Login
 
-	if pullRequest.Mergeable == nil {
-		return nil, fmt.Errorf("Unable to know if the pull request %d is mergeable", pr)
+	// do not fail if we don't know if the pull request is
+	// mergeable, just test it
+	mergeable := true
+	if pullRequest.Mergeable != nil {
+		mergeable = *pullRequest.Mergeable
 	}
-
-	mergeable := *pullRequest.Mergeable
 
 	if pullRequest.Head == nil || pullRequest.Head.Ref == nil {
 		return nil, fmt.Errorf("failed to get the branch name of the pull request %d", pr)
