@@ -115,7 +115,7 @@ rm -rf util-linux-${nsenter_version}/ util-linux-${nsenter_version}.tar.xz
 
 echo "Install ostree"
 ostree_dir="ostree"
-chronic sudo -E apt-get install -y liblzma-dev e2p-dev libfuse-dev gtk-doc-tools
+chronic sudo -E apt-get install -y liblzma-dev e2p-dev libfuse-dev gtk-doc-tools libarchive-dev
 git clone https://github.com/ostreedev/ostree.git
 pushd ${ostree_dir}
 env NOCONFIGURE=1 ./autogen.sh
