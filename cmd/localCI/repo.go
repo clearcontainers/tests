@@ -356,7 +356,7 @@ func (r *Repo) testPullRequest(pr *PullRequest) error {
 		return err
 	}
 
-	if strings.Compare(r.whitelistUsers[0], "@") == 0 {
+	if r.whitelistUsers[0] == "@" {
 		found, err := r.cvr.isMember(pr.Author)
 		if err != nil {
 			return fmt.Errorf("unable to determinate if user '%s' is a member of the organization %s", pr.Author, err)
@@ -365,10 +365,10 @@ func (r *Repo) testPullRequest(pr *PullRequest) error {
 		if !found {
 			return fmt.Errorf("user '%s' is not a member of the organization", pr.Author)
 		}
-	} else if strings.Compare(r.whitelistUsers[0], "*") != 0 {
+	} else if r.whitelistUsers[0] != "*" {
 		found := false
 		for _, u := range r.whitelistUsers {
-			if strings.Compare(u, pr.Author) == 0 {
+			if u == pr.Author {
 				found = true
 				break
 			}

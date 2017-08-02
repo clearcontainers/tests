@@ -229,12 +229,12 @@ func (g *Github) getLatestPullRequestComment(pr int, comment PullRequestComment)
 	for i := len(comments) - 1; i >= 0; i-- {
 		c := comments[i]
 		if len(comment.User) != 0 {
-			if strings.Compare(*c.User.Login, comment.User) != 0 {
+			if *c.User.Login != comment.User {
 				continue
 			}
 		}
 
-		if strings.Compare(*c.Body, comment.Comment) == 0 {
+		if *c.Body == comment.Comment {
 			return &PullRequestComment{
 				User:    comment.User,
 				Comment: comment.Comment,

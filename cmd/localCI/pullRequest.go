@@ -19,7 +19,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -105,7 +104,7 @@ func (pr *PullRequest) Equal(rpr PullRequest) bool {
 	}
 
 	for i, c := range pr.Commits {
-		if strings.Compare(c.Sha, rpr.Commits[i].Sha) != 0 {
+		if c.Sha != rpr.Commits[i].Sha {
 			return false
 		}
 	}
