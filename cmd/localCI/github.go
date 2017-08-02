@@ -187,6 +187,12 @@ func (g *Github) getPullRequest(pr int) (*PullRequest, error) {
 		mergeable = *pullRequest.Mergeable
 	}
 
+	// include the state to check it later
+	state := ""
+	if pullRequest.State != nil {
+		state = *pullRequest.State
+	}
+
 	if pullRequest.Head == nil || pullRequest.Head.Ref == nil {
 		return nil, fmt.Errorf("failed to get the branch name of the pull request %d", pr)
 	}
@@ -198,6 +204,7 @@ func (g *Github) getPullRequest(pr int) (*PullRequest, error) {
 		Commits:    commits,
 		Author:     author,
 		Mergeable:  mergeable,
+		State:      state,
 		BranchName: branchName,
 	}, nil
 }

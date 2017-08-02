@@ -51,6 +51,9 @@ type PullRequest struct {
 	// Mergeable specify if the pull request can be merged
 	Mergeable bool
 
+	// State of the pull request
+	State string
+
 	// BranchName of the pull request
 	BranchName string
 
@@ -86,6 +89,10 @@ func (pr *PullRequest) canBeTested() error {
 	latestCommit := pr.Commits[commitsLen-1]
 	if pr.CommentTrigger != nil && pr.CommentTrigger.time.Unix() < latestCommit.Time.Unix() {
 		return fmt.Errorf("there are new commits after latest comment trigger %+v", pr.CommentTrigger)
+	}
+
+	if pr.State == "closed" {
+		return fmt.Errorf("the state of pull request %d is %s", pr.Number, pr.State)
 	}
 
 	return nil
