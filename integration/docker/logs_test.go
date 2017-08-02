@@ -23,23 +23,14 @@ import (
 
 var _ = Describe("logs", func() {
 	var (
-		args     []string
-		id       string
-		exitCode int
-		command  *Command
+		args []string
+		id   string
 	)
 
-	runCommand := func(args []string, expectedExitCode int) {
-		command = NewCommand(Docker, args...)
-		Expect(command).ToNot(BeNil())
-		exitCode = command.Run()
-		Expect(exitCode).To(Equal(expectedExitCode))
-	}
-
 	BeforeEach(func() {
-		id = RandID(30)
+		id = randomDockerName()
 		args = []string{"run", "-td", "--name", id, Image, "sh", "-c", "'echo hello'"}
-		runCommand(args, 0)
+		runDockerCommand(0, args...)
 		// Issue https://github.com/clearcontainers/runtime/issues/375
 		time.Sleep(2 * time.Second)
 	})
@@ -53,8 +44,8 @@ var _ = Describe("logs", func() {
 		Context("check logs functionality", func() {
 			It("should work", func() {
 				args = []string{"logs", id}
-				runCommand(args, 0)
-				Expect(command.Stdout.String()).To(ContainSubstring("hello"))
+				stdout := runDockerCommand(0, args...)
+				Expect(stdout).To(ContainSubstring("hello"))
 			})
 		})
 	})
