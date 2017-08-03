@@ -21,13 +21,18 @@ set -e
 
 cidir=$(dirname "$0")
 
-github_repository="src/github.com/clearcontainers/tests/cmd/fetchbranches"
-tool_dir="${GOPATH}/${github_repository}"
+tests_repo="github.com/clearcontainers/tests"
+fetchtool_path="$GOPATH/src/$tests_repo/cmd/fetchbranches"
 
-pushd ${tool_dir} 
+if [ ! -d "$fetchtool_path" ];then
+	go get -d "$tests_repo"
+fi
+
+pushd "$fetchtool_path"
 
 # Building the fetch branches tool
 go build .
+
 # Running the fetch branches tool
 ./fetchbranches
 
