@@ -46,6 +46,9 @@ type CVR interface {
 	// downloadPullRequest downloads a specific pull request in the specified workingDir
 	downloadPullRequest(pr int, branchName string, workingDir string) error
 
+	// downloadBranch downloads a specific branch in the specific workingDir
+	downloadBranch(branch string, workingDir string) error
+
 	// createComment creates a comment in the specific pr
 	createComment(pr int, comment string) error
 

@@ -246,7 +246,7 @@ func (g *Github) getLatestPullRequestComment(pr int, comment PullRequestComment)
 	return nil, fmt.Errorf("comment '%+v' not found", comment)
 }
 
-func (g *Github) downloadPullRequest(pr int, branchName string, workingDir string) error {
+func (g *Github) downloadRepo(workingDir string) error {
 	var stderr bytes.Buffer
 
 	// clone the project
@@ -257,22 +257,54 @@ func (g *Github) downloadPullRequest(pr int, branchName string, workingDir strin
 		return fmt.Errorf("failed to run git clone %s %s", stderr.String(), err)
 	}
 
+	return nil
+}
+
+func (g *Github) checkoutBranch(branch string, workingDir string) error {
+	var stderr bytes.Buffer
+
+	// checkout the branch
+	stderr.Reset()
+	cmd := exec.Command("git", "checkout", branch)
+	cmd.Dir = workingDir
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to run git checkout %s %s", stderr.String(), err)
+	}
+
+	return nil
+}
+
+func (g *Github) downloadBranch(branch string, workingDir string) error {
+	if err := g.downloadRepo(workingDir); err != nil {
+		return err
+	}
+
+	if err := g.checkoutBranch(branch, workingDir); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (g *Github) downloadPullRequest(pr int, branch string, workingDir string) error {
+	var stderr bytes.Buffer
+
+	if err := g.downloadRepo(workingDir); err != nil {
+		return err
+	}
+
 	// fetch the branch
 	stderr.Reset()
-	cmd = exec.Command("git", "fetch", "origin", fmt.Sprintf("pull/%d/head:%s", pr, branchName))
+	cmd := exec.Command("git", "fetch", "origin", fmt.Sprintf("pull/%d/head:%s", pr, branch))
 	cmd.Dir = workingDir
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to run git fetch %s %s", stderr.String(), err)
 	}
 
-	// checkout the branch
-	stderr.Reset()
-	cmd = exec.Command("git", "checkout", branchName)
-	cmd.Dir = workingDir
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to run git checkout %s %s", stderr.String(), err)
+	if err := g.checkoutBranch(branch, workingDir); err != nil {
+		return err
 	}
 
 	return nil
