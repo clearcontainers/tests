@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 
@@ -85,52 +84,13 @@ func newGithub(url, token string) (CVR, error) {
 	}, nil
 }
 
-// getDomain returns the domain name
-func (g *Github) getDomain() string {
-	return githubDomain
+// getProjectSlug returns the domain, owner and repo name separated by '/'
+func (g *Github) getProjectSlug() string {
+	return fmt.Sprintf("%s/%s/%s", githubDomain, g.owner, g.repo)
 }
 
-// getOwner returns the owner of the repo
-func (g *Github) getOwner() string {
-	return g.owner
-}
-
-// getRepo returns the repository name
-func (g *Github) getRepo() string {
-	return g.repo
-}
-
-// getOpenPullRequests returns the open pull requests
-func (g *Github) getOpenPullRequests() (map[string]*PullRequest, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeoutShortRequest)
-	defer cancel()
-
-	pullRequests, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list pull requests %s", err)
-	}
-
-	prs := make(map[string]*PullRequest)
-
-	for _, pr := range pullRequests {
-		if pr == nil || pr.Number == nil {
-			continue
-		}
-		number := *pr.Number
-
-		pullRequest, err := g.getPullRequest(number)
-		if err != nil {
-			continue
-		}
-
-		prs[strconv.Itoa(number)] = pullRequest
-	}
-
-	return prs, nil
-}
-
-// getPullRequest returns a specific pull request
-func (g *Github) getPullRequest(pr int) (*PullRequest, error) {
+// getPullRequestCommits returns the commits of a pull request
+func (g *Github) getPullRequestCommits(pr int) ([]repoCommit, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutShortRequest)
 	defer cancel()
 
@@ -140,7 +100,7 @@ func (g *Github) getPullRequest(pr int) (*PullRequest, error) {
 		return nil, err
 	}
 
-	var commits []PullRequestCommit
+	var commits []repoCommit
 	for _, c := range listCommits {
 		if c == nil {
 			return nil, fmt.Errorf("failed to get all commits of the pull request %d", pr)
@@ -157,25 +117,79 @@ func (g *Github) getPullRequest(pr int) (*PullRequest, error) {
 		time := *c.Commit.Committer.Date
 
 		commits = append(commits,
-			PullRequestCommit{
-				Sha:  sha,
-				Time: time,
+			repoCommit{
+				sha:  sha,
+				time: time,
 			},
 		)
 	}
 
+	return commits, nil
+}
+
+// getOpenPullRequests returns the open pull requests
+func (g *Github) getOpenPullRequests() ([]int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutShortRequest)
+	defer cancel()
+
+	pullRequests, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list pull requests %s", err)
+	}
+
+	prs := []int{}
+
+	for _, pr := range pullRequests {
+		if pr == nil || pr.Number == nil {
+			continue
+		}
+
+		prs = append(prs, *pr.Number)
+	}
+
+	return prs, nil
+}
+
+// getBranchInfo returns a specific branch
+func (g *Github) getBranchInfo(branch string) (repoBranchInfo, error) {
+	i := repoBranchInfo{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutShortRequest)
+	defer cancel()
+
+	b, _, err := g.client.Repositories.GetBranch(ctx, g.owner, g.repo, branch)
+	if err != nil {
+		return i, err
+	}
+
+	if b.Commit == nil && b.Commit.SHA == nil {
+		return i, fmt.Errorf("failed to get commit sha of branch %s", branch)
+	}
+
+	return repoBranchInfo{
+		sha: *b.Commit.SHA,
+	}, nil
+}
+
+// getPullRequestInfo return information about a pull request
+func (g *Github) getPullRequestInfo(pr int) (pullRequestInfo, error) {
+	i := pullRequestInfo{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutShortRequest)
+	defer cancel()
+
 	pullRequest, _, err := g.client.PullRequests.Get(ctx, g.owner, g.repo, pr)
 	if err != nil {
-		return nil, err
+		return i, err
 	}
 
 	// check the integrity of the pullRuest object before use it
 	if pullRequest == nil {
-		return nil, fmt.Errorf("failed to get pull request %d", pr)
+		return i, fmt.Errorf("failed to get pull request %d", pr)
 	}
 
 	if pullRequest.User == nil || pullRequest.User.Login == nil {
-		return nil, fmt.Errorf("failed to get the author of the pull request %d", pr)
+		return i, fmt.Errorf("failed to get the author of the pull request %d", pr)
 	}
 
 	author := *pullRequest.User.Login
@@ -194,28 +208,28 @@ func (g *Github) getPullRequest(pr int) (*PullRequest, error) {
 	}
 
 	if pullRequest.Head == nil || pullRequest.Head.Ref == nil {
-		return nil, fmt.Errorf("failed to get the branch name of the pull request %d", pr)
+		return i, fmt.Errorf("failed to get the branch name of the pull request %d", pr)
 	}
 
-	branchName := *pullRequest.Head.Ref
+	branch := *pullRequest.Head.Ref
 
-	return &PullRequest{
-		Number:     pr,
-		Commits:    commits,
-		Author:     author,
-		Mergeable:  mergeable,
-		State:      state,
-		BranchName: branchName,
+	return pullRequestInfo{
+		branch:    branch,
+		author:    author,
+		mergeable: mergeable,
+		state:     state,
 	}, nil
 }
 
 // getLatestPullRequestComment returns the latest comment of a specific
-// user in the specific pr. If comment.User is an empty string then any user
-// could be the author of the latest pull request. If comment.Comment is an empty
+// user in the specific pr. If user is an empty string then any user
+// could be the author of the latest comment. If body is an empty
 // string an error is returned.
-func (g *Github) getLatestPullRequestComment(pr int, comment PullRequestComment) (*PullRequestComment, error) {
-	if len(comment.Comment) == 0 {
-		return nil, fmt.Errorf("comment cannot be an empty string")
+func (g *Github) getLatestPullRequestComment(pr int, user, body string) (RepoComment, error) {
+	c := RepoComment{}
+
+	if len(body) == 0 {
+		return c, fmt.Errorf("body cannot be an empty string")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutLongRequest)
@@ -223,27 +237,27 @@ func (g *Github) getLatestPullRequestComment(pr int, comment PullRequestComment)
 
 	comments, _, err := g.client.Issues.ListComments(ctx, g.owner, g.repo, pr, nil)
 	if err != nil {
-		return nil, err
+		return c, err
 	}
 
 	for i := len(comments) - 1; i >= 0; i-- {
 		c := comments[i]
-		if len(comment.User) != 0 {
-			if *c.User.Login != comment.User {
+		if len(user) != 0 {
+			if *c.User.Login != user {
 				continue
 			}
 		}
 
-		if *c.Body == comment.Comment {
-			return &PullRequestComment{
-				User:    comment.User,
-				Comment: comment.Comment,
+		if *c.Body == body {
+			return RepoComment{
+				User:    user,
+				Comment: body,
 				time:    *c.CreatedAt,
 			}, nil
 		}
 	}
 
-	return nil, fmt.Errorf("comment '%+v' not found", comment)
+	return c, fmt.Errorf("comment '%s' not found", body)
 }
 
 func (g *Github) downloadRepo(workingDir string) error {
