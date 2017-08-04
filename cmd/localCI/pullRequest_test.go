@@ -15,9 +15,6 @@
 package main
 
 import (
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -38,90 +35,43 @@ type stageTest struct {
 	output string
 }
 
-func TestCanBeTested(t *testing.T) {
+func TestPullRequestCanBeTested(t *testing.T) {
 	assert := assert.New(t)
 
-	pr := &PullRequest{}
+	pr := &pullRequest{}
 	assert.Error(pr.canBeTested())
 
-	pr.Commits = append(pr.Commits, PullRequestCommit{})
+	pr.commits = append(pr.commits, repoCommit{})
 	assert.Error(pr.canBeTested())
 
-	pr.CommentTrigger = &PullRequestComment{}
+	pr.commentTrigger = &RepoComment{}
 	assert.Error(pr.canBeTested())
 
-	pr.Mergeable = true
+	pr.info.mergeable = true
 	assert.NoError(pr.canBeTested())
 
-	pr.Commits[0].Time = time.Now()
+	pr.commits[0].time = time.Now()
 	assert.Error(pr.canBeTested())
 }
 
-func TestEqual(t *testing.T) {
+func TestPullRequestEqual(t *testing.T) {
 	assert := assert.New(t)
 
-	pr1 := &PullRequest{}
-	pr2 := PullRequest{}
-	assert.True(pr1.Equal(pr2))
+	var pr1, pr2 revision
 
-	pr2.Commits = append(pr2.Commits, PullRequestCommit{Sha: "abc"})
-	assert.False(pr1.Equal(pr2))
+	pr1 = &pullRequest{}
+	pr2 = &pullRequest{}
+	assert.True(pr1.equal(pr2))
+	assert.False(pr1.equal(pullRequest{}))
 
-	pr1.Commits = pr2.Commits
-	assert.True(pr1.Equal(pr2))
+	pr2.(*pullRequest).repoBranch.info.sha = "abc"
+	assert.False(pr1.equal(pr2))
 
-	pr1.Commits = []PullRequestCommit{{Sha: "xyz"}}
-	assert.False(pr1.Equal(pr2))
-}
+	pr1.(*pullRequest).repoBranch = pr2.(*pullRequest).repoBranch
+	assert.True(pr1.equal(pr2))
 
-func TestRunStage(t *testing.T) {
-	var err error
-	var output []byte
-	assert := assert.New(t)
+	pr1.(*pullRequest).repoBranch.info.sha = "xyz"
+	assert.False(pr1.equal(pr2))
 
-	pr := &PullRequest{}
-
-	pr.LogDir, err = ioutil.TempDir("/tmp", ".logs")
-	assert.NoError(err)
-	defer os.RemoveAll(pr.LogDir)
-
-	tests := []stageTest{
-		{
-			name:     "1",
-			commands: []string{"echo -n 1"},
-			fail:     false,
-			output:   "1",
-		},
-		{
-			name:     "2",
-			commands: []string{"(echo -n 2 >&2)"},
-			fail:     false,
-			output:   "2",
-		},
-		{
-			name:     "3",
-			commands: []string{"(echo -n 3 >&2 && exit 1)"},
-			fail:     true,
-			output:   "3",
-		},
-		{
-			name:     "4",
-			commands: []string{"(echo -n 4 && exit 1)"},
-			fail:     true,
-			output:   "4",
-		},
-	}
-
-	for _, t := range tests {
-		err = pr.runStage(t.name, t.commands)
-		if t.fail {
-			assert.Error(err, "stage: %+v", t)
-		} else {
-			assert.NoError(err, "stage: %+v", t)
-		}
-
-		output, err = ioutil.ReadFile(filepath.Join(pr.LogDir, t.name))
-		assert.NoError(err)
-		assert.Equal(t.output, string(output))
-	}
+	assert.False(pr1.equal(pullRequest{}))
 }
