@@ -34,7 +34,7 @@ func TestNewGoLanguage(t *testing.T) {
 	url := "https://" + projectSlug
 	goVersion := "go1.8.3"
 
-	cvr, err = newCvr(url, "")
+	cvr, err = newCVR(url, "")
 	assert.NoError(err)
 	assert.NotNil(cvr)
 
