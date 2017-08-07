@@ -57,6 +57,10 @@ type Checkmetrics struct {
 	Metricsdir string
 }
 
+// System default path for configuration file
+// the value will be set by Makefile
+var sysConfFile string = ""
+
 func main() {
 
 	var confFile string
@@ -72,6 +76,12 @@ func main() {
 
 	flag.StringVar(&confFile, "f", "", "Configuration file")
 	flag.Parse()
+
+	// If there is not any input file specified by command line
+	// it will look in default system path
+	if confFile == "" {
+		confFile = sysConfFile
+	}
 
 	// Get info about file
 	fileinfo, err := os.Stat(confFile)
