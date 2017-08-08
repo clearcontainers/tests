@@ -124,3 +124,6 @@ make -j4
 sudo -E PATH=$PATH sh -c "make install"
 popd
 rm -rf ${ostree_dir}
+
+echo "Install libudev-dev"
+chronic sudo -E apt-get install -y libudev-dev
