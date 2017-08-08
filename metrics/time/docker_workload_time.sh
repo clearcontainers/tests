@@ -47,7 +47,7 @@ function run_workload(){
 	# but set it in the subshell, as we'd like the docker command to fail and bail , rather than
 	# have the 'time' pass, but report how long it took for docker to fail.
 	set +e
-	(set -e; time -p docker run --rm -ti --runtime "$RUNTIME" "$IMAGE" "$CMD") &> "$TMP_FILE"
+	(set -e; time -p docker run --rm --runtime "$RUNTIME" "$IMAGE" "$CMD") &> "$TMP_FILE"
 	set -e
 
 	test_data=$(grep ^real "$TMP_FILE" | cut -f2 -d' ')
@@ -60,7 +60,7 @@ function run_workload(){
 		cat $TMP_FILE
 		echo "--------end of log file-------------"
 		rm -f $TMP_FILE
-		die "Failed to execute test 'docker run --rm -ti --runtime "$RUNTIME" "$IMAGE" "$CMD"'"
+		die "Failed to execute test 'docker run --rm --runtime "$RUNTIME" "$IMAGE" "$CMD"'"
 
 	fi
 
