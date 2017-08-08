@@ -24,6 +24,8 @@ do not complete successfully.
 ## baseline TOML layout
 The Metrics CSV files to be checked, and the range that the median of the
 `Results` data is expected to fall within is defined in a TOML file.
+This baseline file can be specified by command line or it is installed
+in `/etc/checkmetrics/checkmetrics.toml` by default.
 
 Each Metric has a separate `[[metric]]` section within the TOML file.
 
