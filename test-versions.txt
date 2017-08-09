@@ -1,2 +1,13 @@
-#well known working crio tag/commit/branch
+# Well known working crio tag/commit/branch
 crio_version=065960386fce7088bab3fc22af44ebbbf75d3641
+
+# Kernel Version to use on recent Linux Distros
+kernel_clear_release=16680
+kernel_version="4.9.35-76"
+
+# Kernel Version to use for Ubuntu 14.04 (Semaphore Env)
+kernel_clear_release=12760
+kernel_version="4.5-50"
+
+# Go version to use for building and testing Clear Containers
+go_version="1.8.3"
