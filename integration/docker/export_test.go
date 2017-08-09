@@ -44,7 +44,6 @@ var _ = Describe("export", func() {
 			It("should export filesystem as a tar archive", func() {
 				file, err := ioutil.TempFile(os.TempDir(), "latest.tar")
 				Expect(err).ToNot(HaveOccurred())
-				defer file.Close()
 				defer os.Remove(file.Name())
 				args = []string{"export", "--output", file.Name(), id}
 				runDockerCommand(0, args...)
@@ -52,6 +51,8 @@ var _ = Describe("export", func() {
 				fileInfo, err := file.Stat()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(fileInfo.Size).NotTo(Equal(0))
+				err = file.Close()
+				Expect(err).ToNot(HaveOccurred())
 			})
 		})
 	})
