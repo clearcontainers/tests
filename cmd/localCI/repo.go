@@ -59,6 +59,9 @@ type Repo struct {
 	// OnFailure contains the commands to be executed if any of Setup, Run or Teardown fail
 	OnFailure []string
 
+	// TTY specify whether a tty must be allocate to run the stages
+	TTY bool
+
 	// PostOnSuccess is the comment to be posted if the test finished correctly
 	PostOnSuccess string
 
@@ -398,6 +401,7 @@ func (r *Repo) runTest(rev revision) error {
 	config := stageConfig{
 		logger:     r.logger,
 		workingDir: langEnv.workingDir,
+		tty:        r.TTY,
 	}
 
 	// cleanup and set the log directory of the pull request
