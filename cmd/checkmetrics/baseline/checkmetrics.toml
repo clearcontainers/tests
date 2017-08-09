@@ -1,0 +1,14 @@
+# This file contains baseline expectations
+# for checked results by checkmetrics tool.
+[[metric]]
+# The name of the metrics test, must match
+# that of the generated CSV file
+name = "docker-run-time"
+description = "/bin/true cycle time"
+# Min and Max values to set a 'range' that
+# the median of the CSV Results data must fall
+# within (inclusive)
+minval = 0.5
+maxval = 1.5
+
+# ... repeat this for each metric ...

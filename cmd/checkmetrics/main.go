@@ -128,6 +128,10 @@ func processMetrics(context *cli.Context) (err error) {
 	return
 }
 
+// System default path for baseline file
+// the value will be set by Makefile
+var sysBaseFile string = ""
+
 // checkmetrics main entry point.
 // Do the command line processing, load the TOML file, and do the processing
 // against the CSV files
@@ -157,6 +161,7 @@ func main() {
 
 	app.Before = func(context *cli.Context) error {
 		var err error
+		var baseFilePath string
 
 		if path := context.GlobalString("log"); path != "" {
 			f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND|os.O_SYNC, 0640)
@@ -170,17 +175,17 @@ func main() {
 			log.SetLevel(log.DebugLevel)
 		}
 
-		if context.GlobalString("basefile") == "" {
-			log.Error("Must supply basefile argument")
-			return errors.New("Must supply basefile argument")
-		}
-
 		if context.GlobalString("metricsdir") == "" {
 			log.Error("Must supply metricsdir argument")
 			return errors.New("Must supply metricsdir argument")
 		}
 
-		ciBasefile, err = newBasefile(context.GlobalString("basefile"))
+		baseFilePath = context.GlobalString("basefile")
+		if baseFilePath == "" {
+			baseFilePath = sysBaseFile
+		}
+
+		ciBasefile, err = newBasefile(baseFilePath)
 
 		return err
 	}
