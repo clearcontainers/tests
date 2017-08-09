@@ -76,15 +76,22 @@ echo "Install libudev-dev"
 chronic sudo -E apt-get install -y libudev-dev
 
 if [ "$VERSION_ID" == "14.04" ]; then
-	echo "Install rpm2cpio"
-	chronic sudo -E apt install -y rpm2cpio
-
 	bug_url="https://github.com/clearcontainers/runtime/issues/91"
+	test_kernel_path="${cidir}/kernel"
 	cc_kernel_path="/usr/share/clear-containers"
+	cc_kernel_link_name_vmlinux="vmlinux.container"
+	cc_kernel_link_name_vmlinuz="vmlinuz.container"
+	vmlinux="vmlinux-${kernel_version}.container"
+	vmlinuz="vmlinuz-${kernel_version}.container"
 	echo -e "\nWARNING:"
 	echo "WARNING: Using backlevel kernel version ${kernel_version} due to bug ${bug_url}"
 	echo -e "WARNING:\n"
-	"${cidir}/install_clear_kernel.sh" ${kernel_clear_release} ${kernel_version} "${cc_kernel_path}"
+	echo -e "Installing ${vmlinux}"
+	sudo install -D --owner root --group root --mode 0700 "${test_kernel_path}/${vmlinux}" "${cc_kernel_path}/${vmlinux}"
+	sudo ln -fs ${cc_kernel_path}/${vmlinux} ${cc_kernel_path}/${cc_kernel_link_name_vmlinux}
+	echo -e "Installing ${vmlinuz}"
+	sudo install -D --owner root --group root --mode 0700 "${test_kernel_path}/${vmlinuz}" "${cc_kernel_path}/${vmlinuz}"
+	sudo ln -fs ${cc_kernel_path}/${vmlinuz} ${cc_kernel_path}/${cc_kernel_link_name_vmlinuz}
 
 	echo "Build and Install libdevmapper"
 	devmapper_version="2.02.172"
