@@ -2,6 +2,7 @@ runTestsInParallel = true
 
 [[Repo]]
 url = "https://github.com/clearcontainers/runtime"
+masterBranch = "master"
 pr = 505
 refreshTime = "30s"
 token = "ACCESS TOKEN"

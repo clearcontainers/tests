@@ -46,7 +46,7 @@ func TestNewCvr(t *testing.T) {
 	}
 
 	for _, t := range tests {
-		cvr, err := newCvr(t.url, "")
+		cvr, err := newCVR(t.url, "")
 		if t.fail {
 			assert.Error(err)
 			assert.Nil(cvr)

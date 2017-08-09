@@ -56,34 +56,13 @@ func TestNewGithub(t *testing.T) {
 	}
 }
 
-func TestGithubGetDomain(t *testing.T) {
+func TestGithubGetProjectSlug(t *testing.T) {
 	assert := assert.New(t)
-	url := fmt.Sprintf("https://%s/clearcontainers/tests", githubDomain)
+	projectSlug := fmt.Sprintf("%s/%s/%s", githubDomain, "clearcontainers", "tests")
+	url := fmt.Sprintf("https://%s", projectSlug)
 
 	cvr, err := newGithub(url, "")
 	assert.NoError(err)
 
-	assert.Equal(cvr.getDomain(), githubDomain)
-}
-
-func TestGithubGetOwner(t *testing.T) {
-	assert := assert.New(t)
-	owner := "clearcontainers"
-	url := fmt.Sprintf("https://%s/%s/tests", githubDomain, owner)
-
-	cvr, err := newGithub(url, "")
-	assert.NoError(err)
-
-	assert.Equal(cvr.getOwner(), owner)
-}
-
-func TestGithubGetRepo(t *testing.T) {
-	assert := assert.New(t)
-	repo := "tests"
-	url := fmt.Sprintf("https://%s/clearcontainers/%s", githubDomain, repo)
-
-	cvr, err := newGithub(url, "")
-	assert.NoError(err)
-
-	assert.Equal(cvr.getRepo(), repo)
+	assert.Equal(cvr.getProjectSlug(), projectSlug)
 }

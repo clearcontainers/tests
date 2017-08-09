@@ -16,116 +16,212 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
+	"strconv"
 	"strings"
-	"time"
+
+	"github.com/Sirupsen/logrus"
 )
 
-// PullRequestComment represents a user comment
-type PullRequestComment struct {
-	User    string
-	Comment string
-	time    time.Time
+type pullRequestConfig struct {
+	// cvr control version repository
+	cvr CVR
+
+	// logger of the pull request
+	logger *logrus.Entry
+
+	// commentTrigger is the comment that must be present to test
+	// this pull request, if comment is empty then no comment is needed
+	commentTrigger RepoComment
+
+	// postOnSuccess is the comment to post if test finished correctly
+	postOnSuccess string
+
+	// postOnFailure is the comment to post if test failed
+	postOnFailure string
+
+	// whitelist is the list of users whose pull request can be tested
+	whitelist string
 }
 
-// PullRequestCommit represents a commit in the pull request
-type PullRequestCommit struct {
-	Sha  string
-	Time time.Time
-}
-
-// PullRequest represents a pull request
+// pullRequest represents a pull request
 // present in a control version repository
-type PullRequest struct {
-	// Number of the pull request
-	Number int
+type pullRequest struct {
+	// repoBranch of the pull request
+	repoBranch
 
-	// Commits in the pull request
-	Commits []PullRequestCommit
+	// info of the pull request
+	info pullRequestInfo
 
-	// Author of the pull request
-	Author string
+	// number of the pull request
+	number int
 
-	// Mergeable specify if the pull request can be merged
-	Mergeable bool
+	// commits in the pull request
+	commits []repoCommit
 
-	// BranchName of the pull request
-	BranchName string
+	// whitelist is the list of users whose pull request can be tested
+	whitelist string
 
-	// CommentTrigger is the comment that must be present to trigger the test
+	// commentTrigger is the comment that must be present to trigger the test
 	// also it is used to ensure that the pull request is tested only when
 	// the comment appears after the list of commits
-	CommentTrigger *PullRequestComment
+	commentTrigger *RepoComment
 
-	// BeingTested is true if the pull request is being tested, else false
-	BeingTested bool
+	// postOnSuccess is the comment to post if test finished correctly
+	postOnSuccess string
 
-	// WorkingDir is the working directory to test this pull request
-	WorkingDir string
+	// postOnFailure is the comment to post if test failed
+	postOnFailure string
+}
 
-	// LogDir is the log directory for the pull request
-	LogDir string
+// newPullRequest returns a new pullRequest object
+func newPullRequest(pr int, config pullRequestConfig) (*pullRequest, error) {
+	logger := config.logger
+	cvr := config.cvr
 
-	// Env has the environment variables used to run the commands of each stage
-	Env []string
+	logger.Debugf("creating pull request: %d", pr)
+
+	i, err := cvr.getPullRequestInfo(pr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get pull request info %s", err)
+	}
+
+	logger.Debugf("pull request %d info: %+v", pr, i)
+
+	commits, err := cvr.getPullRequestCommits(pr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get pull request commits %s", err)
+	}
+
+	var shas string
+	for _, c := range commits {
+		shas += c.sha + ","
+	}
+
+	var commentTrigger *RepoComment
+	if len(config.commentTrigger.Comment) != 0 {
+		comment, err := cvr.getLatestPullRequestComment(pr, config.commentTrigger.User,
+			config.commentTrigger.Comment)
+		if err == nil {
+			commentTrigger = &comment
+		}
+	}
+
+	logger.Debugf("pull request %d comment trigger: %#v", pr, commentTrigger)
+
+	return &pullRequest{
+		repoBranch: repoBranch{
+			info:        repoBranchInfo{sha: shas},
+			name:        i.branch,
+			cvr:         cvr,
+			beingTested: false,
+			logger:      logger,
+		},
+		info:           i,
+		number:         pr,
+		commits:        commits,
+		whitelist:      config.whitelist,
+		commentTrigger: commentTrigger,
+		postOnFailure:  config.postOnFailure,
+		postOnSuccess:  config.postOnSuccess,
+	}, nil
+}
+
+func (pr *pullRequest) authorInWhitelist() bool {
+	for _, u := range strings.Split(pr.whitelist, ",") {
+		switch u {
+		// check if user is a member of the organization
+		case "@":
+			author := pr.info.author
+			ok, err := pr.repoBranch.cvr.isMember(author)
+			if ok {
+				return true
+			}
+			if err != nil {
+				pr.repoBranch.logger.Errorf("unable to know if user %s is a member of the organization: %s",
+					author, err)
+			}
+		// any pull request can be tested
+		case "*":
+			return true
+
+		// specific users
+		default:
+			if u == pr.info.author {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // canBeTested returns an error if the pull request cannot be tested
-func (pr *PullRequest) canBeTested() error {
-	if !pr.Mergeable {
+func (pr *pullRequest) canBeTested() error {
+	if !pr.info.mergeable {
 		return fmt.Errorf("the pull request is not mergeable")
 	}
 
-	commitsLen := len(pr.Commits)
+	commitsLen := len(pr.commits)
 	if commitsLen == 0 {
 		return fmt.Errorf("there are no commits to test")
 	}
 
-	latestCommit := pr.Commits[commitsLen-1]
-	if pr.CommentTrigger != nil && pr.CommentTrigger.time.Unix() < latestCommit.Time.Unix() {
-		return fmt.Errorf("there are new commits after latest comment trigger %+v", pr.CommentTrigger)
+	latestCommit := pr.commits[commitsLen-1]
+	if pr.commentTrigger != nil && pr.commentTrigger.time.Unix() < latestCommit.time.Unix() {
+		return fmt.Errorf("there are new commits after latest comment trigger %+v", *pr.commentTrigger)
+	}
+
+	if pr.info.state == "closed" {
+		return fmt.Errorf("the state of pull request %d is %s", pr.number, pr.info.state)
+	}
+
+	if len(pr.whitelist) > 0 && !pr.authorInWhitelist() {
+		return fmt.Errorf("the author of the pull request is not in the whitelist")
 	}
 
 	return nil
 }
 
-// Equal returns true is both pull requests have the same commits
-func (pr *PullRequest) Equal(rpr PullRequest) bool {
-	if len(pr.Commits) != len(rpr.Commits) {
+// download the source code of the revision inside the specific directory path
+func (pr *pullRequest) download(path string) error {
+	pr.repoBranch.logger.Debugf("downloading pull request %d", pr.number)
+
+	return pr.repoBranch.cvr.downloadPullRequest(pr.number, pr.repoBranch.name, path)
+}
+
+func (pr *pullRequest) test(config stageConfig, stages map[string]stage) error {
+	pr.repoBranch.logger.Debugf("testing pull request %d", pr.number)
+
+	envars := []string{fmt.Sprintf("LOCALCI_PR_NUMBER=%d", pr.number)}
+	config.env = append(config.env, envars...)
+
+	err := pr.repoBranch.test(config, stages)
+	postMsg := pr.postOnSuccess
+	if err != nil {
+		postMsg = pr.postOnFailure
+	}
+
+	if e := pr.repoBranch.cvr.createComment(pr.number, postMsg); e != nil {
+		pr.repoBranch.logger.Errorf("failed to create comment on pull request %d: %s",
+			pr.number, e)
+	}
+
+	return err
+}
+
+func (pr *pullRequest) id() string {
+	return strconv.Itoa(pr.number)
+}
+
+func (pr *pullRequest) equal(r interface{}) bool {
+	rpr, ok := r.(*pullRequest)
+	if !ok {
 		return false
 	}
 
-	for i, c := range pr.Commits {
-		if strings.Compare(c.Sha, rpr.Commits[i].Sha) != 0 {
-			return false
-		}
-	}
-
-	return true
+	return pr.repoBranch.equal((revision)(&rpr.repoBranch))
 }
 
-// runStage runs a specific stage with the specific commands
-func (pr *PullRequest) runStage(stage string, commands []string) error {
-	outFile := filepath.Join(pr.LogDir, stage)
-	output, err := os.OpenFile(outFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, logFileMode)
-	if err != nil {
-		return err
-	}
-	defer output.Close()
-
-	for _, c := range commands {
-		cmd := exec.Command("bash", "-c", c)
-		cmd.Stdout = output
-		cmd.Stderr = output
-		cmd.Env = pr.Env
-		cmd.Dir = pr.WorkingDir
-
-		if err := cmd.Run(); err != nil {
-			return err
-		}
-	}
-
-	return nil
+func (pr *pullRequest) logDirName() string {
+	return pr.id()
 }

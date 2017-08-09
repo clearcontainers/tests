@@ -22,28 +22,36 @@ import (
 	"path/filepath"
 )
 
-// Language represents a programming language
-type Language interface {
-	// setup the language, install, download, etc.
-	setup() error
-
-	// getCloneDir returns the directory where the project must be cloned
-	getCloneDir() string
-
-	// getEnv returns the environment variables that must be
-	// used to spawn the tests
-	getEnv() []string
-
-	// teardown the language, remove directories, unset variables, etc
-	teardown() error
+// language represents a programming language
+type language interface {
+	// generateConfig generates a unique working directory.
+	// Returns a languageConfig that must be used to test
+	// the project.
+	// projectSlug must contain the cvr domain, owner and repo name
+	// separated by '/'. i.e github.com/clearcontainers/tests
+	generateConfig(projectSlug string) (languageConfig, error)
 }
 
-type newLanguageFunc func(Repo) (Language, error)
+type newLanguageFunc func(version string) (language, error)
 
 // RepoLanguage represents the language of a repository
 type RepoLanguage struct {
 	Language string
 	Version  string
+	lang     language
+}
+
+// languageConfig to test the project
+type languageConfig struct {
+	// temporal directory created by the language
+	// should be removed after finish the test
+	tempDir string
+
+	// working directory to clone and test the project
+	workingDir string
+
+	// environment variables to test the project
+	env []string
 }
 
 var supportedLanguages = map[string]newLanguageFunc{
@@ -56,21 +64,30 @@ func init() {
 	_ = os.MkdirAll(languagesDir, 0755)
 }
 
-// getLanguage returns a new object representing the repository language
-func (l *RepoLanguage) getLanguage(r Repo) (Language, error) {
+// setup the language, creates a new language handler
+func (l *RepoLanguage) setup() error {
 	if len(l.Language) == 0 {
-		return nil, fmt.Errorf("missing repository language")
+		return fmt.Errorf("missing repository language")
 	}
 
 	newLanguage, ok := supportedLanguages[l.Language]
 	if !ok {
-		return nil, fmt.Errorf("language '%s' is not supported", l.Language)
+		return fmt.Errorf("language '%s' is not supported", l.Language)
 	}
 
-	return newLanguage(r)
+	var err error
+	l.lang, err = newLanguage(l.Version)
+
+	return err
 }
 
-func download(url, dest string) error {
+// generateEnvironment generates a new languageEnvironment to test the project
+func (l *RepoLanguage) generateEnvironment(projectSlug string) (languageConfig, error) {
+	return l.lang.generateConfig(projectSlug)
+}
+
+// downloadFile downloads a file from a remote server
+func downloadFile(url, dest string) error {
 	out, err := os.Create(dest)
 	if err != nil {
 		return err
