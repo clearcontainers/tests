@@ -203,12 +203,17 @@ main()
     # FIXME: why is this disabled?
     qemu_options+=(--disable-linux-aio)
 
+    # In "passthrough" security mode
+    # (-fsdev "...,security_model=passthrough,..."), qemu uses a helper
+    # application called virtfs-proxy-helper(1) to make certain 9p
+    # operations safer. We don't need that, so disable it (and it's
+    # dependencies).
+    qemu_options+=(--disable-virtfs)
+    qemu_options+=(--disable-attr)
+    qemu_options+=(--disable-cap-ng)
+
     #---------------------------------------------------------------------
     # Enabled options
-
-    # Required for 9p support (used to mount the workload into the VM)
-    qemu_options+=(--enable-attr)
-    qemu_options+=(--enable-cap-ng)
 
     # Enable kernel Virtual Machine support.
     # This is the default, but be explicit to avoid any future surprises
@@ -216,9 +221,6 @@ main()
 
     # Required for fast network access
     qemu_options+=(--enable-vhost-net)
-
-    # FIXME: why is this enabled?
-    qemu_options+=(--enable-virtfs)
 
     # Always strip binaries
     qemu_options+=(--enable-strip)
