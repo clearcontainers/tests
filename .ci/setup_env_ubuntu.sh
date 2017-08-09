@@ -84,7 +84,7 @@ if [ "$VERSION_ID" == "14.04" ]; then
 	echo -e "\nWARNING:"
 	echo "WARNING: Using backlevel kernel version ${kernel_version} due to bug ${bug_url}"
 	echo -e "WARNING:\n"
-	"${cidir}/install_clear_kernel.sh" ${kernel_clear_release} ${kernel_version} "${cc_kernel_path}"
+	"${cidir}/install_clear_kernel.sh" "demos" ${kernel_version} "${cc_kernel_path}"
 
 	echo "Build and Install libdevmapper"
 	devmapper_version="2.02.172"

@@ -26,17 +26,27 @@ clear_release="$1"
 kernel_version="$2"
 install_path="$3"
 clear_install_path="/usr/share/clear-containers"
-kernel=vmlinux-${kernel_version}.container
-cc_kernel_link_name="vmlinux.container"
+vmlinux_kernel=vmlinux-${kernel_version}.container
+vmlinuz_kernel=vmlinuz-${kernel_version}.container
+cc_vmlinux_kernel_link_name="vmlinux.container"
+cc_vmlinuz_kernel_link_name="vmlinuz.container"
 
 echo -e "Install clear containers kernel ${kernel_version}"
 
-curl -LO "https://download.clearlinux.org/releases/${clear_release}/clear/x86_64/os/Packages/linux-container-${kernel_version}.x86_64.rpm"
+if [ "${clear_release}" == "demos" ]; then
+	curl -LO "https://download.clearlinux.org/demos/clear-containers/linux-container-${kernel_version}.x86_64.rpm"
+else
+	curl -LO "https://download.clearlinux.org/releases/${clear_release}/clear/x86_64/os/Packages/linux-container-${kernel_version}.x86_64.rpm"
+fi
 rpm2cpio linux-container-${kernel_version}.x86_64.rpm | cpio -ivdm
-sudo install -D --owner root --group root --mode 0700 .${clear_install_path}/${kernel} ${install_path}/${kernel}
+sudo install -D --owner root --group root --mode 0700 .${clear_install_path}/${vmlinux_kernel} ${install_path}/${vmlinux_kernel}
+sudo install -D --owner root --group root --mode 0700 .${clear_install_path}/${vmlinuz_kernel} ${install_path}/${vmlinuz_kernel}
 
-echo -e "Create symbolic link ${install_path}/${cc_kernel_link_name}"
-sudo ln -fs ${install_path}/${kernel} ${install_path}/${cc_kernel_link_name}
+echo -e "Create symbolic link ${install_path}/${cc_vmlinux_kernel_link_name}"
+sudo ln -fs ${install_path}/${vmlinux_kernel} ${install_path}/${cc_vmlinux_kernel_link_name}
+
+echo -e "Create symbolic link ${install_path}/${cc_vmlinuz_kernel_link_name}"
+sudo ln -fs ${install_path}/${vmlinuz_kernel} ${install_path}/${cc_vmlinuz_kernel_link_name}
 
 # cleanup
 rm -f linux-container-${kernel_version}.x86_64.rpm
