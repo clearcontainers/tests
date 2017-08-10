@@ -75,3 +75,22 @@ func ContainerRemove(name string) bool {
 
 	return true
 }
+
+// ContainerStop stops a container
+// returns true on success else false
+func ContainerStop(name string) bool {
+	cmd := NewCommand(Docker, "stop", name)
+	if cmd == nil {
+		return false
+	}
+
+	// docker stop takes ~15 seconds
+	cmd.Timeout = 15
+
+	if cmd.Run() != 0 {
+		LogIfFail(cmd.Stderr.String())
+		return false
+	}
+
+	return true
+}
