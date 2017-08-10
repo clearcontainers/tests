@@ -270,7 +270,7 @@ func (r *Repo) loop() {
 		r.logger.Debugf("requesting master branch: %s", r.MasterBranch)
 		branch, err := newRepoBranch(r.MasterBranch, r.cvr, r.logger)
 		if err != nil {
-			r.logger.Warn("failed to get master branch %s: %s", r.MasterBranch, err)
+			r.logger.Warnf("failed to get master branch %s: %s", r.MasterBranch, err)
 		} else {
 			revisionsToTest = append(revisionsToTest, branch)
 		}
@@ -279,16 +279,16 @@ func (r *Repo) loop() {
 		if r.PR != 0 {
 			// if PR is not 0 then we have to monitor just one PR
 			if err = appendPullRequests(&revisionsToTest, []int{r.PR}); err != nil {
-				r.logger.Warn("failed to append pull request %d", r.PR, err)
+				r.logger.Warnf("failed to append pull request %d", r.PR, err)
 			}
 		} else {
 			// append open pull request
 			r.logger.Debugf("requesting open pull requests")
 			prs, err := r.cvr.getOpenPullRequests()
 			if err != nil {
-				r.logger.Warn("failed to get open pull requests: %s", err)
+				r.logger.Warnf("failed to get open pull requests: %s", err)
 			} else if err = appendPullRequests(&revisionsToTest, prs); err != nil {
-				r.logger.Warn("failed to append pull requests %+v: %s", prs, err)
+				r.logger.Warnf("failed to append pull requests %+v: %s", prs, err)
 			}
 		}
 
