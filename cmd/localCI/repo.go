@@ -97,10 +97,9 @@ type Repo struct {
 }
 
 const (
-	defaultLogDir      = "/var/log/localCI"
-	defaultRefreshTime = "30s"
-	logDirMode         = 0755
-	logFileMode        = 0664
+	logDirMode    = 0755
+	logFileMode   = 0664
+	logServerUser = "root"
 )
 
 var defaultEnv = []string{"CI=true", "LOCALCI=true"}
@@ -123,12 +122,6 @@ func (r *Repo) setupCvr() error {
 		"Repo": r.URL,
 	})
 
-	// setup master branch
-	r.MasterBranch = strings.TrimSpace(r.MasterBranch)
-	if len(r.MasterBranch) == 0 {
-		r.MasterBranch = "master"
-	}
-
 	// get the control version repository
 	r.cvr, err = newCVR(r.URL, r.Token)
 	r.logger.Debugf("control version repository: %#v", r.cvr)
@@ -146,23 +139,17 @@ func (r *Repo) setupLogServer() error {
 	}
 
 	if len(r.LogServer.User) == 0 {
-		r.LogServer.User = "root"
+		r.LogServer.User = logServerUser
 	}
 
 	if len(r.LogServer.Dir) == 0 {
-		r.LogServer.Dir = "/var/log/localCI"
+		r.LogServer.Dir = defaultLogDir
 	}
 
 	return nil
 }
 
 func (r *Repo) setupLogDir() error {
-	// validate log directory
-	r.LogDir = strings.TrimSpace(r.LogDir)
-	if len(r.LogDir) == 0 {
-		r.LogDir = defaultLogDir
-	}
-
 	// create log directory
 	if err := os.MkdirAll(r.LogDir, logDirMode); err != nil {
 		return err
@@ -173,12 +160,6 @@ func (r *Repo) setupLogDir() error {
 
 func (r *Repo) setupRefreshTime() error {
 	var err error
-
-	// set default refreshTime
-	r.RefreshTime = strings.TrimSpace(r.RefreshTime)
-	if len(r.RefreshTime) == 0 {
-		r.RefreshTime = defaultRefreshTime
-	}
 
 	// validate refresh time
 	r.refresh, err = time.ParseDuration(r.RefreshTime)
@@ -215,11 +196,7 @@ func (r *Repo) setupStages() error {
 
 func (r *Repo) setupWhitelist() error {
 	// get the list of users
-	r.whitelistUsers = append(r.whitelistUsers, "*")
-	if len(r.Whitelist) != 0 {
-		r.whitelistUsers = strings.Split(r.Whitelist, ",")
-	}
-
+	r.whitelistUsers = strings.Split(r.Whitelist, ",")
 	return nil
 }
 

@@ -26,6 +26,13 @@ type config struct {
 	Repo               []Repo
 }
 
+const (
+	defaultLogDir       = "/var/log/localCI"
+	defaultRefreshTime  = "30s"
+	defaultMasterBranch = "master"
+	defaultWhitelist    = "*"
+)
+
 // newConfig reads a configuration file returning a new config
 func newConfig(file string) (*config, error) {
 	if file == "" {
@@ -37,7 +44,18 @@ func newConfig(file string) (*config, error) {
 		return nil, err
 	}
 
-	var c config
+	// set default values
+	c := config{
+		RunTestsInParallel: false,
+		Repo: []Repo{
+			{
+				MasterBranch: defaultMasterBranch,
+				RefreshTime:  defaultRefreshTime,
+				LogDir:       defaultLogDir,
+				Whitelist:    defaultWhitelist,
+			},
+		},
+	}
 
 	if err := toml.Unmarshal(configuration, &c); err != nil {
 		return nil, err
