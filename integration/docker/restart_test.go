@@ -40,8 +40,7 @@ var _ = Describe("restart", func() {
 	Describe("restart with docker", func() {
 		Context("restart a container", func() {
 			It("should be running", func() {
-				args = []string{"stop", id}
-				runDockerCommand(0, args...)
+				Expect(ContainerStop(id)).To(BeTrue())
 				args = []string{"inspect", "--format='{{.State.Running}}'", id}
 				stdout := runDockerCommand(0, args...)
 				Expect(stdout).To(ContainSubstring("false"))
