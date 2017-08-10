@@ -94,3 +94,21 @@ func ContainerStop(name string) bool {
 
 	return true
 }
+
+// ImagePull downloads the specific image
+func ImagePull(image string) bool {
+	cmd := NewCommand(Docker, "pull", image)
+	if cmd == nil {
+		return false
+	}
+
+	// 5 minutes should be enough to download a image
+	cmd.Timeout = 300
+
+	if cmd.Run() != 0 {
+		LogIfFail(cmd.Stderr.String())
+		return false
+	}
+
+	return true
+}
