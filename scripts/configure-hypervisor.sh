@@ -201,6 +201,8 @@ main()
     qemu_options+=(--disable-xen)
 
     # FIXME: why is this disabled?
+    # (for reference, it's explicitly enabled in Ubuntu 17.10 and
+    # implicitly enabled in Fedora 27).
     qemu_options+=(--disable-linux-aio)
 
     # In "passthrough" security mode
