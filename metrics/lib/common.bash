@@ -80,10 +80,7 @@ function init_env()
 
 	# Restart services
 	systemctl restart docker
-	runtime=$(docker info | grep -w "Default Runtime:" \
-			| awk '{print $3}')
-
-	if [[ "$runtime" == "cor" || "$runtime" == "cc-runtime" ]];then
+	if [[ "${RUNTIME}" == "cor" || "${RUNTIME}" == "cc-runtime" ]];then
 		systemctl restart cc-proxy
 	fi
 }
@@ -161,9 +158,10 @@ function get_qemu_path(){
 	echo "$qemu_path"
 }
 
-# Checking that default runtime is appropriate
+# Checking that selected runtime is appropriate
 function runtime_docker(){
-	runtimes=($(${DOCKER_EXE} info 2>/dev/null | grep "^Runtimes" \
+	local found
+	local runtimes=($(${DOCKER_EXE} info 2>/dev/null | grep "^Runtimes" \
 		| cut -d: -f2))
 	for runtime in ${runtimes[@]}; do
 		if [[ "${RUNTIME}" == "${runtime}" ]]; then
