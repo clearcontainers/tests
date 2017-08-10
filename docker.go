@@ -115,3 +115,27 @@ func ImagePull(image string) bool {
 
 	return true
 }
+
+// ContainerRunning inspects a container
+// returns true if is running
+func ContainerRunning(name string) bool {
+	args := []string{"inspect", "--format={{.State.Running}}", name}
+
+	cmd := NewCommand(Docker, args...)
+	if cmd == nil {
+		return false
+	}
+
+	if cmd.Run() != 0 {
+		LogIfFail(cmd.Stderr.String())
+		return false
+	}
+
+	output := strings.TrimSpace(cmd.Stdout.String())
+	LogIfFail("container running: " + output)
+	if output == "false" {
+		return false
+	}
+
+	return true
+}
