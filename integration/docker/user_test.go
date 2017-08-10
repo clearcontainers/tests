@@ -39,7 +39,7 @@ var _ = Describe("user", func() {
 		Context("run as non-root user", func() {
 			It("should display the non-root user", func() {
 				Skip("Issue https://github.com/clearcontainers/runtime/issues/386")
-				args = []string{"run", "--name", id, "-u", "postgres", "alpine", "whoami"}
+				args = []string{"run", "--name", id, "-u", "postgres", AlpineImage, "whoami"}
 				stdout := runDockerCommand(0, args...)
 				Expect(stdout).To(ContainSubstring("postgres"))
 			})
@@ -47,7 +47,7 @@ var _ = Describe("user", func() {
 
 		Context("run as root user", func() {
 			It("should display root user", func() {
-				args = []string{"run", "--name", id, "-u", "root:root", "alpine", "whoami"}
+				args = []string{"run", "--name", id, "-u", "root:root", AlpineImage, "whoami"}
 				stdout := runDockerCommand(0, args...)
 				Expect(stdout).To(ContainSubstring("root"))
 			})
@@ -55,7 +55,7 @@ var _ = Describe("user", func() {
 
 		Context("run as non-existent user", func() {
 			It("should display an error", func() {
-				args = []string{"run", "--name", id, "-u", "aaaaaaa", "alpine", "whoami"}
+				args = []string{"run", "--name", id, "-u", "aaaaaaa", AlpineImage, "whoami"}
 				runDockerCommand(125, args...)
 			})
 		})

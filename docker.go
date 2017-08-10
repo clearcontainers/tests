@@ -24,6 +24,9 @@ const (
 
 	// Image used to run containers
 	Image = "busybox"
+
+	// AlpineImage is the alpine image
+	AlpineImage = "alpine"
 )
 
 // ContainerStatus returns the container status
