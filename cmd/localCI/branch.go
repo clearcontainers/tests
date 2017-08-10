@@ -97,7 +97,7 @@ func (b *repoBranch) test(config stageConfig, stages map[string]stage) error {
 
 	runStage := func(stage string) error {
 		s, ok := stages[stage]
-		if ok {
+		if ok && len(s.commands) > 0 {
 			return s.run(config)
 		}
 		return nil
