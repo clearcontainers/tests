@@ -201,6 +201,11 @@ func (pr *pullRequest) test(config stageConfig, stages map[string]stage) error {
 		postMsg = pr.postOnFailure
 	}
 
+	// do not try to post empty messages
+	if len(postMsg) == 0 {
+		return err
+	}
+
 	if e := pr.repoBranch.cvr.createComment(pr.number, postMsg); e != nil {
 		pr.repoBranch.logger.Errorf("failed to create comment on pull request %d: %s",
 			pr.number, e)
