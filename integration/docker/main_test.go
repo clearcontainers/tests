@@ -35,18 +35,16 @@ func runDockerCommand(expectedExitCode int, args ...string) string {
 }
 
 func TestIntegration(t *testing.T) {
-	// before start we have to download the docker image
-	cmd := NewCommand(Docker, "pull", Image)
-
-	// 60 seconds should be enough to pull an image
-	cmd.Timeout = 60
-
-	if cmd == nil {
-		t.Fatalf("failed to create command to pull docker image\n")
+	// before start we have to download the docker images
+	images := []string{
+		Image,
+		AlpineImage,
 	}
 
-	if cmd.Run() != 0 {
-		t.Fatalf("failed to pull docker image: %s\n", cmd.Stderr.String())
+	for _, i := range images {
+		if !ImagePull(i) {
+			t.Fatalf("failed to pull docker image: %s\n", i)
+		}
 	}
 
 	RegisterFailHandler(Fail)
