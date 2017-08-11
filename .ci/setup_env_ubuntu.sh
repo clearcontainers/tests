@@ -42,32 +42,14 @@ chronic sudo -E apt install -y libtool automake autotools-dev autoconf bc
 echo "Install qemu-lite binary"
 chronic sudo -E apt install -y --force-yes qemu-lite
 
+echo "Install qemu-cc binary"
+chronic sudo -E apt install -y --force-yes qemu-cc
+
 echo "Install clear-containers image"
 chronic sudo -E apt install -y --force-yes clear-containers-image
 
 echo "Install CRI-O dependencies for all Ubuntu versions"
 chronic sudo -E apt install -y libglib2.0-dev libseccomp-dev libapparmor-dev libgpgme11-dev
-
-echo "Install qemu Q35 binary"
-chronic sudo -E apt install -y libcap-ng-dev libpixman-1-dev libcap-dev libattr1-dev
-git clone --branch qemu-lite-v2.9.0 https://github.com/clearcontainers/qemu.git --depth 1
-qemu_dir="qemu"
-pushd ${qemu_dir}
-git checkout qemu-lite-v2.9.0
-./configure --disable-tools --disable-libssh2 --disable-tcmalloc --disable-glusterfs        \
-	--disable-seccomp --disable-{bzip2,snappy,lzo} --disable-usb-redir --disable-libusb \
-	--disable-libnfs --disable-tcg-interpreter --disable-debug-tcg --disable-libiscsi   \
-	--disable-rbd --disable-spice --disable-attr --disable-cap-ng --disable-linux-aio   \
-	--disable-brlapi --disable-vnc-{jpeg,png,sasl} --disable-rdma --disable-bluez       \
-	--disable-fdt --disable-curl --disable-curses --disable-sdl --disable-gtk           \
-	--disable-tpm --disable-vte --disable-vnc --disable-xen --disable-opengl            \
-	--disable-slirp --enable-trace-backend=nop --enable-virtfs --enable-attr            \
-	--enable-cap-ng --target-list=x86_64-softmmu
-make -j$(nproc)
-sudo -E PATH=$PATH sh -c "make install"
-sudo -E mv $(which qemu-system-x86_64) /usr/bin/qemu-q35-system-x86_64
-popd
-rm -rf ${qemu_dir}
 
 echo "Install bison binary"
 chronic sudo -E apt install -y bison
