@@ -41,6 +41,9 @@ export PKGLIBEXECDIR=/usr/libexec/clear-containers
 # For the pause bundle
 export LOCALSTATEDIR=/var
 
+# Qemu Binary with Q35 support
+export QEMUCMD=qemu-cc-system-x86_64
+
 runtime_config_path="${SYSCONFDIR}/clear-containers/configuration.toml"
 
 # Note: This will also install the config file.
