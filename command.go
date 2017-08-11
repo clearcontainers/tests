@@ -85,6 +85,10 @@ func (c *Command) Run() (string, string, int) {
 		}
 
 		exitCode := c.cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+
+		LogIfFail("%+v\nTimeout: %d seconds\nExit Code: %d\nStdout: %s\nStderr: %s\n",
+			c.cmd.Args, c.Timeout, exitCode, stdout.String(), stderr.String())
+
 		return stdout.String(), stderr.String(), exitCode
 	}
 }
