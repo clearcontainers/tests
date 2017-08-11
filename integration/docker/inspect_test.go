@@ -41,8 +41,8 @@ var _ = Describe("inspect", func() {
 	})
 
 	AfterEach(func() {
-		Expect(ContainerRemove(id)).To(BeTrue())
-		Expect(ContainerExists(id)).NotTo(BeTrue())
+		Expect(RemoveDockerContainer(id)).To(BeTrue())
+		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 	})
 
 	DescribeTable("inspect with docker",

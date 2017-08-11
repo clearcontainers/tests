@@ -15,12 +15,13 @@
 package docker
 
 import (
-	. "github.com/clearcontainers/tests"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"os"
 	"path"
+
+	. "github.com/clearcontainers/tests"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("volume", func() {
@@ -55,10 +56,10 @@ var _ = Describe("volume", func() {
 				args = []string{"run", "--name", id2, "-t", "-v", volumeName + ":" + containerPath, Image, "ls", containerPath}
 				stdout := runDockerCommand(0, args...)
 				Expect(stdout).To(ContainSubstring(fileTest))
-				Expect(ContainerRemove(id)).To(BeTrue())
-				Expect(ContainerExists(id)).NotTo(BeTrue())
-				Expect(ContainerRemove(id2)).To(BeTrue())
-				Expect(ContainerExists(id2)).NotTo(BeTrue())
+				Expect(RemoveDockerContainer(id)).To(BeTrue())
+				Expect(ExistDockerContainer(id)).NotTo(BeTrue())
+				Expect(RemoveDockerContainer(id2)).To(BeTrue())
+				Expect(ExistDockerContainer(id2)).NotTo(BeTrue())
 				args = []string{"volume", "rm", volumeName}
 				runDockerCommand(0, args...)
 				args = []string{"volume", "ls"}
@@ -79,8 +80,8 @@ var _ = Describe("volume", func() {
 				args = []string{"run", "--name", id, "-v", testFile + ":/root/" + fileTest, Image, "ls", "/root/"}
 				stdout := runDockerCommand(0, args...)
 				Expect(stdout).To(ContainSubstring(fileTest))
-				Expect(ContainerRemove(id)).To(BeTrue())
-				Expect(ContainerExists(id)).NotTo(BeTrue())
+				Expect(RemoveDockerContainer(id)).To(BeTrue())
+				Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 				args = []string{"volume", "rm", testFile}
 				runDockerCommand(0, args...)
 				args = []string{"volume", "ls"}

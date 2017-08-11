@@ -15,11 +15,12 @@
 package docker
 
 import (
+	"io/ioutil"
+	"os"
+
 	. "github.com/clearcontainers/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"io/ioutil"
-	"os"
 )
 
 var _ = Describe("load", func() {
@@ -36,8 +37,8 @@ var _ = Describe("load", func() {
 	})
 
 	AfterEach(func() {
-		Expect(ContainerRemove(id)).To(BeTrue())
-		Expect(ContainerExists(id)).NotTo(BeTrue())
+		Expect(RemoveDockerContainer(id)).To(BeTrue())
+		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 		args = []string{"rmi", imageName}
 		runDockerCommand(0, args...)
 	})

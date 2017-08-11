@@ -31,8 +31,8 @@ var _ = Describe("user", func() {
 	})
 
 	AfterEach(func() {
-		Expect(ContainerRemove(id)).To(BeTrue())
-		Expect(ContainerExists(id)).NotTo(BeTrue())
+		Expect(RemoveDockerContainer(id)).To(BeTrue())
+		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 	})
 
 	Describe("set user with docker", func() {

@@ -15,12 +15,13 @@
 package docker
 
 import (
-	. "github.com/clearcontainers/tests"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"os"
 	"path"
+
+	. "github.com/clearcontainers/tests"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("cp", func() {
@@ -36,8 +37,8 @@ var _ = Describe("cp", func() {
 	})
 
 	AfterEach(func() {
-		Expect(ContainerRemove(id)).To(BeTrue())
-		Expect(ContainerExists(id)).NotTo(BeTrue())
+		Expect(RemoveDockerContainer(id)).To(BeTrue())
+		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 	})
 
 	Describe("cp with docker", func() {
