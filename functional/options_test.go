@@ -31,16 +31,16 @@ func withOption(option string, fail bool) TableEntry {
 var _ = Describe("global options", func() {
 	DescribeTable("option",
 		func(command *Command, fail bool) {
-			exitCode := command.Run()
+			stdout, stderr, exitCode := command.Run()
 
 			if fail {
 				Expect(exitCode).NotTo(Equal(0))
-				Expect(command.Stderr.String()).NotTo(BeEmpty())
-				Expect(command.Stdout.String()).NotTo(BeEmpty())
+				Expect(stderr).NotTo(BeEmpty())
+				Expect(stdout).NotTo(BeEmpty())
 			} else {
 				Expect(exitCode).To(Equal(0))
-				Expect(command.Stderr.String()).To(BeEmpty())
-				Expect(command.Stdout.String()).NotTo(BeEmpty())
+				Expect(stderr).To(BeEmpty())
+				Expect(stdout).NotTo(BeEmpty())
 			}
 		},
 		withOption("--version", shouldNotFail),

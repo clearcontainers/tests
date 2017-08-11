@@ -103,12 +103,12 @@ var _ = Describe("exec", func() {
 			Expect(exitCode).Should(Equal(0))
 
 			if expectedOutput != "" {
-				Expect(stdout.String()).Should(ContainSubstring(expectedOutput))
+				Expect(stdout).Should(ContainSubstring(expectedOutput))
 			} else {
-				Expect(stdout.String()).Should(BeEmpty())
+				Expect(stdout).Should(BeEmpty())
 			}
 
-			Expect(stderr.String()).Should(BeEmpty())
+			Expect(stderr).Should(BeEmpty())
 		},
 		execDetachOutput(false),
 		execDetachOutput(true),
