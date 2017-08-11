@@ -86,6 +86,7 @@ This section have next keys:
 - ``teardown [[]string] (optional)``: the commands executed to cleanup the environment doesn't matter if ``setup`` and ``run`` finished correctly or not.
 - ``onSuccess [[]string] (optional)``: the commands to be executed if ``setup``, ``run`` and ``teardown`` finished correctly.
 - ``onfailure [[]string] (optional)``: the commands to be executed if any of ``setup``, ``run`` or ``teardown`` fail.
+- ``tty [bool] (optional)``: specify whether **localCI** must allocate a tty to run the stages. By default this value is ``true``.
 - ``postOnSuccess [string] (optional)``: message to be posted in the pull request if ``setup``, ``run`` and ``teardown`` finished correctly.
   If this key is not present or is an empty string no mesage is posted.
 - ``postOnFailure [string] (optional)``: message to be posted in the pull request if any of ``setup``, ``run`` or ``teardown`` fail.
@@ -139,6 +140,7 @@ Configuration file example
    teardown = [ ".ci/teardown.sh" ]
    onSuccess = [ "echo success" ]
    onfailure = [ "echo failure" ]
+   tty = false
    postOnSuccess = "qa-passed"
    postOnFailure = "qa-failed"
    logDir = "/var/log/localCI"

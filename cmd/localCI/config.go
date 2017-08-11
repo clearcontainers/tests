@@ -31,6 +31,7 @@ const (
 	defaultRefreshTime  = "30s"
 	defaultMasterBranch = "master"
 	defaultWhitelist    = "*"
+	defaultTTY          = true
 )
 
 // newConfig reads a configuration file returning a new config
@@ -53,6 +54,7 @@ func newConfig(file string) (*config, error) {
 				RefreshTime:  defaultRefreshTime,
 				LogDir:       defaultLogDir,
 				Whitelist:    defaultWhitelist,
+				TTY:          defaultTTY,
 			},
 		},
 	}

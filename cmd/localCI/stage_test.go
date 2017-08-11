@@ -31,11 +31,11 @@ func TestStageRun(t *testing.T) {
 
 	sc := stageConfig{
 		logger: logrus.WithFields(logrus.Fields{"test": "test"}),
+		tty:    false,
 	}
 
 	sc.logDir, err = ioutil.TempDir("/tmp", ".logs")
 	assert.NoError(err)
-	defer os.RemoveAll(sc.logDir)
 
 	s := stage{
 		name: "test",
@@ -88,4 +88,31 @@ func TestStageRun(t *testing.T) {
 		assert.NoError(err)
 		assert.Equal(t.output, string(output))
 	}
+
+	assert.NoError(os.RemoveAll(sc.logDir))
+
+	// run the same tests but now allocating a tty
+	sc.tty = true
+	sc.logDir, err = ioutil.TempDir("/tmp", ".logs")
+	assert.NoError(err)
+
+	for _, t := range tests {
+		s := &stage{
+			name:     t.name,
+			commands: t.commands,
+		}
+
+		err = s.run(sc)
+		if t.fail {
+			assert.Error(err, "stage: %+v", s)
+		} else {
+			assert.NoError(err, "stage: %+v", s)
+		}
+
+		output, err = ioutil.ReadFile(filepath.Join(sc.logDir, t.name))
+		assert.NoError(err)
+		assert.Equal(t.output, string(output))
+	}
+
+	assert.NoError(os.RemoveAll(sc.logDir))
 }

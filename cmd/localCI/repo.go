@@ -59,6 +59,9 @@ type Repo struct {
 	// OnFailure contains the commands to be executed if any of Setup, Run or Teardown fail
 	OnFailure []string
 
+	// TTY specify whether a tty must be allocate to run the stages
+	TTY bool
+
 	// PostOnSuccess is the comment to be posted if the test finished correctly
 	PostOnSuccess string
 
@@ -94,6 +97,9 @@ type Repo struct {
 
 	// logger of the repository
 	logger *logrus.Entry
+
+	// prConfig is the configuration used to create pull request objects
+	prConfig pullRequestConfig
 }
 
 const (
@@ -232,6 +238,14 @@ func (r *Repo) setup() error {
 		}
 	}
 
+	r.prConfig = pullRequestConfig{
+		cvr:            r.cvr,
+		logger:         r.logger,
+		commentTrigger: r.CommentTrigger,
+		postOnFailure:  r.PostOnFailure,
+		postOnSuccess:  r.PostOnSuccess,
+	}
+
 	r.logger.Debugf("control version repository: %#v", r.cvr)
 
 	return nil
@@ -241,20 +255,12 @@ func (r *Repo) setup() error {
 func (r *Repo) loop() {
 	revisionsTested := make(map[string]revision)
 
-	prConfig := pullRequestConfig{
-		cvr:            r.cvr,
-		logger:         r.logger,
-		commentTrigger: r.CommentTrigger,
-		postOnFailure:  r.PostOnFailure,
-		postOnSuccess:  r.PostOnSuccess,
-	}
-
 	r.logger.Debugf("monitoring in a loop the repository: %+v", *r)
 
 	appendPullRequests := func(revisions *[]revision, prs []int) error {
 		for _, pr := range prs {
 			r.logger.Debugf("requesting pull request %d", pr)
-			pr, err := newPullRequest(pr, prConfig)
+			pr, err := newPullRequest(pr, r.prConfig)
 			if err != nil {
 				return fmt.Errorf("failed to get pull request '%d' %s", pr, err)
 			}
@@ -333,15 +339,7 @@ func (r *Repo) test() error {
 		return fmt.Errorf("Missing pull request number in configuration file")
 	}
 
-	prConfig := pullRequestConfig{
-		cvr:            r.cvr,
-		logger:         r.logger,
-		commentTrigger: r.CommentTrigger,
-		postOnFailure:  r.PostOnFailure,
-		postOnSuccess:  r.PostOnSuccess,
-	}
-
-	rev, err := newPullRequest(r.PR, prConfig)
+	rev, err := newPullRequest(r.PR, r.prConfig)
 	if err != nil {
 		return fmt.Errorf("failed to get pull request %d %s", r.PR, err)
 	}
@@ -403,6 +401,7 @@ func (r *Repo) runTest(rev revision) error {
 	config := stageConfig{
 		logger:     r.logger,
 		workingDir: langEnv.workingDir,
+		tty:        r.TTY,
 	}
 
 	// cleanup and set the log directory of the pull request
