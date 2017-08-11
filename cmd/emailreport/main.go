@@ -107,13 +107,13 @@ func main() {
 
 	// Set checkmetrics configuration
 	cmd = conf.Ck.Cmd
-	basefile = "--basefile " + conf.Ck.Basefile
-	metricsdir = "--metricsdir " + conf.Ck.Metricsdir
+	basefile = conf.Ck.Basefile
+	metricsdir = conf.Ck.Metricsdir
 
 	// checkmetrics execution
-	out, err := exec.Command(cmd, basefile, metricsdir).Output()
+	out, err := exec.Command(cmd, "--basefile", basefile, "--metricsdir", metricsdir).Output()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("checkmetrics execution: ", err)
 	}
 
 	if len(out) == 0 {
