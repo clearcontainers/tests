@@ -37,15 +37,11 @@ var _ = Describe("kill", func() {
 				id = randomDockerName()
 				args = []string{"run", "-td", "--name", id, Image, "sh"}
 				runDockerCommand(0, args...)
-				args = []string{"inspect", "--format='{{.State.Running}}'", id}
-				stdout := runDockerCommand(0, args...)
-				Expect(stdout).To(ContainSubstring("true"))
+				Expect(ContainerRunning(id)).To(BeTrue())
 				args = []string{"kill", id}
-				stdout = runDockerCommand(0, args...)
+				stdout := runDockerCommand(0, args...)
 				Expect(stdout).To(ContainSubstring(id))
-				args = []string{"inspect", "--format='{{.State.Running}}'", id}
-				stdout = runDockerCommand(0, args...)
-				Expect(stdout).To(ContainSubstring("false"))
+				Expect(ContainerRunning(id)).To(BeFalse())
 			})
 		})
 	})
