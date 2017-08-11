@@ -16,6 +16,7 @@ package tests
 
 import (
 	"strings"
+	"time"
 )
 
 const (
@@ -29,19 +30,27 @@ const (
 	AlpineImage = "alpine"
 )
 
-// ContainerStatus returns the container status
-func ContainerStatus(name string) string {
-	args := []string{"ps", "-a", "-f", "name=" + name, "--format", "{{.Status}}"}
+func runDockerCommandWithTimeout(timeout time.Duration, command string, args ...string) (string, string, int) {
+	a := []string{command}
+	a = append(a, args...)
 
-	cmd := NewCommand(Docker, args...)
+	cmd := NewCommand(Docker, a...)
+	cmd.Timeout = timeout
 
-	exitCode := cmd.Run()
-	if exitCode != 0 {
-		return ""
-	}
+	return cmd.Run()
+}
 
-	stdout := cmd.Stdout.String()
-	if stdout == "" {
+func runDockerCommand(command string, args ...string) (string, string, int) {
+	return runDockerCommandWithTimeout(time.Duration(Timeout), command, args...)
+}
+
+// StatusDockerContainer returns the container status
+func StatusDockerContainer(name string) string {
+	args := []string{"-a", "-f", "name=" + name, "--format", "{{.Status}}"}
+
+	stdout, _, exitCode := runDockerCommand("ps", args...)
+
+	if exitCode != 0 || stdout == "" {
 		return ""
 	}
 
@@ -49,12 +58,30 @@ func ContainerStatus(name string) string {
 	return state[0]
 }
 
-// ContainerExists returns true if any of next cases is true:
+// IsRunningDockerContainer inspects a container
+// returns true if is running
+func IsRunningDockerContainer(name string) bool {
+	stdout, _, exitCode := runDockerCommand("inspect", "--format={{.State.Running}}", name)
+
+	if exitCode != 0 {
+		return false
+	}
+
+	output := strings.TrimSpace(stdout)
+	LogIfFail("container running: " + output)
+	if output == "false" {
+		return false
+	}
+
+	return true
+}
+
+// ExistDockerContainer returns true if any of next cases is true:
 // - 'docker ps -a' command shows the container
 // - the VM is running (qemu)
 // else false is returned
-func ContainerExists(name string) bool {
-	state := ContainerStatus(name)
+func ExistDockerContainer(name string) bool {
+	state := StatusDockerContainer(name)
 	if state != "" {
 		return true
 	}
@@ -62,80 +89,60 @@ func ContainerExists(name string) bool {
 	return IsVMRunning(name)
 }
 
-// ContainerRemove removes a container
-func ContainerRemove(name string) bool {
-	args := []string{"rm", "-f", name}
-
-	cmd := NewCommand(Docker, args...)
-	if cmd == nil {
-		return false
-	}
-
-	if cmd.Run() != 0 {
-		LogIfFail(cmd.Stderr.String())
+// RemoveDockerContainer removes a container using docker rm -f
+func RemoveDockerContainer(name string) bool {
+	_, _, exitCode := DockerRm("-f", name)
+	if exitCode != 0 {
 		return false
 	}
 
 	return true
 }
 
-// ContainerStop stops a container
+// StopDockerContainer stops a container
+func StopDockerContainer(name string) bool {
+	_, _, exitCode := DockerStop(name)
+	if exitCode != 0 {
+		return false
+	}
+
+	return true
+}
+
+// KillDockerContainer kills a container
+func KillDockerContainer(name string) bool {
+	_, _, exitCode := DockerKill(name)
+	if exitCode != 0 {
+		return false
+	}
+
+	return true
+}
+
+// DockerRm removes a container
+func DockerRm(args ...string) (string, string, int) {
+	return runDockerCommand("rm", args...)
+}
+
+// DockerStop stops a container
 // returns true on success else false
-func ContainerStop(name string) bool {
-	cmd := NewCommand(Docker, "stop", name)
-	if cmd == nil {
-		return false
-	}
-
+func DockerStop(args ...string) (string, string, int) {
 	// docker stop takes ~15 seconds
-	cmd.Timeout = 15
-
-	if cmd.Run() != 0 {
-		LogIfFail(cmd.Stderr.String())
-		return false
-	}
-
-	return true
+	return runDockerCommandWithTimeout(15, "stop", args...)
 }
 
-// ImagePull downloads the specific image
-func ImagePull(image string) bool {
-	cmd := NewCommand(Docker, "pull", image)
-	if cmd == nil {
-		return false
-	}
-
-	// 5 minutes should be enough to download a image
-	cmd.Timeout = 300
-
-	if cmd.Run() != 0 {
-		LogIfFail(cmd.Stderr.String())
-		return false
-	}
-
-	return true
+// DockerPull downloads the specific image
+func DockerPull(args ...string) (string, string, int) {
+	// 10 minutes should be enough to download a image
+	return runDockerCommandWithTimeout(600, "pull", args...)
 }
 
-// ContainerRunning inspects a container
-// returns true if is running
-func ContainerRunning(name string) bool {
-	args := []string{"inspect", "--format={{.State.Running}}", name}
+// DockerRun runs a container
+func DockerRun(args ...string) (string, string, int) {
+	return runDockerCommand("run", args...)
+}
 
-	cmd := NewCommand(Docker, args...)
-	if cmd == nil {
-		return false
-	}
-
-	if cmd.Run() != 0 {
-		LogIfFail(cmd.Stderr.String())
-		return false
-	}
-
-	output := strings.TrimSpace(cmd.Stdout.String())
-	LogIfFail("container running: " + output)
-	if output == "false" {
-		return false
-	}
-
-	return true
+// DockerKill kills a container
+func DockerKill(args ...string) (string, string, int) {
+	return runDockerCommand("kill", args...)
 }
