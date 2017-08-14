@@ -36,6 +36,9 @@ extra_args="-ti --rm"
 
 set -e
 
+## Test name for reporting purposes
+test_name="network metrics iperf3"
+
 # This script will perform all the measurements using a local setup using iperf3
 
 # Test single direction TCP bandwith
@@ -47,8 +50,16 @@ function iperf3_bandwidth {
 	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -t ${time}"
 	start_client "$extra_args" "$client_name" "$image" "$client_command" > "$result"
 
-	local total_bandwidth=$(cat $result | tail -n 3 | head -1 | awk '{print $(NF-2), $(NF-1)}')
-	echo "Network bandwidth is : $total_bandwidth"
+	local result_line=$(grep -m1 -E '\breceiver\b' $result)
+	local -a results
+	read -a results <<< $result_line
+	local total_bandwidth=${results[6]}
+	local total_bandwidth_units=${results[7]}
+	echo "Network bandwidth is : $total_bandwidth $total_bandwidth_units"
+
+	save_results "${test_name}" "network bandwidth" \
+		"$total_bandwidth" "$total_bandwidth_units"
+
 	clean_environment "$server_name"
 }
 
@@ -61,8 +72,16 @@ function iperf3_jitter {
 	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -u -t ${time}"
 	start_client "$extra_args" "$client_name" "$image" "$client_command" > "$result"
 
-	local total_jitter=$(cat $result | tail -n 4 | head -1 | awk '{print $(NF-4), $(NF-3)}')
-	echo "Network jitter is : $total_jitter"
+	local result_line=$(grep -m1 -A1 -E '\bJitter\b' $result | tail -1)
+	local -a results
+	read -a results <<< $result_line
+	local total_jitter=${results[8]}
+	local total_jitter_units=${results[9]}
+	echo "Network jitter is : $total_jitter $total_jitter_units"
+
+	save_results "${test_name}" "network jitter" \
+		"$total_jitter" "$total_jitter_units"
+
 	clean_environment "$server_name"
 }
 
@@ -75,10 +94,29 @@ function iperf3_bidirectional_bandwidth_client_server {
 	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -d -t ${time}"
 	start_client "$extra_args" "$client_name" "$image" "$client_command" > "$result"
 
-	local total_bidirectional_client_bandwidth=$(cat $result | tail -n 3 | head -1 | awk '{print $(NF-2), $(NF-1)}')
-	local total_bidirectional_server_bandwidth=$(cat $result | tail -n 4 | head -1 | awk '{print $(NF-3), $(NF-2)}')
-	echo "Network bidirectional bandwidth (client to server) is : $total_bidirectional_client_bandwidth"
-	echo "Network bidirectional bandwidth (server to client) is : $total_bidirectional_server_bandwidth"
+	local client_result=$(grep -m1 -E '\breceiver\b' $result)
+	local server_result=$(grep -m1 -E '\bsender\b'   $result)
+	local -a client_results
+	read -a client_results <<< ${client_result}
+	read -a server_results <<< ${server_result}
+	local total_bidirectional_client_bandwidth=${client_results[6]}
+	local total_bidirectional_client_bandwidth_units=${client_results[7]}
+	local total_bidirectional_server_bandwidth=${server_results[6]}
+	local total_bidirectional_server_bandwidth_units=${server_results[7]}
+	echo "Network bidirectional bandwidth (client to server) is :" \
+		"$total_bidirectional_client_bandwidth" \
+		"$total_bidirectional_client_bandwidth_units"
+	echo "Network bidirectional bandwidth (server to client) is :" \
+		"$total_bidirectional_server_bandwidth" \
+		"$total_bidirectional_server_bandwidth_units"
+
+	save_results "${test_name}" "network bidir bw client to server" \
+		"$total_bidirectional_client_bandwidth" \
+		"$total_bidirectional_client_bandwidth_units"
+	save_results "${test_name}" "network bidir bw server to client" \
+		"$total_bidirectional_server_bandwidth" \
+		"$total_bidirectional_server_bandwidth_units"
+
 	clean_environment "$server_name"
 }
 
