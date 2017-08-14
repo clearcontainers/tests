@@ -30,6 +30,9 @@ set -e
 
 # Test single docker->docker udp bandwidth
 
+## Test name for reporting purposes
+test_name="network metrics nuttcp"
+
 function udp_bandwidth {
 	# Currently default nuttcp has a bug
 	# see https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=745051
@@ -52,10 +55,26 @@ function udp_bandwidth {
 	$DOCKER_EXE exec ${server_name} sh -c "${server_command}"
 	start_client "$extra_args" "$client_name" "$image" "$client_command" > "$result"
 
-	local total_bandwidth=$(cat "$result" | tail -1 | cut -d'=' -f2 | awk '{print $(NF-11), $(NF-10)}')	
-	local total_loss=$(cat "$result" | tail -1 | awk '{print $(NF-1), $(NF)}')
-	echo "UDP bandwidth is (${bl} buffer size) : $total_bandwidth"
-	echo "UDP % of packet loss is (${bl} buffer size) : $total_loss"
+# 6, 7, 16, "%"
+
+	local result_line=$(tail -1 ${result})
+	local -a results
+	read -a results <<< ${result_line%$'\r'}
+	local total_bandwidth=${results[6]}
+	local total_bandwidth_units=${results[7]}
+	local total_loss=${results[16]}
+	local total_loss_units="%"
+	echo "UDP bandwidth is (${bl} buffer size) :" \
+		"$total_bandwidth $total_bandwidth_units"
+	echo "UDP % of packet loss is (${bl} buffer size) :" \
+		"${total_loss}${total_loss_units}"
+
+	local subtest_name="UDP ${bl}b buffer"
+	save_results "${test_name}" "${subtest_name} bandwidth" \
+		"$total_bandwidth" "$total_bandwidth_units"
+	save_results "${test_name}" "${subtest_name} packet loss" \
+		"$total_loss" "$total_loss_units"
+
 	clean_environment "$server_name"
 }
 
