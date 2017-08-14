@@ -64,10 +64,12 @@ function cpu_consumption {
 	echo >&2 "WARNING: sleeping for $middle_time seconds in order to have server and client stable"
 	sleep ${middle_time}
 	qemu_pids=$(pidof ${QEMU_PATH})
-	ps --no-headers -o %cpu -p "$qemu_pids" > "$result"
-	sed -i 's/ //g' "$result"
-	local total_cpu_consumption=$(awk '{ total += $1 } END { print total/NR }' "$result")
+	local total_cpu_consumption=$(ps --no-headers -o %cpu \
+		-p $(pidof ${QEMU_PATH}) | awk '{ total+= $1 } END { print total/NR }')
 	echo "The cpu % consumption is : $total_cpu_consumption"
+
+	save_results "network metrics cpu consumption" "" \
+		"$total_cpu_consumption" "%"
 
 	clean_environment "$server_name"
 	$DOCKER_EXE rm -f ${client_name} > /dev/null
