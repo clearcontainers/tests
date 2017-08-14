@@ -50,6 +50,9 @@ function latency {
 
 	local latency_average=$(cat $result | grep avg | tail -1 | awk '{print $4}' | cut -d '/' -f 2)
 	echo "The average latency is : $latency_average ms"
+
+	save_results "network latency" "" "${latency_average}" "ms"
+
 	clean_environment "$server_name"
 }
 

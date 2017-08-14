@@ -30,3 +30,6 @@ echo "Running all metrics tests"
 
 # Run the time tests
 bash ${SCRIPT_PATH}/time/docker_workload_time.sh true busybox $RUNTIME 100
+
+# Run the network metrics
+bash ${SCRIPT_PATH}/network/network-latency.sh
