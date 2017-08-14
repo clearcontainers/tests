@@ -49,10 +49,29 @@ function bidirectional_bandwidth_server_client {
 	client_command="iperf -c ${server_address} -d -t ${time}"
 	start_client "$extra_args" "$client_name" "$image" "$client_command" > "$result"
 
-	local total_bidirectional_server_bandwidth=$(cat $result | tail -1 | awk '{print $(NF-1), $NF}')
-	local total_bidirectional_client_bandwidth=$(cat $result | tail -n 2 | head -1 | awk '{print $(NF-1), $NF}')
-	echo "Bi-directional network bandwidth is (client to server) : $total_bidirectional_client_bandwidth"
-	echo "Bi-directional network bandwidth is (server to server) : $total_bidirectional_server_bandwidth"
+	local server_result=$(tail -1 $result)
+	read -a server_results <<< ${server_result%$'\r'}
+	local client_result=$(tail -n 2 $result | head -1)
+	read -a client_results <<< ${client_result%$'\r'}
+
+	local total_bidirectional_server_bandwidth=${server_results[-2]}
+	local total_bidirectional_server_bandwidth_units=${server_results[-1]}
+	local total_bidirectional_client_bandwidth=${client_results[-2]}
+	local total_bidirectional_client_bandwidth_units=${client_results[-1]}
+	echo "Bi-directional network bandwidth is (client to server) :" \
+		"$total_bidirectional_client_bandwidth" \
+		"$total_bidirectional_client_bandwidth_units"
+	echo "Bi-directional network bandwidth is (server to client) :" \
+		"$total_bidirectional_server_bandwidth" \
+		"$total_bidirectional_server_bandwidth_units"
+
+	save_results "network metrics" "client to server" \
+		"$total_bidirectional_client_bandwidth" \
+		"$total_bidirectional_client_bandwidth_units"
+	save_results "network metrics" "server to client" \
+		"$total_bidirectional_server_bandwidth" \
+		"$total_bidirectional_server_bandwidth_units"
+
 	clean_environment "$server_name"
 }
 
