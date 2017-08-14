@@ -243,12 +243,16 @@ func (g *Github) getLatestPullRequestComment(pr int, user, body string) (RepoCom
 	for i := len(comments) - 1; i >= 0; i-- {
 		c := comments[i]
 		if len(user) != 0 {
-			if *c.User.Login != user {
+			if c.User == nil || c.User.Login == nil || *c.User.Login != user {
 				continue
 			}
 		}
 
-		if *c.Body == body {
+		if c.CreatedAt == nil {
+			continue
+		}
+
+		if c.Body != nil && *c.Body == body {
 			return RepoComment{
 				User:    user,
 				Comment: body,
