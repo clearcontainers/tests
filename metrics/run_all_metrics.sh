@@ -33,3 +33,11 @@ bash ${SCRIPT_PATH}/time/docker_workload_time.sh true busybox $RUNTIME 100
 
 # Run the network metrics
 bash ${SCRIPT_PATH}/network/network-latency.sh
+bash ${SCRIPT_PATH}/network/network-metrics-cpu-consumption.sh
+bash ${SCRIPT_PATH}/network/network-metrics-iperf3.sh
+bash ${SCRIPT_PATH}/network/network-metrics-memory-pss-1g.sh
+bash ${SCRIPT_PATH}/network/network-metrics-memory-pss.sh
+bash ${SCRIPT_PATH}/network/network-metrics-memory-rss-1g.sh
+bash ${SCRIPT_PATH}/network/network-metrics-nuttcp.sh
+bash ${SCRIPT_PATH}/network/network-metrics.sh
+bash ${SCRIPT_PATH}/network/network-nginx-ab-benchmark.sh
