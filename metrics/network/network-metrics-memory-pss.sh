@@ -63,9 +63,13 @@ function pss_memory {
 	# Measurement after client and server are more stable
 	echo >&2 "WARNING: sleeping for $middle_time seconds in order to have server and client stable"
 	sleep ${middle_time}
-	smem -c "pss" -P ${QEMU_PATH} | tail -n 2 > "$result"
+	local memory_command="smem --no-header -c pss"
+	${memory_command} -P ${QEMU_PATH} > "$result"
+
 	local total_pss_memory=$(awk '{ total += $1 } END { print total/NR }' "$result")
 	echo "The PSS memory is : $total_pss_memory Kb"
+
+	save_results "network metrics memory" "pss" "$total_pss_memory" "kb"
 
 	clean_environment "$server_name"
 	$DOCKER_EXE rm -f ${client_name} > /dev/null

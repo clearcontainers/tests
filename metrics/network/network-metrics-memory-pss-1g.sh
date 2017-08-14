@@ -65,10 +65,13 @@ function pss_memory {
 	echo >&2 "WARNING: sleeping for $middle_time seconds in order to sample the PSS"
 	sleep ${middle_time}
 
-	local memory_command="smem -c pss"
-	${memory_command} -P ${QEMU_PATH} | tail -n 2 > "$result"
+	local memory_command="smem --no-header -c pss"
+	${memory_command} -P ${QEMU_PATH} > "$result"
+
 	local memory=$(awk '{ total += $1 } END { print total/NR }' "$result")
 	echo "The PSS memory is : $memory Kb"
+
+	save_results "network metrics memory" "pss 1g" "$memory" "kb"
 
 	echo >&2 "WARNING: This test is being affected by https://github.com/01org/cc-oci-runtime/issues/795"
 	clean_environment "$server_name"
