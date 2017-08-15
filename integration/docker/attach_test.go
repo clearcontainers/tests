@@ -15,22 +15,26 @@
 package docker
 
 import (
+	"fmt"
+
 	. "github.com/clearcontainers/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("attach", func() {
+var _ = Describe("docker attach", func() {
 	var (
-		args []string
-		id   string
+		id                string
+		exitCode          int
+		containerExitCode int
 	)
 
 	BeforeEach(func() {
+		containerExitCode = 13
 		id = randomDockerName()
-		args = []string{"run", "--name", id, "-d", Image, "sh", "-c", "sleep 10 && exit 13"}
-		runDockerCommand(0, args...)
-
+		_, _, exitCode = DockerRun("--name", id, "-d", Image, "sh", "-c",
+			fmt.Sprintf("sleep 10 && exit %d", containerExitCode))
+		Expect(exitCode).To(Equal(0))
 	})
 
 	AfterEach(func() {
@@ -38,13 +42,11 @@ var _ = Describe("attach", func() {
 		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 	})
 
-	Describe("attach with docker", func() {
-		Context("check attach functionality", func() {
-			It("should attach exit code", func() {
-				Skip("Issue https://github.com/clearcontainers/runtime/issues/363")
-				args = []string{"attach", id}
-				runDockerCommand(13, args...)
-			})
+	Context("check attach functionality", func() {
+		It("should attach exit code", func() {
+			Skip("Issue https://github.com/clearcontainers/runtime/issues/363")
+			_, _, exitCode = DockerAttach(id)
+			Expect(exitCode).To(Equal(containerExitCode))
 		})
 	})
 })

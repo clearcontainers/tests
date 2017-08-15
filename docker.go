@@ -151,3 +151,9 @@ func DockerKill(args ...string) (string, string, int) {
 func DockerVolume(args ...string) (string, string, int) {
 	return runDockerCommand("volume", args...)
 }
+
+// DockerAttach attach to a running container
+func DockerAttach(args ...string) (string, string, int) {
+	// 15 seconds should be enough to wait for the container workload
+	return runDockerCommandWithTimeout(15, "attach", args...)
+}
