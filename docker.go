@@ -146,3 +146,8 @@ func DockerRun(args ...string) (string, string, int) {
 func DockerKill(args ...string) (string, string, int) {
 	return runDockerCommand("kill", args...)
 }
+
+// DockerVolume manages volumes
+func DockerVolume(args ...string) (string, string, int) {
+	return runDockerCommand("volume", args...)
+}
