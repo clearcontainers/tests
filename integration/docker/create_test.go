@@ -20,27 +20,27 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("create", func() {
+var _ = Describe("docker create", func() {
 	var (
-		args []string
-		id   string
+		id       string
+		exitCode int
+		stdout   string
 	)
 
 	AfterEach(func() {
-		Expect(ContainerRemove(id)).To(BeTrue())
-		Expect(ContainerExists(id)).NotTo(BeTrue())
+		Expect(RemoveDockerContainer(id)).To(BeTrue())
+		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 	})
 
-	Describe("create with docker", func() {
-		Context("check create functionality", func() {
-			It("create a container", func() {
-				id = randomDockerName()
-				args = []string{"create", "-t", "--name", id, Image}
-				runDockerCommand(0, args...)
-				args = []string{"ps", "--filter", "status=created"}
-				stdout := runDockerCommand(0, args...)
-				Expect(stdout).To(ContainSubstring(id))
-			})
+	Context("check create functionality", func() {
+		It("create a container", func() {
+			id = randomDockerName()
+			_, _, exitCode = DockerCreate("-t", "--name", id, Image)
+			Expect(exitCode).To(Equal(0))
+
+			stdout, _, exitCode = DockerPs("--filter", "status=created")
+			Expect(exitCode).To(Equal(0))
+			Expect(stdout).To(ContainSubstring(id))
 		})
 	})
 })

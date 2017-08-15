@@ -33,12 +33,6 @@ type Command struct {
 	// cmd exec.Cmd
 	cmd *exec.Cmd
 
-	// Stderr process's standard error
-	Stderr bytes.Buffer
-
-	// Stdout process's standard output
-	Stdout bytes.Buffer
-
 	// Timeout is the time limit of seconds of the command
 	Timeout time.Duration
 }
@@ -54,16 +48,19 @@ func init() {
 func NewCommand(path string, args ...string) *Command {
 	c := new(Command)
 	c.cmd = exec.Command(path, args...)
-	c.cmd.Stderr = &c.Stderr
-	c.cmd.Stdout = &c.Stdout
 	c.Timeout = time.Duration(Timeout)
 
 	return c
 }
 
-// Run runs a command returning its exit code
-func (c *Command) Run() int {
+// Run runs a command returning its stdout, stderr and exit code
+func (c *Command) Run() (string, string, int) {
 	LogIfFail("Running command '%s %s'\n", c.cmd.Path, c.cmd.Args)
+
+	var stdout, stderr bytes.Buffer
+	c.cmd.Stdout = &stdout
+	c.cmd.Stderr = &stderr
+
 	if err := c.cmd.Start(); err != nil {
 		LogIfFail("could no start command: %v\n", err)
 	}
@@ -80,12 +77,18 @@ func (c *Command) Run() int {
 	case <-timeout:
 		LogIfFail("Killing process timeout reached '%d' seconds\n", c.Timeout)
 		_ = c.cmd.Process.Kill()
-		return -1
+		return "", "", -1
 
 	case err := <-done:
 		if err != nil {
 			LogIfFail("command failed error '%s'\n", err)
 		}
-		return c.cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+
+		exitCode := c.cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+
+		LogIfFail("%+v\nTimeout: %d seconds\nExit Code: %d\nStdout: %s\nStderr: %s\n",
+			c.cmd.Args, c.Timeout, exitCode, stdout.String(), stderr.String())
+
+		return stdout.String(), stderr.String(), exitCode
 	}
 }

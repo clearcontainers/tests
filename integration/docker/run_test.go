@@ -39,7 +39,7 @@ var _ = Describe("run", func() {
 	})
 
 	AfterEach(func() {
-		Expect(ContainerExists(id)).NotTo(BeTrue())
+		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 	})
 
 	DescribeTable("container with docker",
@@ -49,8 +49,7 @@ var _ = Describe("run", func() {
 			command := NewCommand(Docker, args...)
 			Expect(command).NotTo(BeNil())
 
-			exitCode := command.Run()
-			LogIfFail(command.Stderr.String())
+			_, _, exitCode := command.Run()
 
 			Expect(expectedExitCode).To(Equal(exitCode))
 		},
@@ -75,8 +74,8 @@ var _ = Describe("run", func() {
 	})
 
 	AfterEach(func() {
-		Expect(ContainerRemove(id)).To(BeTrue())
-		Expect(ContainerExists(id)).NotTo(BeTrue())
+		Expect(RemoveDockerContainer(id)).To(BeTrue())
+		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 	})
 
 	DescribeTable("container with docker",
@@ -86,14 +85,13 @@ var _ = Describe("run", func() {
 			command := NewCommand(Docker, args...)
 			Expect(command).NotTo(BeNil())
 
-			exitCode := command.Run()
-			LogIfFail(command.Stderr.String())
+			_, _, exitCode := command.Run()
 
 			Expect(exitCode).To(BeZero())
 
-			Expect(ContainerStatus(id)).To(Equal(expectedStatus))
+			Expect(StatusDockerContainer(id)).To(Equal(expectedStatus))
 
-			Expect(ContainerExists(id)).To(BeTrue())
+			Expect(ExistDockerContainer(id)).To(BeTrue())
 		},
 		Entry("in background and interactive", "-di", "Up"),
 		Entry("in background, interactive and with a tty", "-dit", "Up"),

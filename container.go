@@ -15,7 +15,6 @@
 package tests
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -89,7 +88,7 @@ func NewContainer(workload []string, detach bool) (*Container, error) {
 
 // Run the container
 // calls to run command returning its stdout, stderr and exit code
-func (c *Container) Run() (bytes.Buffer, bytes.Buffer, int) {
+func (c *Container) Run() (string, string, int) {
 	args := []string{}
 
 	if c.Debug {
@@ -123,14 +122,13 @@ func (c *Container) Run() (bytes.Buffer, bytes.Buffer, int) {
 	}
 
 	cmd := NewCommand(Runtime, args...)
-	ret := cmd.Run()
 
-	return cmd.Stdout, cmd.Stderr, ret
+	return cmd.Run()
 }
 
 // Delete the container
 // calls to delete command returning its stdout, stderr and exit code
-func (c *Container) Delete(force bool) (bytes.Buffer, bytes.Buffer, int) {
+func (c *Container) Delete(force bool) (string, string, int) {
 	args := []string{"delete"}
 
 	if force {
@@ -142,14 +140,13 @@ func (c *Container) Delete(force bool) (bytes.Buffer, bytes.Buffer, int) {
 	}
 
 	cmd := NewCommand(Runtime, args...)
-	ret := cmd.Run()
 
-	return cmd.Stdout, cmd.Stderr, ret
+	return cmd.Run()
 }
 
 // Kill the container
 // calls to kill command returning its stdout, stderr and exit code
-func (c *Container) Kill(all bool, signal interface{}) (bytes.Buffer, bytes.Buffer, int) {
+func (c *Container) Kill(all bool, signal interface{}) (string, string, int) {
 	args := []string{"kill"}
 
 	if all {
@@ -168,14 +165,13 @@ func (c *Container) Kill(all bool, signal interface{}) (bytes.Buffer, bytes.Buff
 	}
 
 	cmd := NewCommand(Runtime, args...)
-	ret := cmd.Run()
 
-	return cmd.Stdout, cmd.Stderr, ret
+	return cmd.Run()
 }
 
 // Exec the container
 // calls into exec command returning its stdout, stderr and exit code
-func (c *Container) Exec(process Process) (bytes.Buffer, bytes.Buffer, int) {
+func (c *Container) Exec(process Process) (string, string, int) {
 	args := []string{}
 
 	if c.Debug {
@@ -207,14 +203,13 @@ func (c *Container) Exec(process Process) (bytes.Buffer, bytes.Buffer, int) {
 	args = append(args, process.Workload...)
 
 	cmd := NewCommand(Runtime, args...)
-	ret := cmd.Run()
 
-	return cmd.Stdout, cmd.Stderr, ret
+	return cmd.Run()
 }
 
 // List the containers
 // calls to list command returning its stdout, stderr and exit code
-func (c *Container) List(format string, quiet bool, all bool) (bytes.Buffer, bytes.Buffer, int) {
+func (c *Container) List(format string, quiet bool, all bool) (string, string, int) {
 	args := []string{"list"}
 
 	if format != "" {
@@ -230,9 +225,8 @@ func (c *Container) List(format string, quiet bool, all bool) (bytes.Buffer, byt
 	}
 
 	cmd := NewCommand(Runtime, args...)
-	ret := cmd.Run()
 
-	return cmd.Stdout, cmd.Stderr, ret
+	return cmd.Run()
 }
 
 // SetWorkload sets a workload for the container
@@ -288,7 +282,7 @@ func (c *Container) isListed() bool {
 		return false
 	}
 
-	return strings.Contains(stdout.String(), *c.ID)
+	return strings.Contains(stdout, *c.ID)
 }
 
 func (c *Container) isWorkloadRunning() bool {

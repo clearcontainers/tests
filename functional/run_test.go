@@ -53,8 +53,7 @@ var _ = Describe("run", func() {
 		func(workload []string, expectedExitCode int) {
 			Ω(container.SetWorkload(workload)).Should(Succeed())
 
-			_, stderr, exitCode := container.Run()
-			LogIfFail(stderr.String())
+			_, _, exitCode := container.Run()
 
 			Ω(expectedExitCode).Should(Equal(exitCode))
 		},
@@ -89,14 +88,13 @@ var _ = Describe("run", func() {
 			Ω(container.RemoveOption(option)).Should(Succeed())
 
 			_, stderr, exitCode := container.Run()
-			LogIfFail(stderr.String())
 
 			if fail {
 				Ω(exitCode).ShouldNot(Equal(0))
-				Ω(stderr.String()).ShouldNot(BeEmpty())
+				Ω(stderr).ShouldNot(BeEmpty())
 			} else {
 				Ω(exitCode).Should(Equal(0))
-				Ω(stderr.String()).Should(BeEmpty())
+				Ω(stderr).Should(BeEmpty())
 			}
 		},
 		withoutOption("--bundle", shouldFail),

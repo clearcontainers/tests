@@ -34,8 +34,8 @@ var _ = Describe("tag", func() {
 	})
 
 	AfterEach(func() {
-		Expect(ContainerRemove(id)).To(BeTrue())
-		Expect(ContainerExists(id)).NotTo(BeTrue())
+		Expect(RemoveDockerContainer(id)).To(BeTrue())
+		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 		args = []string{"rmi", tagName}
 		runDockerCommand(0, args...)
 	})

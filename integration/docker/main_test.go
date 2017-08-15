@@ -29,9 +29,9 @@ func randomDockerName() string {
 func runDockerCommand(expectedExitCode int, args ...string) string {
 	cmd := NewCommand(Docker, args...)
 	Expect(cmd).ToNot(BeNil())
-	LogIfFail(cmd.Stderr.String())
-	Expect(cmd.Run()).To(Equal(expectedExitCode))
-	return cmd.Stdout.String()
+	stdout, _, exitCode := cmd.Run()
+	Expect(exitCode).To(Equal(expectedExitCode))
+	return stdout
 }
 
 func TestIntegration(t *testing.T) {
@@ -42,7 +42,8 @@ func TestIntegration(t *testing.T) {
 	}
 
 	for _, i := range images {
-		if !ImagePull(i) {
+		_, _, exitCode := DockerPull(i)
+		if exitCode != 0 {
 			t.Fatalf("failed to pull docker image: %s\n", i)
 		}
 	}

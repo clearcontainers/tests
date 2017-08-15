@@ -27,8 +27,8 @@ var _ = Describe("kill", func() {
 	)
 
 	AfterEach(func() {
-		Expect(ContainerRemove(id)).To(BeTrue())
-		Expect(ContainerExists(id)).NotTo(BeTrue())
+		Expect(RemoveDockerContainer(id)).To(BeTrue())
+		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 	})
 
 	Describe("kill with docker", func() {
@@ -37,11 +37,11 @@ var _ = Describe("kill", func() {
 				id = randomDockerName()
 				args = []string{"run", "-td", "--name", id, Image, "sh"}
 				runDockerCommand(0, args...)
-				Expect(ContainerRunning(id)).To(BeTrue())
+				Expect(IsRunningDockerContainer(id)).To(BeTrue())
 				args = []string{"kill", id}
 				stdout := runDockerCommand(0, args...)
 				Expect(stdout).To(ContainSubstring(id))
-				Expect(ContainerRunning(id)).To(BeFalse())
+				Expect(IsRunningDockerContainer(id)).To(BeFalse())
 			})
 		})
 	})

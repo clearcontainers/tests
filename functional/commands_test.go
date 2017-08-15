@@ -35,13 +35,14 @@ func withInexistentID(command string) TableEntry {
 
 var _ = Describe("commands", func() {
 	var exitCode int
+	var stderr string
 
 	DescribeTable("without a container ID should fail",
 		func(cmd *Command) {
-			exitCode = cmd.Run()
+			_, stderr, exitCode = cmd.Run()
 
 			Ω(exitCode).ShouldNot(Equal(0))
-			Ω(cmd.Stderr.String()).ShouldNot(BeEmpty())
+			Ω(stderr).ShouldNot(BeEmpty())
 		},
 		withoutID("kill"),
 		withoutID("delete"),
@@ -51,10 +52,10 @@ var _ = Describe("commands", func() {
 
 	DescribeTable("with a inexistent container ID should fail",
 		func(cmd *Command) {
-			exitCode = cmd.Run()
+			_, stderr, exitCode = cmd.Run()
 
 			Ω(exitCode).ShouldNot(Equal(0))
-			Ω(cmd.Stderr.String()).ShouldNot(BeEmpty())
+			Ω(stderr).ShouldNot(BeEmpty())
 		},
 		withInexistentID("kill"),
 		withInexistentID("delete"),

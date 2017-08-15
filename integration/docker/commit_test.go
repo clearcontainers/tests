@@ -20,36 +20,40 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("commit", func() {
+var _ = Describe("docker commit", func() {
 	var (
-		args []string
-		id   string
+		id       string
+		exitCode int
+		stdout   string
 	)
 
 	BeforeEach(func() {
 		id = randomDockerName()
-		args = []string{"run", "-td", "--name", id, Image, "sh"}
-		runDockerCommand(0, args...)
+		_, _, exitCode = DockerRun("-td", "--name", id, Image, "sh")
+		Expect(exitCode).To(Equal(0))
 	})
 
 	AfterEach(func() {
-		Expect(ContainerRemove(id)).To(BeTrue())
-		Expect(ContainerExists(id)).NotTo(BeTrue())
+		Expect(RemoveDockerContainer(id)).To(BeTrue())
+		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 	})
 
-	Describe("commit with docker", func() {
-		Context("commit a container with new configurations", func() {
-			It("should have the new configurations", func() {
-				imageName := "test/container-test"
-				args = []string{"commit", "-m", "test_commit", id, imageName}
-				runDockerCommand(0, args...)
-				stdout := runDockerCommand(0, "images")
-				Expect(stdout).To(ContainSubstring(imageName))
-				args = []string{"rmi", imageName}
-				runDockerCommand(0, args...)
-				stdout = runDockerCommand(0, "images")
-				Expect(stdout).NotTo(ContainSubstring(imageName))
-			})
+	Context("commit a container with new configurations", func() {
+		It("should have the new configurations", func() {
+			imageName := "test/container-test"
+			_, _, exitCode = DockerCommit("-m", "test_commit", id, imageName)
+			Expect(exitCode).To(Equal(0))
+
+			stdout, _, exitCode = DockerImages()
+			Expect(exitCode).To(Equal(0))
+			Expect(stdout).To(ContainSubstring(imageName))
+
+			_, _, exitCode = DockerRmi(imageName)
+			Expect(exitCode).To(Equal(0))
+
+			stdout, _, exitCode = DockerImages()
+			Expect(exitCode).To(Equal(0))
+			Expect(stdout).NotTo(ContainSubstring(imageName))
 		})
 	})
 })

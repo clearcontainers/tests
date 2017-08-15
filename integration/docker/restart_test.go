@@ -33,18 +33,18 @@ var _ = Describe("restart", func() {
 	})
 
 	AfterEach(func() {
-		Expect(ContainerRemove(id)).To(BeTrue())
-		Expect(ContainerExists(id)).NotTo(BeTrue())
+		Expect(RemoveDockerContainer(id)).To(BeTrue())
+		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 	})
 
 	Describe("restart with docker", func() {
 		Context("restart a container", func() {
 			It("should be running", func() {
-				Expect(ContainerStop(id)).To(BeTrue())
-				Expect(ContainerRunning(id)).To(BeFalse())
+				Expect(StopDockerContainer(id)).To(BeTrue())
+				Expect(IsRunningDockerContainer(id)).To(BeFalse())
 				args = []string{"restart", id}
 				runDockerCommand(0, args...)
-				Expect(ContainerRunning(id)).To(BeTrue())
+				Expect(IsRunningDockerContainer(id)).To(BeTrue())
 			})
 		})
 	})
