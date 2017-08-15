@@ -172,3 +172,13 @@ func DockerImages(args ...string) (string, string, int) {
 func DockerRmi(args ...string) (string, string, int) {
 	return runDockerCommand("rmi", args...)
 }
+
+// DockerCp copies files/folders between a container and the local filesystem
+func DockerCp(args ...string) (string, string, int) {
+	return runDockerCommand("cp", args...)
+}
+
+// DockerExec runs a command in a running container
+func DockerExec(args ...string) (string, string, int) {
+	return runDockerCommand("exec", args...)
+}

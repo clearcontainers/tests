@@ -24,16 +24,17 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("cp", func() {
+var _ = Describe("docker cp", func() {
 	var (
-		args []string
-		id   string
+		id       string
+		exitCode int
+		stdout   string
 	)
 
 	BeforeEach(func() {
 		id = randomDockerName()
-		args = []string{"run", "-td", "--name", id, Image, "sh"}
-		runDockerCommand(0, args...)
+		_, _, exitCode = DockerRun("-td", "--name", id, Image, "sh")
+		Expect(exitCode).To(Equal(0))
 	})
 
 	AfterEach(func() {
@@ -41,22 +42,22 @@ var _ = Describe("cp", func() {
 		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 	})
 
-	Describe("cp with docker", func() {
-		Context("check files after a docker cp", func() {
-			It("has the corresponding files", func() {
-				file, err := ioutil.TempFile(os.TempDir(), "file")
-				Expect(err).ToNot(HaveOccurred())
-				err = file.Close()
-				Expect(err).ToNot(HaveOccurred())
-				defer os.Remove(file.Name())
-				Expect(file.Name()).To(BeAnExistingFile())
-				args = []string{"cp", file.Name(), id + ":/root/"}
-				runDockerCommand(0, args...)
-				args = []string{"exec", id, "sh", "-c", "ls /root/"}
-				stdout := runDockerCommand(0, args...)
-				testFile := path.Base(file.Name())
-				Expect(stdout).To(ContainSubstring(testFile))
-			})
+	Context("check files after a docker cp", func() {
+		It("should have the corresponding files", func() {
+			file, err := ioutil.TempFile(os.TempDir(), "file")
+			Expect(err).ToNot(HaveOccurred())
+			err = file.Close()
+			Expect(err).ToNot(HaveOccurred())
+			defer os.Remove(file.Name())
+			Expect(file.Name()).To(BeAnExistingFile())
+
+			_, _, exitCode = DockerCp(file.Name(), id+":/root/")
+			Expect(exitCode).To(Equal(0))
+
+			stdout, _, exitCode = DockerExec(id, "ls", "/root/")
+			Expect(exitCode).To(Equal(0))
+			testFile := path.Base(file.Name())
+			Expect(stdout).To(ContainSubstring(testFile))
 		})
 	})
 })
