@@ -182,3 +182,13 @@ func DockerCp(args ...string) (string, string, int) {
 func DockerExec(args ...string) (string, string, int) {
 	return runDockerCommand("exec", args...)
 }
+
+// DockerPs list containers
+func DockerPs(args ...string) (string, string, int) {
+	return runDockerCommand("ps", args...)
+}
+
+// DockerCreate creates a new container
+func DockerCreate(args ...string) (string, string, int) {
+	return runDockerCommand("create", args...)
+}
