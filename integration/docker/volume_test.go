@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("volume", func() {
+var _ = Describe("docker volume", func() {
 	var (
 		args          []string
 		id            string = randomDockerName()
@@ -32,62 +32,73 @@ var _ = Describe("volume", func() {
 		volumeName    string = "cc3volume"
 		containerPath string = "/attached_vol/"
 		fileTest      string = "hello"
+		exitCode      int
+		stdout        string
 	)
 
-	Describe("volume with docker", func() {
-		Context("create volume", func() {
-			It("should display the volume's name", func() {
-				args = []string{"volume", "create", "--name", volumeName}
-				runDockerCommand(0, args...)
-				args = []string{"volume", "inspect", volumeName}
-				runDockerCommand(0, args...)
-				args = []string{"volume", "rm", volumeName}
-				runDockerCommand(0, args...)
-				args = []string{"volume", "ls"}
-				stdout := runDockerCommand(0, args...)
-				Expect(stdout).NotTo(ContainSubstring(volumeName))
-			})
+	Context("create volume", func() {
+		It("should display the volume's name", func() {
+			_, _, exitCode = DockerVolume("create", "--name", volumeName)
+			Expect(exitCode).To(Equal(0))
+			_, _, exitCode = DockerVolume("inspect", volumeName)
+			Expect(exitCode).To(Equal(0))
+			_, _, exitCode = DockerVolume("rm", volumeName)
+			Expect(exitCode).To(Equal(0))
+			stdout, _, exitCode = DockerVolume("ls")
+			Expect(exitCode).To(Equal(0))
+			Expect(stdout).NotTo(ContainSubstring(volumeName))
 		})
+	})
 
-		Context("use volume in a container", func() {
-			It("should display the volume", func() {
-				args = []string{"run", "--name", id, "-t", "-v", volumeName + ":" + containerPath, Image, "touch", containerPath + fileTest}
-				runDockerCommand(0, args...)
-				args = []string{"run", "--name", id2, "-t", "-v", volumeName + ":" + containerPath, Image, "ls", containerPath}
-				stdout := runDockerCommand(0, args...)
-				Expect(stdout).To(ContainSubstring(fileTest))
-				Expect(RemoveDockerContainer(id)).To(BeTrue())
-				Expect(ExistDockerContainer(id)).NotTo(BeTrue())
-				Expect(RemoveDockerContainer(id2)).To(BeTrue())
-				Expect(ExistDockerContainer(id2)).NotTo(BeTrue())
-				args = []string{"volume", "rm", volumeName}
-				runDockerCommand(0, args...)
-				args = []string{"volume", "ls"}
-				stdout = runDockerCommand(0, args...)
-				Expect(stdout).NotTo(ContainSubstring(volumeName))
-			})
+	Context("use volume in a container", func() {
+		It("should display the volume", func() {
+			args = []string{"--name", id, "-t", "-v", volumeName + ":" + containerPath, Image, "touch", containerPath + fileTest}
+			_, _, exitCode = DockerRun(args...)
+			Expect(exitCode).To(Equal(0))
+
+			args = []string{"--name", id2, "-t", "-v", volumeName + ":" + containerPath, Image, "ls", containerPath}
+			stdout, _, exitCode = DockerRun(args...)
+			Expect(exitCode).To(Equal(0))
+			Expect(stdout).To(ContainSubstring(fileTest))
+
+			Expect(RemoveDockerContainer(id)).To(BeTrue())
+			Expect(ExistDockerContainer(id)).NotTo(BeTrue())
+			Expect(RemoveDockerContainer(id2)).To(BeTrue())
+			Expect(ExistDockerContainer(id2)).NotTo(BeTrue())
+
+			_, _, exitCode = DockerVolume("rm", volumeName)
+			Expect(exitCode).To(Equal(0))
+
+			stdout, _, exitCode = DockerVolume("ls")
+			Expect(exitCode).To(Equal(0))
+			Expect(stdout).NotTo(ContainSubstring(volumeName))
 		})
+	})
 
-		Context("volume bind-mount a directory", func() {
-			It("should display directory's name", func() {
-				file, err := ioutil.TempFile(os.TempDir(), fileTest)
-				Expect(err).ToNot(HaveOccurred())
-				err = file.Close()
-				Expect(err).ToNot(HaveOccurred())
-				defer os.Remove(file.Name())
-				Expect(file.Name()).To(BeAnExistingFile())
-				testFile := path.Base(file.Name())
-				args = []string{"run", "--name", id, "-v", testFile + ":/root/" + fileTest, Image, "ls", "/root/"}
-				stdout := runDockerCommand(0, args...)
-				Expect(stdout).To(ContainSubstring(fileTest))
-				Expect(RemoveDockerContainer(id)).To(BeTrue())
-				Expect(ExistDockerContainer(id)).NotTo(BeTrue())
-				args = []string{"volume", "rm", testFile}
-				runDockerCommand(0, args...)
-				args = []string{"volume", "ls"}
-				stdout = runDockerCommand(0, args...)
-				Expect(stdout).NotTo(ContainSubstring(testFile))
-			})
+	Context("volume bind-mount a directory", func() {
+		It("should display directory's name", func() {
+			file, err := ioutil.TempFile(os.TempDir(), fileTest)
+			Expect(err).ToNot(HaveOccurred())
+			err = file.Close()
+			Expect(err).ToNot(HaveOccurred())
+			defer os.Remove(file.Name())
+			Expect(file.Name()).To(BeAnExistingFile())
+
+			testFile := path.Base(file.Name())
+			args = []string{"--name", id, "-v", testFile + ":/root/" + fileTest, Image, "ls", "/root/"}
+			stdout, _, exitCode = DockerRun(args...)
+			Expect(exitCode).To(Equal(0))
+			Expect(stdout).To(ContainSubstring(fileTest))
+
+			Expect(RemoveDockerContainer(id)).To(BeTrue())
+			Expect(ExistDockerContainer(id)).NotTo(BeTrue())
+
+			_, _, exitCode = DockerVolume("rm", testFile)
+			Expect(exitCode).To(Equal(0))
+
+			stdout, _, exitCode = DockerVolume("ls")
+			Expect(exitCode).To(Equal(0))
+			Expect(stdout).NotTo(ContainSubstring(testFile))
 		})
 	})
 })
