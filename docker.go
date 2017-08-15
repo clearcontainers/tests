@@ -197,3 +197,9 @@ func DockerCreate(args ...string) (string, string, int) {
 func DockerBuild(args ...string) (string, string, int) {
 	return runDockerCommand("build", args...)
 }
+
+// DockerInfo displays system-wide information
+func DockerInfo() (string, string, int) {
+	return runDockerCommand("info")
+}
+
