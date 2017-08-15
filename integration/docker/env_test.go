@@ -20,10 +20,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("env", func() {
+var _ = Describe("docker env", func() {
 	var (
-		args []string
-		id   string
+		id       string
+		hostname string
+		stdout   string
+		exitCode int
 	)
 
 	AfterEach(func() {
@@ -31,17 +33,15 @@ var _ = Describe("env", func() {
 		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 	})
 
-	Describe("check env", func() {
-		Context("check that required env variables are set", func() {
-			It("should have path, hostname, home", func() {
-				id = randomDockerName()
-				hostname := "container"
-				args = []string{"run", "--name", id, "-h", hostname, Image, "env"}
-				stdout := runDockerCommand(0, args...)
-				Expect(stdout).To(ContainSubstring("PATH"))
-				Expect(stdout).To(ContainSubstring("HOME"))
-				Expect(stdout).To(ContainSubstring("HOSTNAME=" + hostname))
-			})
+	Context("check that required env variables are set", func() {
+		It("should have path, hostname, home", func() {
+			id = randomDockerName()
+			hostname = "container"
+			stdout, _, exitCode = DockerRun("--name", id, "-h", hostname, Image, "env")
+			Expect(exitCode).To(Equal(0))
+			Expect(stdout).To(ContainSubstring("PATH"))
+			Expect(stdout).To(ContainSubstring("HOME"))
+			Expect(stdout).To(ContainSubstring("HOSTNAME=" + hostname))
 		})
 	})
 })
