@@ -269,7 +269,7 @@ func (c *Container) Cleanup() error {
 // - the VM is running (qemu)
 // else false is returned
 func (c *Container) Exist() bool {
-	return c.isListed() || c.isWorkloadRunning() || c.isVMRunning()
+	return c.isListed() || c.isWorkloadRunning() || IsVMRunning(*c.ID)
 }
 
 func (c *Container) isListed() bool {
@@ -300,9 +300,4 @@ func (c *Container) isWorkloadRunning() bool {
 	}
 
 	return true
-}
-
-func (c *Container) isVMRunning() bool {
-	// FIXME: find a way to check if the VM is still running
-	return false
 }
