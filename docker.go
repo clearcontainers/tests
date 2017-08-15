@@ -157,3 +157,18 @@ func DockerAttach(args ...string) (string, string, int) {
 	// 15 seconds should be enough to wait for the container workload
 	return runDockerCommandWithTimeout(15, "attach", args...)
 }
+
+// DockerCommit creates a new image from a container's changes
+func DockerCommit(args ...string) (string, string, int) {
+	return runDockerCommand("commit", args...)
+}
+
+// DockerImages list images
+func DockerImages(args ...string) (string, string, int) {
+	return runDockerCommand("images", args...)
+}
+
+// DockerRmi removes one or more images
+func DockerRmi(args ...string) (string, string, int) {
+	return runDockerCommand("rmi", args...)
+}
