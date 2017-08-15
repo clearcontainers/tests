@@ -3,6 +3,8 @@ Tests
 
 Clear Containers Tests Repository
 
+Test
+
 Functional tests
 ----------------
 To run all functional tests, run::
