@@ -100,6 +100,9 @@ type Repo struct {
 
 	// prConfig is the configuration used to create pull request objects
 	prConfig pullRequestConfig
+
+	// revisionsLock is a lock for the revisions of a repository
+	revisionsLock sync.Mutex
 }
 
 const (
@@ -110,9 +113,12 @@ const (
 
 var defaultEnv = []string{"CI=true", "LOCALCI=true"}
 
-var runTestsInParallel bool
+var testReposInParallel bool
 
-var testLock sync.Mutex
+var testRevisionsInParallel bool
+
+// reposLock is a lock between repositories
+var reposLock sync.Mutex
 
 func (r *Repo) setupCvr() error {
 	var err error
@@ -344,9 +350,9 @@ func (r *Repo) test() error {
 		return fmt.Errorf("failed to get pull request %d %s", r.PR, err)
 	}
 
-	// run tests in parallel does not make sense when
+	// tests revisions in parallel does not make sense when
 	// we are just testing one pull request
-	runTestsInParallel = false
+	testRevisionsInParallel = false
 
 	return r.testRevision(rev)
 }
@@ -354,21 +360,26 @@ func (r *Repo) test() error {
 // testRevision tests a specific revision
 // returns an error if the test fail
 func (r *Repo) testRevision(rev revision) error {
-	if !runTestsInParallel {
-		testLock.Lock()
-		defer testLock.Unlock()
+	if !testReposInParallel {
+		reposLock.Lock()
+		defer reposLock.Unlock()
 	}
 
-	if !runTestsInParallel {
+	if !testRevisionsInParallel {
+		r.revisionsLock.Lock()
+		defer r.revisionsLock.Unlock()
+	}
+
+	if !testRevisionsInParallel {
 		return r.runTest(rev)
 	}
 
-	go func() {
+	go func(rev revision) {
 		err := r.runTest(rev)
 		if err != nil {
 			r.logger.Errorf("failed to test revision %#v: %s", rev, err)
 		}
-	}()
+	}(rev)
 
 	return nil
 }

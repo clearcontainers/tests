@@ -63,7 +63,9 @@ The configuration file follows the syntax defined by the `Tom's Obvious, Minimal
 Keys
 ~~~~
 
-- ``runTestsInParallel [bool] (optional)``: specify whether the tests can run in parallel. By default this value is ``false``. If **localCI** is running as a tool the value is ignored.
+- ``testReposInParallel [bool] (optional)``: specify whether two or more repositories can be tested in parallel. By default this value is ``false``.
+- ``testRevisionsInParallel [bool] (optional)``: specify whether two or more revisions (pull requests and master branch) of one repository can be tested in parallel.
+By default this value is ``false``. If **localCI** is running as a tool this key is ignored.
 
 Sections
 ~~~~~~~~

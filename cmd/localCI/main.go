@@ -118,7 +118,8 @@ func main() {
 		}
 		ciLog.Debugf("configuration %+v", config)
 
-		runTestsInParallel = config.RunTestsInParallel
+		testReposInParallel = config.TestReposInParallel
+		testRevisionsInParallel = config.TestRevisionsInParallel
 
 		context.App.Metadata = map[string]interface{}{
 			"repos": config.Repo,

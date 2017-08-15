@@ -22,8 +22,9 @@ import (
 )
 
 type config struct {
-	RunTestsInParallel bool
-	Repo               []Repo
+	TestReposInParallel     bool
+	TestRevisionsInParallel bool
+	Repo                    []Repo
 }
 
 const (
@@ -47,7 +48,8 @@ func newConfig(file string) (*config, error) {
 
 	// set default values
 	c := config{
-		RunTestsInParallel: false,
+		TestReposInParallel:     false,
+		TestRevisionsInParallel: false,
 		Repo: []Repo{
 			{
 				MasterBranch: defaultMasterBranch,
