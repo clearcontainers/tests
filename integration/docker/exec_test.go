@@ -20,16 +20,19 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("exec", func() {
+var _ = Describe("docker exec", func() {
 	var (
-		args []string
-		id   string
+		args     []string
+		id       string
+		exitCode int
+		stdout   string
+		stderr   string
 	)
 
 	BeforeEach(func() {
 		id = randomDockerName()
-		args = []string{"run", "-td", "--name", id, Image, "sh"}
-		runDockerCommand(0, args...)
+		_, _, exitCode = DockerRun("-td", "--name", id, Image, "sh")
+		Expect(exitCode).To(Equal(0))
 	})
 
 	AfterEach(func() {
@@ -37,38 +40,43 @@ var _ = Describe("exec", func() {
 		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 	})
 
-	Describe("exec with docker", func() {
-		Context("modifying a container with exec", func() {
-			It("should have the changes", func() {
-				args = []string{"exec", "-d", id, "sh", "-c", "echo 'hello world' > file"}
-				runDockerCommand(0, args...)
-				args = []string{"exec", id, "sh", "-c", "cat /file"}
-				stdout := runDockerCommand(0, args...)
-				Expect(stdout).NotTo(BeEmpty())
-				Expect(stdout).To(ContainSubstring("hello world"))
-			})
-		})
+	Context("modifying a container with exec", func() {
+		It("should have the changes", func() {
+			args = []string{"-d", id, "sh", "-c", "echo 'hello world' > file"}
+			_, _, exitCode = DockerExec(args...)
+			Expect(exitCode).To(Equal(0))
 
-		Context("check exit code using exec", func() {
-			It("should have the value assigned", func() {
-				args = []string{"exec", id, "sh", "-c", "exit 42"}
-				runDockerCommand(42, args...)
-			})
+			args = []string{id, "sh", "-c", "cat /file"}
+			stdout, _, exitCode = DockerExec(args...)
+			Expect(exitCode).To(Equal(0))
+			Expect(stdout).NotTo(BeEmpty())
+			Expect(stdout).To(ContainSubstring("hello world"))
 		})
+	})
 
-		Context("check stdout forwarded using exec", func() {
-			It("should displayed it", func() {
-				args = []string{"exec", id, "sh", "-c", "ls /etc/resolv.conf 2>/dev/null"}
-				stdout := runDockerCommand(0, args...)
-				Expect(stdout).To(ContainSubstring("/etc/resolv.conf"))
-			})
+	Context("check exit code using exec", func() {
+		It("should have the value assigned", func() {
+			_, _, exitCode = DockerExec(id, "sh", "-c", "exit 42")
+			Expect(exitCode).To(Equal(42))
 		})
+	})
 
-		Context("check stderr forwarded using exec", func() {
-			It("should not exist", func() {
-				args = []string{"exec", id, "sh", "-c", "ls /etc/foo >/dev/null"}
-				runDockerCommand(1, args...)
-			})
+	Context("check stdout forwarded using exec", func() {
+		It("should displayed it", func() {
+			args = []string{id, "sh", "-c", "ls /etc/resolv.conf 2>/dev/null"}
+			stdout, _, exitCode = DockerExec(args...)
+			Expect(exitCode).To(Equal(0))
+			Expect(stdout).To(ContainSubstring("/etc/resolv.conf"))
+		})
+	})
+
+	Context("check stderr forwarded using exec", func() {
+		It("should not exist", func() {
+			args = []string{id, "sh", "-c", "ls /etc/foo >/dev/null"}
+			stdout, stderr, exitCode = DockerExec(args...)
+			Expect(exitCode).To(Equal(1))
+			Expect(stdout).To(BeEmpty())
+			Expect(stderr).ToNot(BeEmpty())
 		})
 	})
 })
