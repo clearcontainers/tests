@@ -210,7 +210,7 @@ func (r *Repo) setupEnvars() error {
 	// add environment variables
 	r.env = os.Environ()
 	r.env = append(r.env, defaultEnv...)
-	repoSlug := fmt.Sprintf("LOCALCI_REPO_SLUG=%s", r.cvr.getProjectSlug())
+	repoSlug := fmt.Sprintf("LOCALCI_REPO_SLUG=%s", r.cvr.getRepoSlug())
 	r.env = append(r.env, repoSlug)
 
 	return nil

@@ -103,6 +103,9 @@ type CVR interface {
 	// getProjectSlug returns the domain, owner and repo name separated by '/'
 	getProjectSlug() string
 
+	// getRepoSlug returns the owner and the repo name separated by '/'
+	getRepoSlug() string
+
 	// getLatestPullRequestComment returns the latest comment of a specific
 	// user in the specific pr. If user is an empty string then any user
 	// could be the author of the latest comment. If body is an empty
