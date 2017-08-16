@@ -45,8 +45,7 @@ var _ = Describe("run", func() {
 	})
 
 	AfterEach(func() {
-		Ω(container.Exist()).ShouldNot(BeTrue())
-		Ω(container.Cleanup()).Should(Succeed())
+		Expect(container.Teardown()).To(Succeed())
 	})
 
 	DescribeTable("container",
@@ -79,8 +78,7 @@ var _ = Describe("run", func() {
 	})
 
 	AfterEach(func() {
-		Ω(container.Exist()).ShouldNot(BeTrue())
-		Ω(container.Cleanup()).Should(Succeed())
+		Expect(container.Teardown()).To(Succeed())
 	})
 
 	DescribeTable("container",

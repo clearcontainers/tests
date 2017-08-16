@@ -253,9 +253,29 @@ func (c *Container) RemoveOption(option string) error {
 	return nil
 }
 
-// Cleanup removes files and directories created by the container
-// returns an error if a file or directory can not be removed
-func (c *Container) Cleanup() error {
+// Teardown deletes the container if it is running,
+// ensures the container is not running and removes any
+// file created by the container
+func (c *Container) Teardown() error {
+	var cid string
+
+	if c.ID != nil {
+		cid = *c.ID
+	}
+
+	// if container exist then delete it
+	if c.Exist() {
+		_, stderr, exitCode := c.Delete(true)
+		if exitCode != 0 {
+			return fmt.Errorf("failed to delete container %s %s", cid, stderr)
+		}
+
+		// if container still exist then fail
+		if c.Exist() {
+			return fmt.Errorf("unable to delete container %s", cid)
+		}
+	}
+
 	if c.Bundle != nil {
 		return c.Bundle.Remove()
 	}
