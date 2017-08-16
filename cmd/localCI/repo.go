@@ -258,11 +258,11 @@ func (r *Repo) loop() {
 	r.logger.Debugf("monitoring in a loop the repository: %+v", *r)
 
 	appendPullRequests := func(revisions *[]revision, prs []int) error {
-		for _, pr := range prs {
-			r.logger.Debugf("requesting pull request %d", pr)
-			pr, err := newPullRequest(pr, r.prConfig)
+		for _, prNumber := range prs {
+			r.logger.Debugf("requesting pull request %d", prNumber)
+			pr, err := newPullRequest(prNumber, r.prConfig)
 			if err != nil {
-				return fmt.Errorf("failed to get pull request '%d' %s", pr, err)
+				return fmt.Errorf("failed to get pull request '%d' %s", prNumber, err)
 			}
 			*revisions = append(*revisions, pr)
 		}
