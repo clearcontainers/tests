@@ -69,10 +69,16 @@ function nginx_ab_networking {
 	sleep "$sleep_secs"
 	ab -n ${requests} -c ${concurrency} http://${url}/ > "$total_requests"
 
-	result=$(cat "$total_requests" | grep "Requests per second" | cut -d ':' -f2 | sed 's/ //g' | cut -d '[' -f1)
+	cp -p $total_requests result.test
+
+	local result=$(grep "^Requests per second" $total_requests)
+	[[ $result =~ :[[:blank:]]*([[:digit:]]+(\.[[:digit:]]*)?) ]] && rps=${BASH_REMATCH[1]}
 	$DOCKER_EXE rm -f ${container_name} > /dev/null	
 	rm -f "$total_requests"
 }
 
 nginx_ab_networking
-echo "The total of requests per second is : $result"
+echo "The total of requests per second is : $rps"
+save_results "network nginx ab benchmark" \
+	"requests=${requests} concurrency=${concurrency}" \
+	"$rps" "requests/s"
