@@ -40,8 +40,8 @@ var _ = Describe("run", func() {
 
 	BeforeEach(func() {
 		container, err = NewContainer([]string{}, false)
-		Ω(container).ShouldNot(BeNil())
-		Ω(err).ShouldNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
+		Expect(container).NotTo(BeNil())
 	})
 
 	AfterEach(func() {
@@ -74,8 +74,8 @@ var _ = Describe("run", func() {
 
 	BeforeEach(func() {
 		container, err = NewContainer([]string{"true"}, false)
-		Ω(container).ShouldNot(BeNil())
-		Ω(err).ShouldNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
+		Expect(container).NotTo(BeNil())
 	})
 
 	AfterEach(func() {
