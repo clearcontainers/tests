@@ -41,7 +41,10 @@ func loop(repos []Repo) error {
 		}
 
 		wg.Add(1)
-		go r.loop()
+		go func(repo Repo) {
+			repo.loop()
+			wg.Done()
+		}(r)
 	}
 
 	wg.Wait()
