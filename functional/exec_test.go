@@ -70,7 +70,7 @@ var _ = Describe("exec", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(container).NotTo(BeNil())
 		_, _, exitCode := container.Run()
-		Expect(exitCode).Should(Equal(0))
+		Expect(exitCode).To(Equal(0))
 	})
 
 	AfterEach(func() {
@@ -83,10 +83,10 @@ var _ = Describe("exec", func() {
 			tInit := time.Now()
 
 			_, _, exitCode = container.Exec(process)
-			Expect(exitCode).Should(Equal(0))
+			Expect(exitCode).To(Equal(0))
 
 			duration := time.Since(tInit)
-			Expect(duration.Seconds()).Should(BeNumerically(comparator, timeout))
+			Expect(duration.Seconds()).To(BeNumerically(comparator, timeout))
 		},
 		execDetachTiming(false),
 		execDetachTiming(true),
@@ -97,15 +97,15 @@ var _ = Describe("exec", func() {
 			process.ContainerID = container.ID
 
 			stdout, stderr, exitCode := container.Exec(process)
-			Expect(exitCode).Should(Equal(0))
+			Expect(exitCode).To(Equal(0))
 
 			if expectedOutput != "" {
-				Expect(stdout).Should(ContainSubstring(expectedOutput))
+				Expect(stdout).To(ContainSubstring(expectedOutput))
 			} else {
-				Expect(stdout).Should(BeEmpty())
+				Expect(stdout).To(BeEmpty())
 			}
 
-			Expect(stderr).Should(BeEmpty())
+			Expect(stderr).To(BeEmpty())
 		},
 		execDetachOutput(false),
 		execDetachOutput(true),
