@@ -67,8 +67,8 @@ var _ = Describe("exec", func() {
 
 	BeforeEach(func() {
 		container, err = NewContainer(sleepingContainerWorkload, true)
-		Expect(container).ShouldNot(BeNil())
-		Expect(err).ShouldNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
+		Expect(container).NotTo(BeNil())
 		_, _, exitCode := container.Run()
 		Expect(exitCode).Should(Equal(0))
 	})
