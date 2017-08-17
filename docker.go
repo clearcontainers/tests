@@ -28,6 +28,10 @@ const (
 
 	// AlpineImage is the alpine image
 	AlpineImage = "alpine"
+
+	// timeout for docker rmi command
+	// 15 seconds should be enough to complete this task
+	dockerRmiTimeout = 15
 )
 
 func runDockerCommandWithTimeout(timeout time.Duration, command string, args ...string) (string, string, int) {
@@ -170,7 +174,10 @@ func DockerImages(args ...string) (string, string, int) {
 
 // DockerRmi removes one or more images
 func DockerRmi(args ...string) (string, string, int) {
-	return runDockerCommand("rmi", args...)
+	// docker takes more than 5 seconds to remove an image, it depends
+	// of the image size and this operation does not involve to the
+	// runtime
+	return runDockerCommandWithTimeout(dockerRmiTimeout, "rmi", args...)
 }
 
 // DockerCp copies files/folders between a container and the local filesystem
@@ -202,4 +209,3 @@ func DockerBuild(args ...string) (string, string, int) {
 func DockerInfo() (string, string, int) {
 	return runDockerCommand("info")
 }
-
