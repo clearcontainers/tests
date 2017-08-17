@@ -307,6 +307,22 @@ func (r *Repo) loop() {
 }
 
 func (r *Repo) testRevisions(revisions []revision, revisionsTested *map[string]revision) {
+	// remove revisions that are not in the list of open pull request and already tested
+	for k, v := range *revisionsTested {
+		found := false
+		// iterate over open pull requests and master branch
+		for _, r := range revisions {
+			if r.id() == k {
+				found = true
+				break
+			}
+		}
+
+		if !found && !v.isBeingTested() {
+			delete((*revisionsTested), k)
+		}
+	}
+
 	for _, revision := range revisions {
 		tested, ok := (*revisionsTested)[revision.id()]
 		if ok {
@@ -327,7 +343,6 @@ func (r *Repo) testRevisions(revisions []revision, revisionsTested *map[string]r
 		}
 
 		// copy the PR that was tested
-		// FIXME: remove the PR's that were closed or merged
 		(*revisionsTested)[revision.id()] = revision
 	}
 }
