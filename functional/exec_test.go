@@ -74,10 +74,7 @@ var _ = Describe("exec", func() {
 	})
 
 	AfterEach(func() {
-		Expect(container.Exist()).Should(BeTrue())
-		_, _, exitCode = container.Delete(true)
-		Expect(exitCode).Should(Equal(0))
-		Expect(container.Cleanup()).Should(Succeed())
+		Expect(container.Teardown()).To(Succeed())
 	})
 
 	DescribeTable("container",
