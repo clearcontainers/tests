@@ -89,6 +89,11 @@ func (g *Github) getProjectSlug() string {
 	return fmt.Sprintf("%s/%s/%s", githubDomain, g.owner, g.repo)
 }
 
+// getRepoSlug returns the owner and the repo name separated by '/'
+func (g *Github) getRepoSlug() string {
+	return fmt.Sprintf("%s/%s", g.owner, g.repo)
+}
+
 // getPullRequestCommits returns the commits of a pull request
 func (g *Github) getPullRequestCommits(pr int) ([]repoCommit, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutShortRequest)
