@@ -2,6 +2,6 @@
 
 To run these tests you just do
 
-bats popular-containers-images.bats
+bats docker_popular_images/popular_docker_images.bats
 
 In order to run all these tests you need a minimum of 8GB
