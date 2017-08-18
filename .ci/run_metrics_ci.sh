@@ -17,6 +17,8 @@
 CURRENTDIR=$(dirname "$(readlink -f "$0")")
 REPORT_CMDS=("checkmetrics" "emailreport")
 
+KSM_ENABLE_FILE="/sys/kernel/mm/ksm/run"
+
 # Verify/install report tools. These tools will
 # parse/send the results from metrics scripts execution.
 for cmd in "${REPORT_CMDS[@]}"; do
@@ -33,8 +35,58 @@ done
 pushd "$CURRENTDIR/../metrics"
 	source "lib/common.bash"
 
+	# If KSM is available on this platform, let's run the KSM tests first
+	# and then turn it off for the rest of the tests, as KSM may introduce
+	# some extra noise in the results by stealing CPU time for instance
+	if [[ -f ${KSM_ENABLE_FILE} ]]; then
+		# Ensure KSM is enabled
+		sudo bash -c "echo 1 > ${KSM_ENABLE_FILE}"
+
+		# Note - here we could set some default settings for KSM,
+		# as on some distros KSM may either be set to rather passive
+		# which affects the chosen 'settle time' of the tests
+
+		# Run the memory footprint test. With default Ubuntu 16.04
+		# settings, and 20 containers, it takes ~200s to 'settle' to
+		# a steady memory footprint
+		bash density/docker_memory_usage.sh 20 300
+
+		# And now ensure KSM is turned off for the rest of the tests
+		sudo bash -c "echo 0 > ${KSM_ENABLE_FILE}"
+	fi
+
 	# Run the time tests
 	bash time/docker_workload_time.sh true busybox $RUNTIME 100
+
+	# Run the memory footprint test
+	# As we have no KSM here, we do not need a 'settle delay'
+	bash density/docker_memory_usage.sh 20 1
+
+	#
+	# Run some network tests
+	#
+
+	# ops/second
+	bash network/network-nginx-ab-benchmark.sh
+
+	# ping latency
+	bash network/network-latency.sh
+
+	# Bandwidth and jitter
+	bash network/network-metrics-iperf3.sh
+
+	# UDP bandwidths and packet loss
+	bash network/network-metrics-nuttcp.sh
+
+
+	#
+	# Run some IO tests
+	#
+	bash storage/fio_job.sh -b 16k -o randread -t "storage IO random read bs 16k"
+	bash storage/fio_job.sh -b 16k -o randwrite -t "storage IO random write bs 16k"
+	bash storage/fio_job.sh -b 16k -o read -t "storage IO linear read bs 16k"
+	bash storage/fio_job.sh -b 16k -o write -t "storage IO linear write bs 16k"
+
 
 	# Parse/Report results
 	emailreport
