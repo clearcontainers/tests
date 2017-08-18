@@ -22,6 +22,7 @@ LIB_DIR="${SCRIPT_PATH}/../lib"
 DOCKER_EXE="${DOCKER_EXE:-docker}"
 RUNTIME="${RUNTIME:-cc-runtime}"
 CC_SHIM_PATH="${CC_SHIM_PATH:-/usr/libexec/clear-containers/cc-shim}"
+CC_PROXY_PATH="${CC_PROXY_PATH:-/usr/libexec/clear-containers/cc-proxy}"
 
 # If we fail for any reason, exit through here and we should log that to the correct
 # place and return the correct code to halt the run
@@ -192,4 +193,10 @@ function kill_processes_before_start() {
 	HYPERVISOR_PATH="$(get_qemu_path)"
 	check_active_process "$HYPERVISOR_PATH" || killall "$HYPERVISOR_PATH"
 	check_active_process "$CC_SHIM_PATH" || killall "$CC_SHIM_PATH"
+}
+
+# Generate a random name - generally used when creating containers, but can
+# be used for any other appropriate purpose
+function random_name() {
+	mktemp -u cc-XXXXXX
 }
