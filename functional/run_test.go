@@ -50,11 +50,11 @@ var _ = Describe("run", func() {
 
 	DescribeTable("container",
 		func(workload []string, expectedExitCode int) {
-			Ω(container.SetWorkload(workload)).Should(Succeed())
+			Expect(container.SetWorkload(workload)).To(Succeed())
 
 			_, _, exitCode := container.Run()
 
-			Ω(expectedExitCode).Should(Equal(exitCode))
+			Expect(expectedExitCode).To(Equal(exitCode))
 		},
 		withWorkload("true", 0),
 		withWorkload("false", 1),
@@ -83,16 +83,16 @@ var _ = Describe("run", func() {
 
 	DescribeTable("container",
 		func(option string, fail bool) {
-			Ω(container.RemoveOption(option)).Should(Succeed())
+			Expect(container.RemoveOption(option)).To(Succeed())
 
 			_, stderr, exitCode := container.Run()
 
 			if fail {
-				Ω(exitCode).ShouldNot(Equal(0))
-				Ω(stderr).ShouldNot(BeEmpty())
+				Expect(exitCode).ToNot(Equal(0))
+				Expect(stderr).NotTo(BeEmpty())
 			} else {
-				Ω(exitCode).Should(Equal(0))
-				Ω(stderr).Should(BeEmpty())
+				Expect(exitCode).To(Equal(0))
+				Expect(stderr).To(BeEmpty())
 			}
 		},
 		withoutOption("--bundle", shouldFail),

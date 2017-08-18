@@ -41,8 +41,8 @@ var _ = Describe("commands", func() {
 		func(cmd *Command) {
 			_, stderr, exitCode = cmd.Run()
 
-			Ω(exitCode).ShouldNot(Equal(0))
-			Ω(stderr).ShouldNot(BeEmpty())
+			Expect(exitCode).ToNot(Equal(0))
+			Expect(stderr).NotTo(BeEmpty())
 		},
 		withoutID("kill"),
 		withoutID("delete"),
@@ -54,8 +54,8 @@ var _ = Describe("commands", func() {
 		func(cmd *Command) {
 			_, stderr, exitCode = cmd.Run()
 
-			Ω(exitCode).ShouldNot(Equal(0))
-			Ω(stderr).ShouldNot(BeEmpty())
+			Expect(exitCode).ToNot(Equal(0))
+			Expect(stderr).NotTo(BeEmpty())
 		},
 		withInexistentID("kill"),
 		withInexistentID("delete"),
