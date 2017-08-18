@@ -337,9 +337,34 @@ func (r *Repo) testRevisions(revisions []revision, revisionsTested *map[string]r
 			}
 		}
 
-		if err := r.testRevision(revision); err != nil {
-			r.logger.Errorf("failed to test revision '%+v' %s", revision, err)
+		// setup revision
+		langEnv, err := r.setupRevision(revision)
+		if err != nil {
+			r.logger.Errorf("failed to setup revision %#v: %s", revision, err)
 			continue
+		}
+
+		// cleanup revision
+		defer func() {
+			err = langEnv.cleanup()
+			if err != nil {
+				r.logger.Error(err)
+			}
+		}()
+
+		// test revision
+		if runTestsInParallel {
+			go func() {
+				if err := r.testRevision(revision, langEnv); err != nil {
+					r.logger.Errorf("failed to test revision %#v %s", revision, err)
+				}
+			}()
+		} else {
+			testLock.Lock()
+			if err := r.testRevision(revision, langEnv); err != nil {
+				r.logger.Errorf("failed to test revision %#v %s", revision, err)
+			}
+			testLock.Unlock()
 		}
 
 		// copy the PR that was tested
@@ -363,67 +388,55 @@ func (r *Repo) test() error {
 	// we are just testing one pull request
 	runTestsInParallel = false
 
-	return r.testRevision(rev)
+	// setup revision
+	langEnv, err := r.setupRevision(rev)
+	if err != nil {
+		return fmt.Errorf("failed to setup revision %#v: %s", rev, err)
+	}
+
+	// cleanup revision
+	defer func() {
+		err = langEnv.cleanup()
+		if err != nil {
+			r.logger.Error(err)
+		}
+	}()
+
+	// test revision
+	return r.testRevision(rev, langEnv)
+}
+
+// setupRevision generates a language environment, downloads the revision
+// and creates the logs directory
+func (r *Repo) setupRevision(rev revision) (languageConfig, error) {
+	// generate a new environment to run the stages
+	langEnv, err := r.Language.generateEnvironment(r.cvr.getProjectSlug())
+	if err != nil {
+		return languageConfig{}, err
+	}
+
+	// download the revision
+	if err = rev.download(langEnv.workingDir); err != nil {
+		return languageConfig{}, err
+	}
+
+	// cleanup and set the log directory of the pull request
+	logDir := filepath.Join(r.LogDir, rev.logDirName())
+	_ = os.RemoveAll(logDir)
+	if err = os.MkdirAll(logDir, logDirMode); err != nil {
+		return languageConfig{}, err
+	}
+
+	return langEnv, nil
 }
 
 // testRevision tests a specific revision
 // returns an error if the test fail
-func (r *Repo) testRevision(rev revision) error {
-	if !runTestsInParallel {
-		testLock.Lock()
-		defer testLock.Unlock()
-	}
-
-	if !runTestsInParallel {
-		return r.runTest(rev)
-	}
-
-	go func() {
-		err := r.runTest(rev)
-		if err != nil {
-			r.logger.Errorf("failed to test revision %#v: %s", rev, err)
-		}
-	}()
-
-	return nil
-}
-
-// runTest generate an environment and run the stages
-func (r *Repo) runTest(rev revision) error {
-	langEnv, err := r.Language.generateEnvironment(r.cvr.getProjectSlug())
-	if err != nil {
-		return err
-	}
-
-	// cleanup task
-	defer func() {
-		err = os.RemoveAll(langEnv.workingDir)
-		if err != nil {
-			r.logger.Errorf("failed to remove the working directory '%s': %s", langEnv.workingDir, err)
-		}
-
-		err = os.RemoveAll(langEnv.tempDir)
-		if err != nil {
-			r.logger.Errorf("failed to remove the temporal directory '%s': %s", langEnv.tempDir, err)
-		}
-	}()
-
-	// download the revision
-	if err = rev.download(langEnv.workingDir); err != nil {
-		return err
-	}
-
+func (r *Repo) testRevision(rev revision, langEnv languageConfig) error {
 	config := stageConfig{
 		logger:     r.logger,
 		workingDir: langEnv.workingDir,
 		tty:        r.TTY,
-	}
-
-	// cleanup and set the log directory of the pull request
-	config.logDir = filepath.Join(r.LogDir, rev.logDirName())
-	_ = os.RemoveAll(config.logDir)
-	if err = os.MkdirAll(config.logDir, logDirMode); err != nil {
-		return err
 	}
 
 	// set environment variables
@@ -437,8 +450,7 @@ func (r *Repo) runTest(rev revision) error {
 	// copy logs to server if we have an IP address
 	if len(r.LogServer.IP) != 0 {
 		defer func() {
-			err = r.LogServer.copy(config.logDir)
-			if err != nil {
+			if err := r.LogServer.copy(config.logDir); err != nil {
 				r.logger.Errorf("failed to copy log dir %s to server %+v", config.logDir, r.LogServer)
 			}
 		}()
