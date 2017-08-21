@@ -44,6 +44,6 @@ function clone_build_and_install() {
 	clone_and_build $1 $2
 	pushd "${GOPATH}/src/${1}"
 	echo "Install repository ${1}"
-	sudo -E make -e install
+	sudo -E PATH=$PATH make -e install
 	popd
 }
