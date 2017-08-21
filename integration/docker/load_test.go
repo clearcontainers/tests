@@ -37,10 +37,10 @@ var _ = Describe("load", func() {
 	})
 
 	AfterEach(func() {
+		_, _, exitCode := DockerRmi(imageName)
+		Expect(exitCode).To(Equal(0))
 		Expect(RemoveDockerContainer(id)).To(BeTrue())
 		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
-		args = []string{"rmi", imageName}
-		runDockerCommand(0, args...)
 	})
 
 	Describe("load with docker", func() {
@@ -53,8 +53,8 @@ var _ = Describe("load", func() {
 				defer os.Remove(file.Name())
 				Expect(file.Name()).To(BeAnExistingFile())
 				imageName = "test/container-test"
-				args = []string{"commit", id, imageName}
-				runDockerCommand(0, args...)
+				_, _, exitCode := DockerCommit(id, imageName)
+				Expect(exitCode).To(Equal(0))
 				args = []string{"save", imageName, "--output", file.Name()}
 				runDockerCommand(0, args...)
 				args = []string{"load", "--input", file.Name()}
