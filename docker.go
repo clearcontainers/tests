@@ -205,6 +205,11 @@ func DockerBuild(args ...string) (string, string, int) {
 	return runDockerCommand("build", args...)
 }
 
+// DockerExport will export a container’s filesystem as a tar archive
+func DockerExport(args ...string) (string, string, int) {
+	return runDockerCommand("export", args...)
+}
+
 // DockerInfo displays system-wide information
 func DockerInfo() (string, string, int) {
 	return runDockerCommand("info")
