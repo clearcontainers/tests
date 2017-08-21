@@ -35,7 +35,6 @@ FILE_SIZE="4G"
 FIO_TEST_NAME="io_test"
 NUM_JOBS="1"
 OPERATION="randread"
-RUNTIME="cor"
 TEST_NAME="storage fio test"
 
 # This docker image includes FIO tool.
@@ -158,7 +157,7 @@ function main()
 	init_env
 	create_fio_job
 
-	# Launch container (cor runtime by default)
+	# Launch container
 	output=$(docker run --runtime="$RUNTIME" \
 		"$FIO_IMAGE" bash -c "$FIO_JOB")
 
