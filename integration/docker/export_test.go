@@ -46,8 +46,8 @@ var _ = Describe("export", func() {
 				file, err := ioutil.TempFile(os.TempDir(), "latest.tar")
 				Expect(err).ToNot(HaveOccurred())
 				defer os.Remove(file.Name())
-				args = []string{"export", "--output", file.Name(), id}
-				runDockerCommand(0, args...)
+				_, _, exitCode := DockerExport("--output", file.Name(), id)
+				Expect(exitCode).To(Equal(0))
 				Expect(file.Name()).To(BeAnExistingFile())
 				fileInfo, err := file.Stat()
 				Expect(err).ToNot(HaveOccurred())
