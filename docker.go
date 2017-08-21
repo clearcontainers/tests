@@ -209,3 +209,13 @@ func DockerBuild(args ...string) (string, string, int) {
 func DockerInfo() (string, string, int) {
 	return runDockerCommand("info")
 }
+
+// DockerSwarm manages swarm
+func DockerSwarm(args ...string) (string, string, int) {
+	return runDockerCommand("swarm", args...)
+}
+
+// DockerService manages services
+func DockerService(args ...string) (string, string, int) {
+	return runDockerCommand("service", args...)
+}
