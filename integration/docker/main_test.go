@@ -22,6 +22,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const (
+	shouldFail    = true
+	shouldNotFail = false
+)
+
 func randomDockerName() string {
 	return RandID(30)
 }
