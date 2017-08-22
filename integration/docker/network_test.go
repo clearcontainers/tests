@@ -15,6 +15,7 @@
 package docker
 
 import (
+	. "github.com/clearcontainers/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -26,20 +27,21 @@ var _ = Describe("network", func() {
 	)
 
 	AfterEach(func() {
-		args = []string{"network", "rm", networkName}
-		runDockerCommand(0, args...)
-		args = []string{"network", "ls"}
-		stdout := runDockerCommand(0, args...)
+		_, _, exitCode := DockerNetwork("rm", networkName)
+		Expect(exitCode).To(Equal(0))
+		stdout, _, exitCode := DockerNetwork("ls")
+		Expect(exitCode).To(Equal(0))
 		Expect(stdout).NotTo(ContainSubstring(networkName))
 	})
 
 	Describe("network with docker", func() {
 		Context("create network", func() {
 			It("should display the network's name", func() {
-				args = []string{"network", "create", "-d", "bridge", networkName}
-				runDockerCommand(0, args...)
-				args = []string{"network", "inspect", networkName}
-				runDockerCommand(0, args...)
+				args = []string{"create", "-d", "bridge", networkName}
+				_, _, exitCode := DockerNetwork(args...)
+				Expect(exitCode).To(Equal(0))
+				_, _, exitCode = DockerNetwork("inspect", networkName)
+				Expect(exitCode).To(Equal(0))
 			})
 		})
 	})
