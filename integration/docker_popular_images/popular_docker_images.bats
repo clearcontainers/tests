@@ -198,7 +198,7 @@ setup () {
 }
 
 @test "check kong configuration file is valid" {
-	$DOCKER_EXE run --rm -i kong bash -c "cp /etc/kong/kong.conf.default /usr/local/kong/kong.conf; kong check /usr/local/kong/kong.conf | grep valid"
+	$DOCKER_EXE run --rm -i kong bash -c "kong check /etc/kong/kong.conf.default | grep valid"
 }
 
 @test "check kernel version in a mageia container" {
