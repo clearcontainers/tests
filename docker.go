@@ -220,6 +220,11 @@ func DockerBuild(args ...string) (string, string, int) {
 	return runDockerCommand("build", args...)
 }
 
+// DockerNetwork manages networks
+func DockerNetwork(args ...string) (string, string, int) {
+	return runDockerCommand("network", args...)
+}
+
 // DockerExport will export a container’s filesystem as a tar archive
 func DockerExport(args ...string) (string, string, int) {
 	return runDockerCommand("export", args...)
