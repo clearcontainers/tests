@@ -210,6 +210,11 @@ func DockerPs(args ...string) (string, string, int) {
 	return runDockerCommand("ps", args...)
 }
 
+// DockerSearch searchs docker hub images
+func DockerSearch(args ...string) (string, string, int) {
+	return runDockerCommand("search", args...)
+}
+
 // DockerCreate creates a new container
 func DockerCreate(args ...string) (string, string, int) {
 	return runDockerCommand("create", args...)
