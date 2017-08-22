@@ -215,6 +215,11 @@ func DockerCreate(args ...string) (string, string, int) {
 	return runDockerCommand("create", args...)
 }
 
+// DockerDiff inspect changes to files or directories on a container’s filesystem
+func DockerDiff(args ...string) (string, string, int) {
+	return runDockerCommand("diff", args...)
+}
+
 // DockerBuild builds an image from a Dockerfile
 func DockerBuild(args ...string) (string, string, int) {
 	return runDockerCommand("build", args...)
