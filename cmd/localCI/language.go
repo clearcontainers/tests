@@ -54,6 +54,21 @@ type languageConfig struct {
 	env []string
 }
 
+// cleanup removes working and temporal directory
+func (l *languageConfig) cleanup() error {
+	err := os.RemoveAll(l.workingDir)
+	if err != nil {
+		return fmt.Errorf("failed to remove the working directory '%s' %s", l.workingDir, err)
+	}
+
+	err = os.RemoveAll(l.tempDir)
+	if err != nil {
+		return fmt.Errorf("failed to remove the temporal directory '%s' %s", l.tempDir, err)
+	}
+
+	return nil
+}
+
 var supportedLanguages = map[string]newLanguageFunc{
 	"Go": newGoLanguage,
 }
