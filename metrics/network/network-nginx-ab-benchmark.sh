@@ -22,6 +22,8 @@
 #  benchmarking tool in the host to calculate the 
 #  requests per second
 
+set -e
+
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 
 source "${SCRIPT_PATH}/../lib/common.bash"
@@ -44,22 +46,14 @@ function setup {
 	kill_processes_before_start
 }
 
-function check_environment {
-	ab -V
-	if [ $? -ne 0 ]
-	then
-		echo "Please install the Apache HTTP server benchmarking tool (ab)"
-		exit 1
-	fi
-}
-
 # This script will perform all the measurements using a local setup
 
 # Test single host<->docker requests per second using nginx and ab
 
 function nginx_ab_networking {
+	cmds=("ab")
+	check_cmds "${cmds[@]}"
 	setup
-	check_environment
 	container_name="docker-nginx"
 	total_requests=$(mktemp)
 
