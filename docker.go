@@ -15,6 +15,8 @@
 package tests
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -60,6 +62,19 @@ func StatusDockerContainer(name string) string {
 
 	state := strings.Split(stdout, " ")
 	return state[0]
+}
+
+// ExitCodeDockerContainer returns the container exit code
+func ExitCodeDockerContainer(name string) (int, error) {
+	args := []string{"--format={{.State.ExitCode}}", name}
+
+	stdout, _, exitCode := runDockerCommand("inspect", args...)
+
+	if exitCode != 0 || stdout == "" {
+		return -1, fmt.Errorf("failed to run docker inspect command")
+	}
+
+	return strconv.Atoi(strings.TrimSpace(stdout))
 }
 
 // IsRunningDockerContainer inspects a container
