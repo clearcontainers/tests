@@ -437,6 +437,7 @@ func (r *Repo) testRevision(rev revision, langEnv languageConfig) error {
 		logger:     r.logger,
 		workingDir: langEnv.workingDir,
 		tty:        r.TTY,
+		logDir:     filepath.Join(r.LogDir, rev.logDirName()),
 	}
 
 	// set environment variables
