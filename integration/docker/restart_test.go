@@ -28,8 +28,8 @@ var _ = Describe("restart", func() {
 
 	BeforeEach(func() {
 		id = randomDockerName()
-		args = []string{"run", "-td", "--name", id, Image, "sh"}
-		runDockerCommand(0, args...)
+		_, _, exitCode := DockerRun("-td", "--name", id, Image, "sh")
+		Expect(exitCode).To(Equal(0))
 	})
 
 	AfterEach(func() {
