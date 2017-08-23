@@ -32,11 +32,13 @@ make
 sudo -E PATH=$PATH sh -c "make install"
 sudo -E PATH=$PATH sh -c "make install.config"
 
+containers_config_path="/etc/containers"
+echo "Copy containers policy from CRI-O repo to $containers_config_path"
+sudo mkdir -p "$containers_config_path"
+sudo cp test/policy.json "$containers_config_path"
+
 echo "Setup cc-runtime as the runtime to use"
 sudo sed -i.bak 's/\/usr\/bin\/runc/\/usr\/local\/bin\/cc-runtime/g' /etc/crio/crio.conf
-
-echo "Setup aufs as the storage driver"
-sudo sed -i.bak 's/storage_driver = \"\"/storage_driver = \"aufs\"/g' /etc/crio/crio.conf
 
 popd
 
