@@ -25,14 +25,13 @@ import (
 
 var _ = Describe("export", func() {
 	var (
-		args []string
-		id   string
+		id string
 	)
 
 	BeforeEach(func() {
 		id = randomDockerName()
-		args = []string{"run", "-td", "--name", id, Image}
-		runDockerCommand(0, args...)
+		_, _, exitCode := DockerRun("-td", "--name", id, Image)
+		Expect(exitCode).To(Equal(0))
 	})
 
 	AfterEach(func() {
