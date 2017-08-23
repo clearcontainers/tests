@@ -22,8 +22,7 @@ import (
 
 var _ = Describe("terminal", func() {
 	var (
-		args []string
-		id   string
+		id string
 	)
 
 	BeforeEach(func() {
@@ -38,24 +37,24 @@ var _ = Describe("terminal", func() {
 	Describe("terminal with docker", func() {
 		Context("TERM env variable is set when allocating a tty", func() {
 			It("should display the terminal's name", func() {
-				args = []string{"run", "--name", id, "-t", Image, "env"}
-				stdout := runDockerCommand(0, args...)
+				stdout, _, exitCode := DockerRun("--name", id, "-t", Image, "env")
+				Expect(exitCode).To(Equal(0))
 				Expect(stdout).To(MatchRegexp("TERM=" + `[[:alnum:]]`))
 			})
 		})
 
 		Context("TERM env variable is not set when not allocating a tty", func() {
 			It("should not display the terminal's name", func() {
-				args = []string{"run", "--name", id, Image, "env"}
-				stdout := runDockerCommand(0, args...)
+				stdout, _, exitCode := DockerRun( "--name", id, Image, "env")
+				Expect(exitCode).To(Equal(0))
 				Expect(stdout).NotTo(ContainSubstring("TERM"))
 			})
 		})
 
 		Context("Check that pseudo tty is setup properly when allocating a tty", func() {
 			It("should display the pseudo tty's name", func() {
-				args = []string{"run", "--name", id, "-t", Image, "tty"}
-				stdout := runDockerCommand(0, args...)
+				stdout, _, exitCode := DockerRun("--name", id, "-t", Image, "tty")
+				Expect(exitCode).To(Equal(0))
 				Expect(stdout).To(MatchRegexp("/dev/pts/" + `[[:alnum:]]`))
 			})
 		})
