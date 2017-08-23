@@ -29,15 +29,15 @@ var _ = Describe("tag", func() {
 
 	BeforeEach(func() {
 		id = randomDockerName()
-		args = []string{"run", "-td", "--name", id, Image, "sh"}
-		runDockerCommand(0, args...)
+		_, _, exitCode := DockerRun("-td", "--name", id, Image, "sh")
+		Expect(exitCode).To(Equal(0))
 	})
 
 	AfterEach(func() {
 		Expect(RemoveDockerContainer(id)).To(BeTrue())
 		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
-		args = []string{"rmi", tagName}
-		runDockerCommand(0, args...)
+		_, _, exitCode := DockerRmi(tagName)
+		Expect(exitCode).To(Equal(0))
 	})
 
 	Describe("tag with docker", func() {
