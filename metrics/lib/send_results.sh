@@ -32,11 +32,12 @@ source "${SCRIPT_PATH}/common.bash"
 RESULT_DIR="${SCRIPT_PATH}/../results"
 
 GROUP="PNP"
+BINDIR_LOCAL_PATH="/usr/local/bin"
 COR_DEFAULT_PATH="/usr/bin"
 COR_DEFAULT_NAME="cc-oci-runtime"
 RUNC_DEFAULT_PATH="/usr/bin"
 RUNC_DEFAULT_NAME="docker-runc"
-CC_RUNTIME_DEFAULT_PATH="/usr/local/bin"
+CC_RUNTIME_DEFAULT_PATH="/usr/bin"
 CC_RUNTIME_DEFAULT_NAME="cc-runtime"
 CC_DEFAULT_IMG_PATH="/usr/share/clear-containers"
 CONTAINERS_IMG_SYSTEM="/usr/share/clear-containers/clear-containers.img"
@@ -122,15 +123,26 @@ function get_runtime_info()
 
 	case "$RUNTIME" in
 		cc-runtime)
-			result="$(get_runtime_version ${COR_DEFAULT_PATH} ${COR_DEFAULT_NAME})"
+			# First look for a cc-runtime local installation
+			if [ -f "$BINDIR_LOCAL_PATH/$CC_RUNTIME_DEFAULT_NAME" ]; then
+				CC_RUNTIME_DEFAULT_PATH="$BINDIR_LOCAL_PATH"
+			fi
+
+			result="$(get_runtime_version ${CC_RUNTIME_DEFAULT_PATH} ${CC_RUNTIME_DEFAULT_NAME})"
 			;;
 
 		cor)
-			result="$(get_runtime_version ${RUNC_DEFAULT_PATH} ${RUNC_DEFAULT_NAME})"
+			# First look for a cor local installation
+			if [ -f "$BINDIR_LOCAL_PATH/$COR_DEFAULT_NAME" ]; then
+				COR_DEFAULT_PATH="$BINDIR_LOCAL_PATH"
+			fi
+
+			result="$(get_runtime_version ${COR_DEFAULT_PATH} ${COR_DEFAULT_NAME})"
+
 			;;
 
 		runc)
-			result="$(get_runtime_version ${CC_RUNTIME_DEFAULT_PATH} ${CC_RUNTIME_DEFAULT_NAME})"
+			result="$(get_runtime_version ${RUNC_DEFAULT_PATH} ${RUNC_DEFAULT_NAME})"
 			;;
 
 		*)
