@@ -27,7 +27,7 @@ if grep -q "N" /sys/module/kvm_intel/parameters/nested; then
 fi
 
 echo "Add clear containers sources to apt list"
-sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/clearcontainers:/clear-containers-3/xUbuntu_16.04/ /' >> /etc/apt/sources.list.d/clear-containers.list"
+sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/clearcontainers:/clear-containers-3/xUbuntu_16.04/ /' > /etc/apt/sources.list.d/clear-containers.list"
 curl -fsSL http://download.opensuse.org/repositories/home:/clearcontainers:/clear-containers-3/xUbuntu_16.04/Release.key | sudo -E apt-key add -
 
 echo "Update apt repositories"

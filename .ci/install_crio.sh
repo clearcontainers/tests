@@ -27,8 +27,9 @@ git fetch
 git checkout "${crio_version}"
 
 echo "Installing CRI-O"
-make install.tools
-make
+sudo -E PATH=$PATH sh -c "make clean"
+sudo -E PATH=$PATH sh -c "make install.tools"
+sudo -E PATH=$PATH sh -c "make"
 sudo -E PATH=$PATH sh -c "make install"
 sudo -E PATH=$PATH sh -c "make install.config"
 
