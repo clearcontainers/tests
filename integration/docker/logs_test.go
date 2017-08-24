@@ -30,8 +30,8 @@ var _ = Describe("logs", func() {
 
 	BeforeEach(func() {
 		id = randomDockerName()
-		args = []string{"run", "-td", "--name", id, Image, "sh", "-c", "'echo hello'"}
-		runDockerCommand(0, args...)
+		_, _, exitCode := DockerRun("-td", "--name", id, Image, "sh", "-c", "'echo hello'")
+		Expect(exitCode).To(Equal(0))
 		// Issue https://github.com/clearcontainers/runtime/issues/375
 		time.Sleep(2 * time.Second)
 	})

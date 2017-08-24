@@ -35,9 +35,8 @@ var _ = Describe("inspect", func() {
 
 	BeforeEach(func() {
 		id = randomDockerName()
-		args = []string{"run", "-t", "--name", id, Image, "true"}
-		runDockerCommand(0, args...)
-
+		_, _, exitCode := DockerRun("-t", "--name", id, Image, "true")
+		Expect(exitCode).To(Equal(0))
 	})
 
 	AfterEach(func() {

@@ -28,8 +28,8 @@ var _ = Describe("port", func() {
 
 	BeforeEach(func() {
 		id = randomDockerName()
-		args = []string{"run", "-td", "-p", "8080:8080", "--name", id, Image}
-		runDockerCommand(0, args...)
+		_, _, exitCode := DockerRun("-td", "-p", "8080:8080", "--name", id, Image)
+		Expect(exitCode).To(Equal(0))
 	})
 
 	AfterEach(func() {
