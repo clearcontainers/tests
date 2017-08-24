@@ -244,6 +244,7 @@ func (r *Repo) setup() error {
 		commentTrigger: r.CommentTrigger,
 		postOnFailure:  r.PostOnFailure,
 		postOnSuccess:  r.PostOnSuccess,
+		whitelist:      r.Whitelist,
 	}
 
 	r.logger.Debugf("control version repository: %#v", r.cvr)
@@ -335,6 +336,12 @@ func (r *Repo) testRevisions(revisions []revision, revisionsTested *map[string]r
 				r.logger.Debugf("revision was already tested: %#v", revision)
 				continue
 			}
+		}
+
+		// check if the revision can be tested
+		if err := revision.canBeTested(); err != nil {
+			r.logger.Debugf("revision %s cannot be tested: %s", revision.id(), err)
+			continue
 		}
 
 		// setup revision
