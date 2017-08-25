@@ -37,8 +37,8 @@ type Github struct {
 }
 
 const (
-	timeoutShortRequest = 10 * time.Second
-	timeoutLongRequest  = 20 * time.Second
+	timeoutShortRequest = 60 * time.Second
+	timeoutLongRequest  = 120 * time.Second
 )
 
 // newGithub returns an object of type Github
