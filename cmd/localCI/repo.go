@@ -299,8 +299,11 @@ func (r *Repo) loop() {
 			}
 		}
 
-		r.logger.Debugf("testing revisions: %#v", revisionsToTest)
-		r.testRevisions(revisionsToTest, &revisionsTested)
+		// test only if there are at least 1 revision
+		if len(revisionsToTest) > 0 {
+			r.logger.Debugf("testing revisions: %#v", revisionsToTest)
+			r.testRevisions(revisionsToTest, &revisionsTested)
+		}
 
 		r.logger.Debugf("going to sleep: %s", r.RefreshTime)
 		time.Sleep(r.refresh)
