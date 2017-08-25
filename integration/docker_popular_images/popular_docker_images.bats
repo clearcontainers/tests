@@ -22,7 +22,7 @@ DOCKER_EXE="docker"
 setup () {
 	if [ ! -z $("$DOCKER_EXE" ps -aq) ]; then
 		$DOCKER_EXE rm -f $($DOCKER_EXE ps -aq)
-	fi 
+	fi
 }
 
 @test "create a directory in an aerospike container" {
