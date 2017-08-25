@@ -57,7 +57,7 @@ function nginx_ab_networking {
 	container_name="docker-nginx"
 	total_requests=$(mktemp)
 
-	$DOCKER_EXE run -d --name ${container_name} -p ${port} ${image} > /dev/null
+	$DOCKER_EXE run -d --name ${container_name} --runtime $RUNTIME -p ${port} ${image} > /dev/null
 	sleep_secs=2
 	echo >&2 "WARNING: sleeping for $sleep_secs seconds (see https://github.com/01org/cc-oci-runtime/issues/828)"
 	sleep "$sleep_secs"
