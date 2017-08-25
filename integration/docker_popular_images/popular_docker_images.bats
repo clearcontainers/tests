@@ -22,11 +22,14 @@ DOCKER_EXE="docker"
 setup () {
 	if [ ! -z $("$DOCKER_EXE" ps -aq) ]; then
 		$DOCKER_EXE rm -f $($DOCKER_EXE ps -aq)
-	fi 
+	fi
 }
 
 @test "create a directory in an aerospike container" {
-	$DOCKER_EXE run --rm -i aerospike bash -c "mkdir /home/test | ls /home | grep test"
+	tmpdir=$(mktemp -d)
+	$DOCKER_EXE run --rm -dti -v $tmpdir:/opt/aerospike/data aerospike/aerospike-server timeout 5 /entrypoint.sh asd
+	[ -n ${tmpdir} ] || false
+	rm -rf $tmpdir
 }
 
 @test "hello world in an alpine container" {
