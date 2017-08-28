@@ -63,9 +63,20 @@ function cpu_consumption {
 	# Measurement after client and server are more stable
 	echo >&2 "WARNING: sleeping for $middle_time seconds in order to have server and client stable"
 	sleep ${middle_time}
+
+	# Check the runtime in order to determine which process will
+	# be measured about cpu %
+	if [ "$RUNTIME" == "runc" ]; then
+		process="iperf"
+	elif [ "$RUNTIME" == "cor" ] || [ "$RUNTIME" == "cc-runtime" ]; then
+		process="$QEMU_PATH"
+	else
+		die "Unknown runtime: $RUNTIME"
+	fi
+
 	qemu_pids=$(pidof ${QEMU_PATH})
 	local total_cpu_consumption=$(ps --no-headers -o %cpu \
-		-p $(pidof ${QEMU_PATH}) | awk '{ total+= $1 } END { print total/NR }')
+		-p $(pidof ${process}) | awk '{ total+= $1 } END { print total/NR }')
 	echo "The cpu % consumption is : $total_cpu_consumption"
 
 	save_results "network metrics cpu consumption" "" \
