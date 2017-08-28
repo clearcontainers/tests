@@ -39,8 +39,6 @@ metrics:
 integration: ginkgo
 	./ginkgo ./integration/docker/ -- -timeout ${TIMEOUT}
 
-# Add crio tests here when https://github.com/clearcontainers/runtime/issues/215
-check:	functional integration
 check: functional crio integration
 
 all: functional checkcommits integration
