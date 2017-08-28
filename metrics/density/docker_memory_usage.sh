@@ -39,8 +39,6 @@ NUM_CONTAINERS="$1"
 WAIT_TIME="$2"
 TEST_NAME="memory footprint"
 TEST_ARGS="workload=${IMAGE} units=kb"
-# Set QEMU_PATH unless it's already set
-QEMU_PATH=${QEMU_PATH:-$(get_qemu_path)}
 SMEM_BIN="smem"
 KSM_ENABLE_FILE="/sys/kernel/mm/ksm/run"
 
@@ -68,6 +66,36 @@ function check_for_ksm(){
 		TEST_NAME="${TEST_NAME} ksm"
 	fi
 }
+
+# This function measures the PSS average
+# memory about the child process of each
+# docker-containerd-shim instance in the
+# system.
+function get_runc_pss_memory(){
+        avg=0
+        docker_shim="docker-containerd-shim"
+        mem_amount=0
+        count=0
+
+        shim_instances=$(pgrep  -f "^$docker_shim")
+        for shim in $shim_instances; do
+                child_pid="$(pgrep -P $shim)"
+                child_mem=$(smem -c "pid pss" | \
+                                grep "$child_pid" | awk '{print $2}')
+                if (( $child_mem > 0 ));then
+                        mem_amount=$(( $child_mem + $mem_amount ))
+                        (( count++ ))
+                fi
+        done
+
+        # Calculate average
+        if (( $count > 0 )); then
+                avg=$(bc -l <<< "scale=2; $mem_amount / $count")
+        fi
+
+        echo "$avg"
+}
+
 
 # This function measures the PSS average
 # memory of a process.
@@ -99,6 +127,7 @@ function get_docker_memory_usage(){
 	cc_shim_mem=0
 	proxy_mem=0
 	cc_proxy_mem=0
+	memory_usage=0
 
 	containers=()
 
@@ -111,33 +140,48 @@ function get_docker_memory_usage(){
 	# let it do its work and for the numbers to 'settle'.
 	sleep "$WAIT_TIME"
 
-	# Get PSS memory of CC components.
-	# And check that the smem search has found the process - we get a "0"
-	#  back if that procedure fails (such as if a process has changed its name
-	#  or is not running when expected to be so)
-	# As an added bonus - this script must be run as root (or at least as
-	#  a user with enough rights to allow smem to read the smap stats for
-	#  the docker owned processes). Now if you do not have enough rights
-	#  the smem failure to read the stats will also be trapped.
-	qemu_mem="$(get_pss_memory "$QEMU_PATH")"
-	if [ "$qemu_mem" == "0" ]; then
-		die "Failed to find PSS for $QEMU_PATH"
+	# Check the runtime in order in order to determine which process will
+	# be measured about PSS
+	if [ "$RUNTIME" == "runc" ]; then
+		runc_workload_mem="$(get_runc_pss_memory)"
+		memory_usage="$runc_workload_mem"
+
+	elif [ "$RUNTIME" == "cor" ] || [ "$RUNTIME" == "cc-runtime" ]; then
+		# Get PSS memory of CC components.
+		# And check that the smem search has found the process - we get a "0"
+		#  back if that procedure fails (such as if a process has changed its name
+		#  or is not running when expected to be so)
+		# As an added bonus - this script must be run as root (or at least as
+		#  a user with enough rights to allow smem to read the smap stats for
+		#  the docker owned processes). Now if you do not have enough rights
+		#  the smem failure to read the stats will also be trapped.
+
+		# Set QEMU_PATH unless it's already set
+		QEMU_PATH=${QEMU_PATH:-$(get_qemu_path)}
+
+		qemu_mem="$(get_pss_memory "$QEMU_PATH")"
+		if [ "$qemu_mem" == "0" ]; then
+			die "Failed to find PSS for $QEMU_PATH"
+		fi
+
+		cc_shim_mem="$(get_pss_memory "$CC_SHIM_PATH")"
+		if [ "$cc_shim_mem" == "0" ]; then
+			die "Failed to find PSS for $CC_SHIM_PATH"
+		fi
+
+		proxy_mem="$(get_pss_memory "$CC_PROXY_PATH")"
+		if [ "$proxy_mem" == "0" ]; then
+			die "Failed to find PSS for $CC_PROXY_PATH"
+		fi
+
+		cc_proxy_mem="$(bc -l <<< "scale=2; $proxy_mem / $NUM_CONTAINERS")"
+		cc_mem_usage="$(bc -l <<< "scale=2; $qemu_mem + $cc_shim_mem + $cc_proxy_mem")"
+		memory_usage="$cc_mem_usage"
+	else
+		die "Unknown runtime: $RUNTIME"
 	fi
 
-	cc_shim_mem="$(get_pss_memory "$CC_SHIM_PATH")"
-	if [ "$cc_shim_mem" == "0" ]; then
-		die "Failed to find PSS for $CC_SHIM_PATH"
-	fi
-
-	proxy_mem="$(get_pss_memory "$CC_PROXY_PATH")"
-	if [ "$proxy_mem" == "0" ]; then
-		die "Failed to find PSS for $CC_PROXY_PATH"
-	fi
-
-	cc_proxy_mem="$(bc -l <<< "scale=2; $proxy_mem / $NUM_CONTAINERS")"
-	cc_mem_usage="$(bc -l <<< "scale=2; $qemu_mem + $cc_shim_mem + $cc_proxy_mem")"
-
-	save_results "$TEST_NAME" "$TEST_ARGS" "$cc_mem_usage" "KB"
+	save_results "$TEST_NAME" "$TEST_ARGS" "$memory_usage" "KB"
 	docker rm -f ${containers[@]}
 }
 
