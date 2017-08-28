@@ -30,6 +30,10 @@ function clone_and_build() {
 
 	pushd ${project_dir}
 
+	# Ensure HEAD is at latest master.
+	git fetch origin
+	git reset --hard origin/master
+
 	echo "Build ${github_project}"
 	if [ ! -f Makefile ]; then
 		echo "Run autogen.sh to generate Makefile"
