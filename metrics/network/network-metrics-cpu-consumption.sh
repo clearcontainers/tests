@@ -53,6 +53,7 @@ function cpu_consumption {
 	# Arguments to run the client
 	local extra_args="-d"
 
+	init_env
 	setup
 	local server_command="iperf -p ${port} -s"
 	local server_address=$(start_server "$server_name" "$image" "$server_command")
