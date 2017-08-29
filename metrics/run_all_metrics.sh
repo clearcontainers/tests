@@ -26,6 +26,11 @@ fi
 
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 
+# Check tools/commands dependencies
+echo "Check dependencies"
+cmds=("docker" "bc" "awk" "smem" "ab")
+check_cmds "${cmds[@]}"
+
 echo "Running all metrics tests"
 
 # Run the time tests
