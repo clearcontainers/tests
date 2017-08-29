@@ -32,7 +32,7 @@ func execDetachTiming(detach bool) TableEntry {
 		comparator = "<"
 	}
 
-	timeout := 1
+	timeout := 5
 
 	process := Process{
 		Workload: []string{"sleep", fmt.Sprintf("%d", timeout)},
