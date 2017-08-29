@@ -56,7 +56,7 @@ bash ${SCRIPT_PATH}/network/network-nginx-ab-benchmark.sh
 bash ${SCRIPT_PATH}/density/docker_memory_usage.sh 20 1
 
 # Run I/O storage tests
-bash storage/fio_job.sh -b 16k -o randread -t "storage IO random read bs 16k"
-bash storage/fio_job.sh -b 16k -o randwrite -t "storage IO random write bs 16k"
-bash storage/fio_job.sh -b 16k -o read -t "storage IO linear read bs 16k"
-bash storage/fio_job.sh -b 16k -o write -t "storage IO linear write bs 16k"
+bash ${SCRIPT_PATH}/storage/fio_job.sh -b 16k -o randread -t "storage IO random read bs 16k"
+bash ${SCRIPT_PATH}/storage/fio_job.sh -b 16k -o randwrite -t "storage IO random write bs 16k"
+bash ${SCRIPT_PATH}/storage/fio_job.sh -b 16k -o read -t "storage IO linear read bs 16k"
+bash ${SCRIPT_PATH}/storage/fio_job.sh -b 16k -o write -t "storage IO linear write bs 16k"
