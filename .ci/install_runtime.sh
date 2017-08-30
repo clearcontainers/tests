@@ -56,19 +56,19 @@ echo "Add runtime as a new/default Docker runtime. Docker version \"$(docker --v
 docker_options="-D --add-runtime cc30=/usr/local/bin/cc-runtime --default-runtime=cc30"
 if [[ ! $(ps -p 1 | grep systemd) ]]; then
 	config_path="/etc/default"
-	sudo mkdir -p /etc/default
-	cat << EOF | sudo tee $config_path/docker
-DOCKER_OPTS="$docker_options"
+	sudo mkdir -p ${config_path}
+	cat << EOF | sudo tee ${config_path}/docker
+DOCKER_OPTS="${docker_options}"
 EOF
 	echo "Restart docker service"
 	sudo service docker restart
 else
 	config_path="/etc/systemd/system/docker.service.d/"
-	sudo mkdir -p "$config_path"
-	cat << EOF | sudo tee $config_path/cc.conf
+	sudo mkdir -p ${config_path}
+	cat << EOF | sudo tee ${config_path}/clear-containers.conf
 [Service]
 ExecStart=
-ExecStart=/usr/bin/dockerd $docker_options
+ExecStart=/usr/bin/dockerd ${docker_options}
 EOF
 	echo "Restart docker service"
 	sudo systemctl daemon-reload
