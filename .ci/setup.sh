@@ -21,9 +21,14 @@
 set -e
 
 cidir=$(dirname "$0")
+source /etc/os-release
 
 echo "Set up environment"
-bash -f ${cidir}/setup_env_ubuntu.sh
+if [ "$ID" == fedora ];then
+	bash -f "${cidir}/setup_env_fedora.sh"
+elif [ "$ID" == ubuntu ];then
+	bash -f "${cidir}/setup_env_ubuntu.sh"
+fi
 
 # This should only run when running tests for a PR
 # since it looks for PULL_REQUEST_NUMBER or LOCALCI_PR_NUMBER environment
