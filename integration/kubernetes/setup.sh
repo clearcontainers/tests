@@ -32,21 +32,6 @@ pushd "${SCRIPT_PATH}/../../.ci"
 ./setup.sh
 popd
 
-echo "Install runc for CRI-O"
-go get -d github.com/opencontainers/runc
-pushd "${GOPATH}/src/github.com/opencontainers/runc"
-make
-sudo -E install -D -m0755 runc "/usr/local/bin/crio-runc"
-popd
-
-crio_config_file="/etc/crio/crio.conf"
-echo "Set runc as default runtime in CRI-O for trusted workloads"
-sudo sed -i 's/^runtime =.*/runtime = "\/usr\/local\/bin\/crio-runc"/' "$crio_config_file"
-
-echo "Set Clear containers as default runtime in CRI-O for untrusted workloads"
-sudo sed -i 's/default_workload_trust = "trusted"/default_workload_trust = "untrusted"/' "$crio_config_file"
-sudo sed -i 's/runtime_untrusted_workload = ""/runtime_untrusted_workload = "\/usr\/local\/bin\/cc-runtime"/' "$crio_config_file"
-
 echo "Modify kubelet systemd configuration to use CRI-O"
 k8s_systemd_file="/etc/systemd/system/kubelet.service.d/10-kubeadm.conf"
 sudo sed -i '/KUBELET_AUTHZ_ARGS/a Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote --container-runtime-endpoint=/var/run/crio.sock --runtime-request-timeout=30m"' "$k8s_systemd_file"
