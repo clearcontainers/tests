@@ -260,10 +260,23 @@ func (r *Repo) loop() {
 
 	appendPullRequests := func(revisions *[]revision, prs []int) error {
 		for _, prNumber := range prs {
+			var pr revision
+			var err error
+
 			r.logger.Debugf("requesting pull request %d", prNumber)
-			pr, err := newPullRequest(prNumber, r.prConfig)
+			pr, err = newPullRequest(prNumber, r.prConfig)
 			if err != nil {
-				return fmt.Errorf("failed to get pull request '%d' %s", prNumber, err)
+				r.logger.Warnf("failed to get pull request '%d' %s", prNumber, err)
+
+				// use already tested revision to avoid delete revision from
+				// tested revisions, this is to do not re-tested pull requests
+				// if we are not able to get the pull request information
+				rev, ok := revisionsTested[fmt.Sprintf("%d", prNumber)]
+				if !ok {
+					return err
+				}
+
+				pr = rev
 			}
 			*revisions = append(*revisions, pr)
 		}
@@ -294,6 +307,8 @@ func (r *Repo) loop() {
 			prs, err := r.cvr.getOpenPullRequests()
 			if err != nil {
 				r.logger.Warnf("failed to get open pull requests: %s", err)
+				// do not test revisions if we do not know how many pull requests are opened
+				continue
 			} else if err = appendPullRequests(&revisionsToTest, prs); err != nil {
 				r.logger.Warnf("failed to append pull requests %+v: %s", prs, err)
 			}
