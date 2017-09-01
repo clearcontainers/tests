@@ -112,19 +112,22 @@ if [ "$VERSION_ID" == "14.04" ]; then
 	popd
 	rm -rf ${ostree_dir}
 
-elif [ "$VERSION_ID" == "16.04" ]; then
+elif [ "$VERSION_ID" == "16.04" ] || [ "$VERSION_ID" == "17.04" ]; then
 	echo "Install Build Tools"
 	sudo -E apt install -y build-essential python pkg-config zlib1g-dev
 
 	echo "Install Clear Containers Kernel"
 	sudo -E apt install -y linux-container
 
-	echo "Install CRI-O dependencies available for Ubuntu 16.04"
+	echo -e "Install CRI-O dependencies available for Ubuntu $VERSION_ID"
 	sudo -E apt install -y libdevmapper-dev btrfs-tools util-linux
 
-	echo "Install os-tree"
-	sudo -E add-apt-repository ppa:alexlarsson/flatpak -y
-	sudo -E apt update
+	if [ "$VERSION_ID" == "16.04" ]; then
+		echo "Install os-tree"
+		sudo -E add-apt-repository ppa:alexlarsson/flatpak -y
+		sudo -E apt update
+	fi
+
 	sudo -E apt install -y libostree-dev
 
 	if ! command -v docker > /dev/null; then
