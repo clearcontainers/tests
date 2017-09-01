@@ -74,6 +74,7 @@ func main() {
 	var cmd string
 	var basefile string
 	var metricsdir string
+	var status string = "PASS"
 
 	flag.StringVar(&confFile, "f", "", "Configuration file")
 	flag.StringVar(&comments, "c", "", "comments/suggestions")
@@ -120,17 +121,16 @@ func main() {
 	// checkmetrics execution
 	out, err := exec.Command(cmd, "--basefile", basefile, "--metricsdir", metricsdir).Output()
 	if err != nil {
-		body = fmt.Sprintf(body + "%s\n\n %v", out, err)
-		SendByEmail(conf, body)
-		log.Fatal("checkmetrics execution: ", err)
-	}
-
-	if len(out) == 0 {
-		body = fmt.Sprintf(body + "no output from " + cmd)
-		SendByEmail(conf, body)
-		log.Fatal("no output from: " + cmd)
+		status = "FAIL"
+		if len(out) == 0 {
+			body = fmt.Sprintf(body + "no output from " + cmd)
+		} else {
+			body = fmt.Sprintf(body + "%s\n\n %v", out, err)
+		}
+		SendByEmail(conf, body, status)
+		log.Fatal(cmd + " error: ", err)
 	}
 
 	body = fmt.Sprintf(body + "%s", out)
-	SendByEmail(conf, body)
+	SendByEmail(conf, body, status)
 }
