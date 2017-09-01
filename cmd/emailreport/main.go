@@ -65,6 +65,7 @@ func main() {
 
 	var confFile string
 	var conf Configuration
+	var comments string
 	var body string
 	var currentUID int
 	var ownerUID int
@@ -75,6 +76,7 @@ func main() {
 	var metricsdir string
 
 	flag.StringVar(&confFile, "f", "", "Configuration file")
+	flag.StringVar(&comments, "c", "", "comments/suggestions")
 	flag.Parse()
 
 	// If there is not any input file specified by command line
@@ -105,6 +107,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Add comments to the body message
+	if comments != "" {
+		body = fmt.Sprintf(comments + "\n")
+	}
+
 	// Set checkmetrics configuration
 	cmd = conf.Ck.Cmd
 	basefile = conf.Ck.Basefile
@@ -113,13 +120,17 @@ func main() {
 	// checkmetrics execution
 	out, err := exec.Command(cmd, "--basefile", basefile, "--metricsdir", metricsdir).Output()
 	if err != nil {
+		body = fmt.Sprintf(body + "%s\n\n %v", out, err)
+		SendByEmail(conf, body)
 		log.Fatal("checkmetrics execution: ", err)
 	}
 
 	if len(out) == 0 {
+		body = fmt.Sprintf(body + "no output from " + cmd)
+		SendByEmail(conf, body)
 		log.Fatal("no output from: " + cmd)
 	}
 
-	body = fmt.Sprintf("%s", out)
+	body = fmt.Sprintf(body + "%s", out)
 	SendByEmail(conf, body)
 }
