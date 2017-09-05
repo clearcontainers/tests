@@ -23,7 +23,7 @@ import (
 // HeaderRFC822 provides a header as a
 // string according the RFC822 Standard for ARPA
 // Internet Text Messages.
-func HeaderRFC822(conf Configuration) string {
+func HeaderRFC822(conf Configuration, status string) string {
 	var header string
 
 	if conf.Mail.From == "" {
@@ -45,7 +45,7 @@ func HeaderRFC822(conf Configuration) string {
 		header += "cc: " + strings.Join(conf.Mail.Cc, ",") + "\n"
 	}
 
-	header += "Subject: " + conf.Mail.Subject + "\n\n"
+	header += "Subject: " + conf.Mail.Subject + " status: " + status + "\n\n"
 
 	return header
 }
@@ -53,13 +53,13 @@ func HeaderRFC822(conf Configuration) string {
 // SendByEmail allows to send the result output of
 // checkmetrics execution to a whitelist of emails.
 // This list is described by a TOML configuration file.
-func SendByEmail(conf Configuration, body string) {
+func SendByEmail(conf Configuration, body string, status string) {
 	var header string
 	var msg string
 	var auth smtp.Auth
 	var server string
 
-	header = HeaderRFC822(conf)
+	header = HeaderRFC822(conf, status)
 	msg = header + body
 
 	auth = smtp.PlainAuth(

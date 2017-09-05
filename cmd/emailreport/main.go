@@ -65,6 +65,7 @@ func main() {
 
 	var confFile string
 	var conf Configuration
+	var comments string
 	var body string
 	var currentUID int
 	var ownerUID int
@@ -73,8 +74,12 @@ func main() {
 	var cmd string
 	var basefile string
 	var metricsdir string
+	var subject string
+	var status string = "PASS"
 
 	flag.StringVar(&confFile, "f", "", "Configuration file")
+	flag.StringVar(&comments, "c", "", "comments/suggestions")
+	flag.StringVar(&subject, "s", "", "email subject")
 	flag.Parse()
 
 	// If there is not any input file specified by command line
@@ -105,6 +110,16 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// The subject can be overwritten by command line
+	if subject != "" {
+		conf.Mail.Subject = subject
+	}
+
+	// Add comments to the body message
+	if comments != "" {
+		body = fmt.Sprintf(comments + "\n")
+	}
+
 	// Set checkmetrics configuration
 	cmd = conf.Ck.Cmd
 	basefile = conf.Ck.Basefile
@@ -113,13 +128,16 @@ func main() {
 	// checkmetrics execution
 	out, err := exec.Command(cmd, "--basefile", basefile, "--metricsdir", metricsdir).Output()
 	if err != nil {
-		log.Fatal("checkmetrics execution: ", err)
+		status = "FAIL"
+		if len(out) == 0 {
+			body = fmt.Sprintf(body + "no output from " + cmd)
+		} else {
+			body = fmt.Sprintf(body + "%s\n\n %v", out, err)
+		}
+		SendByEmail(conf, body, status)
+		log.Fatal(cmd + " error: ", err)
 	}
 
-	if len(out) == 0 {
-		log.Fatal("no output from: " + cmd)
-	}
-
-	body = fmt.Sprintf("%s", out)
-	SendByEmail(conf, body)
+	body = fmt.Sprintf(body + "%s", out)
+	SendByEmail(conf, body, status)
 }
