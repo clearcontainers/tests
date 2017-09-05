@@ -18,6 +18,7 @@ CURRENTDIR=$(dirname "$(readlink -f "$0")")
 REPORT_CMDS=("checkmetrics" "emailreport")
 
 KSM_ENABLE_FILE="/sys/kernel/mm/ksm/run"
+GITHUB_URL="https://github.com"
 
 # Verify/install report tools. These tools will
 # parse/send the results from metrics scripts execution.
@@ -87,9 +88,14 @@ pushd "$CURRENTDIR/../metrics"
 	bash storage/fio_job.sh -b 16k -o read -t "storage IO linear read bs 16k"
 	bash storage/fio_job.sh -b 16k -o write -t "storage IO linear write bs 16k"
 
+	# Pull request URL
+	PR_URL="$GITHUB_URL/$LOCALCI_REPO_SLUG/pull/$LOCALCI_PR_NUMBER"
+
+	# Subject for emailreport tool about Pull Request
+	SUBJECT="[${LOCALCI_REPO_SLUG}] metrics report (#${LOCALCI_PR_NUMBER})"
 
 	# Parse/Report results
-	emailreport
+	emailreport -c "Pull request: $PR_URL" -s "$SUBJECT"
 
 	# Clean env
 	rm -rf "results"
