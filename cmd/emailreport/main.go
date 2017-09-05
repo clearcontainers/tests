@@ -74,10 +74,12 @@ func main() {
 	var cmd string
 	var basefile string
 	var metricsdir string
+	var subject string
 	var status string = "PASS"
 
 	flag.StringVar(&confFile, "f", "", "Configuration file")
 	flag.StringVar(&comments, "c", "", "comments/suggestions")
+	flag.StringVar(&subject, "s", "", "email subject")
 	flag.Parse()
 
 	// If there is not any input file specified by command line
@@ -106,6 +108,11 @@ func main() {
 	// Parsing TOML configuration file
 	if _, err := toml.DecodeFile(confFile, &conf); err != nil {
 		log.Fatal(err)
+	}
+
+	// The subject can be overwritten by command line
+	if subject != "" {
+		conf.Mail.Subject = subject
 	}
 
 	// Add comments to the body message
