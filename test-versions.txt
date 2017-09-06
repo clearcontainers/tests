@@ -11,3 +11,6 @@ kernel_version="4.5-50"
 
 # Go version to use for building and testing Clear Containers
 go_version="1.8.3"
+
+# Openshift Origin version compatible with Clear Containers
+origin_version="release-3.6"
