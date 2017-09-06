@@ -19,16 +19,13 @@ set -e
 cidir=$(dirname "$0")
 source "$cidir/../test-versions.txt"
 source "/etc/os-release"
+cc_kernel_path="/usr/share/clear-containers"
 
 if grep -q "N" /sys/module/kvm_intel/parameters/nested; then
 	echo "enable Nested Virtualization"
 	sudo modprobe -r kvm_intel
 	sudo modprobe kvm_intel nested=1
 fi
-
-echo "Add clear containers sources to apt list"
-sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/clearcontainers:/clear-containers-3/xUbuntu_16.04/ /' > /etc/apt/sources.list.d/clear-containers.list"
-curl -fsSL http://download.opensuse.org/repositories/home:/clearcontainers:/clear-containers-3/xUbuntu_16.04/Release.key | sudo -E apt-key add -
 
 echo "Update apt repositories"
 sudo -E apt update
@@ -37,13 +34,13 @@ echo "Install chronic"
 sudo -E apt install -y moreutils
 
 echo "Install clear containers dependencies"
-chronic sudo -E apt install -y libtool automake autotools-dev autoconf bc
+chronic sudo -E apt install -y libtool automake autotools-dev autoconf bc alien libpixman-1-dev
 
 echo "Install qemu-lite binary"
-chronic sudo -E apt install -y --force-yes qemu-lite
+"${cidir}/install_qemu_lite.sh" "${qemu_clear_release}" "${qemu_lite_sha}"
 
 echo "Install clear-containers image"
-chronic sudo -E apt install -y --force-yes clear-containers-image
+"${cidir}/install_clear_image.sh" "$image_version" "${cc_kernel_path}"
 
 echo "Install CRI-O dependencies for all Ubuntu versions"
 chronic sudo -E apt install -y libglib2.0-dev libseccomp-dev libapparmor-dev libgpgme11-dev
@@ -59,11 +56,10 @@ if [ "$VERSION_ID" == "14.04" ]; then
 	chronic sudo -E apt install -y rpm2cpio
 
 	bug_url="https://github.com/clearcontainers/runtime/issues/91"
-	cc_kernel_path="/usr/share/clear-containers"
 	echo -e "\nWARNING:"
-	echo "WARNING: Using backlevel kernel version ${kernel_version} due to bug ${bug_url}"
+	echo "WARNING: Using backlevel kernel version ${semaphore_kernel_version} due to bug ${bug_url}"
 	echo -e "WARNING:\n"
-	"${cidir}/install_clear_kernel.sh" "demos" ${kernel_version} "${cc_kernel_path}"
+	"${cidir}/install_clear_kernel.sh" "demos" "${semaphore_kernel_version}" "${cc_kernel_path}"
 
 	echo "Build and Install libdevmapper"
 	devmapper_version="2.02.172"
@@ -117,7 +113,7 @@ elif [ "$VERSION_ID" == "16.04" ] || [ "$VERSION_ID" == "17.04" ]; then
 	sudo -E apt install -y build-essential python pkg-config zlib1g-dev
 
 	echo "Install Clear Containers Kernel"
-	sudo -E apt install -y linux-container
+	"${cidir}/install_clear_kernel.sh" "${kernel_clear_release}" "${kernel_version}" "${cc_kernel_path}"
 
 	echo -e "Install CRI-O dependencies available for Ubuntu $VERSION_ID"
 	sudo -E apt install -y libdevmapper-dev btrfs-tools util-linux

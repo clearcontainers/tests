@@ -1,13 +1,20 @@
 # Well known working crio tag/commit/branch
 crio_version=959aab4fd5dbc315ca2dc84a90599c2108756a2c
 
+# Clear Containers image version
+image_version=17270
+
 # Kernel Version to use on recent Linux Distros
-kernel_clear_release=16680
-kernel_version="4.9.35-76"
+kernel_clear_release=17580
+kernel_version="4.9.47-77"
 
 # Kernel Version to use for Ubuntu 14.04 (Semaphore Env)
-kernel_clear_release=12760
-kernel_version="4.5-50"
+semaphore_kernel_clear_release=12760
+semaphore_kernel_version="4.5-50"
+
+# Qemu-lite Version
+qemu_clear_release=17580
+qemu_lite_sha=741f430a960b5b67745670e8270db91aeb083c5f-29
 
 # Go version to use for building and testing Clear Containers
 go_version="1.8.3"
