@@ -53,7 +53,7 @@ echo "Enabling global logging for runtime in file ${runtime_config_path}"
 sudo sed -i -e 's/^#\(\[runtime\]\|global_log_path =\)/\1/g' "${runtime_config_path}"
 
 echo "Add runtime as a new/default Docker runtime. Docker version \"$(docker --version)\" could change according to Semaphore CI updates."
-docker_options="-D --add-runtime cc30=/usr/local/bin/cc-runtime --default-runtime=cc30"
+docker_options="-D --add-runtime cc-runtime=/usr/local/bin/cc-runtime --default-runtime=cc-runtime"
 if [[ ! $(ps -p 1 | grep systemd) ]]; then
 	config_path="/etc/default"
 	sudo mkdir -p ${config_path}
