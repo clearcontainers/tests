@@ -36,7 +36,8 @@ function start_server {
 	local server_name="$1"
 	local image="$2"
 	local server_command="$3"
-	$DOCKER_EXE run -d --runtime="${RUNTIME}" --name=${server_name} ${image} \
+	local extra_args="$4"
+	$DOCKER_EXE run ${extra_args} -d --runtime="${RUNTIME}" --name=${server_name} ${image} \
 		sh -c "${server_command}" > /dev/null
 	local server_address=$($DOCKER_EXE inspect --format "{{.NetworkSettings.IPAddress}}" ${server_name})
 	echo "$server_address"
