@@ -108,7 +108,7 @@ if [ "$VERSION_ID" == "14.04" ]; then
 	popd
 	rm -rf ${ostree_dir}
 
-elif [ "$VERSION_ID" == "16.04" ] || [ "$VERSION_ID" == "17.04" ]; then
+elif [ "$VERSION_ID" == "16.04" ] || [ "$VERSION_ID" == "17.04" ] || [ "$VERSION_ID" == "16.10" ]; then
 	echo "Install Build Tools"
 	sudo -E apt install -y build-essential python pkg-config zlib1g-dev
 
