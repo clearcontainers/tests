@@ -30,22 +30,21 @@ setup() {
 
 @test "Verify nginx connectivity between pods" {
 	wait_time=20
-	sleep_time=3
-	output_file=$(mktemp)
-	echo $output_file
+	sleep_time=5
 	cmd="sudo -E kubectl get pods | grep $service_name | grep Running"
 	sudo -E kubectl run "$service_name" --image="$nginx_image" --replicas=2
 	sudo -E kubectl expose deployment "$service_name" --port=80
 	sudo -E kubectl get svc,pod
 	# Wait for nginx service to come up
 	waitForProcess "$wait_time" "$sleep_time" "$cmd"
-	run bash -c "sudo -E kubectl run test-nginx --rm -ti --restart=Never \
-		--image=$busybox_image -- wget --timeout=1 $service_name > $output_file"
-	[ "$status" -eq 0 ]
-	grep "index.html" "$output_file"
+	busybox_pod="test-nginx"
+	sudo -E kubectl run $busybox_pod -i --image="$busybox_image" \
+		-- wget --timeout=5 "$service_name"
+	pod_name=$(sudo -E kubectl get pods | awk '/'$busybox_pod'/ {print $1}')
+	sudo -E kubectl logs "$pod_name" | grep "index.html"
 }
 
 teardown() {
-	rm "$output_file"
 	sudo -E kubectl delete deployment "$service_name"
+	sudo -E kubectl delete service "$service_name"
 }
