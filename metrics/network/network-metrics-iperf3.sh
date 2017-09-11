@@ -122,6 +122,8 @@ function iperf3_bidirectional_bandwidth_client_server {
 
 echo "Currently this script is using ramfs for tmp (see https://github.com/01org/cc-oci-runtime/issues/152)"
 
+init_env
+
 iperf3_bandwidth
 
 iperf3_jitter
