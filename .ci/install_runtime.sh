@@ -65,8 +65,17 @@ EOF
 else
 	config_path="/etc/systemd/system/docker.service.d/"
 	sudo mkdir -p ${config_path}
+
+	# Check if the system has set http[s] proxy
+	if [ ! -z "$http_proxy" ] && [ ! -z "$https_proxy" ] ;then
+		docker_http_proxy="HTTP_PROXY=$http_proxy"
+		docker_https_proxy="HTTPS_PROXY=$https_proxy"
+
+	fi
 	cat << EOF | sudo tee ${config_path}/clear-containers.conf
 [Service]
+Environment="$docker_http_proxy"
+Environment="$docker_https_proxy"
 ExecStart=
 ExecStart=/usr/bin/dockerd ${docker_options}
 EOF
