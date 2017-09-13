@@ -1,5 +1,5 @@
 # Well known working crio tag/commit/branch
-crio_version=959aab4fd5dbc315ca2dc84a90599c2108756a2c
+crio_version=400713a58bedb88678e84b72d4620847c8d27fec
 
 # Clear Containers image version
 image_version=17270

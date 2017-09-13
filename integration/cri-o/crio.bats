@@ -43,6 +43,7 @@ function teardown() {
 	run crioctl ctr start --id "$ctr_id"
 	echo "$output"
 	[ "$status" -eq 0 ]
+	sleep 5
 	run crioctl ctr status --id "$ctr_id"
 	echo "$output"
 	[ "$status" -eq 0 ]

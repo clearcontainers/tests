@@ -21,10 +21,21 @@ cidir=$(dirname "$0")
 source "${cidir}/../test-versions.txt"
 
 echo "Get CRI-O sources"
-go get -d github.com/kubernetes-incubator/cri-o || true
-pushd $GOPATH/src/github.com/kubernetes-incubator/cri-o
+crio_repo="github.com/kubernetes-incubator/cri-o"
+go get -d "$crio_repo" || true
+pushd "${GOPATH}/src/${crio_repo}"
 git fetch
 git checkout "${crio_version}"
+
+echo "Get CRI Tools"
+critools_repo="github.com/kubernetes-incubator/cri-tools"
+go get "$critools_repo" || true
+pushd "${GOPATH}/src/${critools_repo}"
+crictl_commit=$(grep "ENV CRICTL_COMMIT" "${GOPATH}/src/${crio_repo}/Dockerfile" | cut -d " " -f3)
+git checkout "${crictl_commit}"
+go install ./cmd/crictl
+sudo install "${GOPATH}/bin/crictl" /usr/bin
+popd
 
 echo "Installing CRI-O"
 sudo -E PATH=$PATH sh -c "make clean"
