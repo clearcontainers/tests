@@ -86,6 +86,22 @@ function init_env()
 	fi
 }
 
+# Clean environment, this function will try to remove all
+# stopped/running containers, it is advisable to use this function
+# in the final of each metrics test.
+function clean_env()
+{
+	containers_running=$(docker ps -q)
+
+	if [ ! -z "$containers_running" ]; then
+		# First stop all containers that are running
+		sudo $DOCKER_EXE stop $containers_running
+
+		# Remove all containers
+		sudo $DOCKER_EXE rm -f $(docker ps -qa)
+	fi
+}
+
 function get_hypervisor_from_toml(){
 	## Regular expressions used for TOML parsing
 	# Matches a section header
