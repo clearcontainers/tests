@@ -1,0 +1,283 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<hudson>
+  <disabledAdministrativeMonitors>
+    <string>hudson.diagnosis.ReverseProxySetupMonitor</string>
+    <string>OldData</string>
+  </disabledAdministrativeMonitors>
+  <version>2.60.2</version>
+  <numExecutors>2</numExecutors>
+  <mode>NORMAL</mode>
+  <useSecurity>true</useSecurity>
+  <authorizationStrategy class="org.jenkinsci.plugins.GithubAuthorizationStrategy" plugin="github-oauth@0.27">
+    <rootACL>
+      <organizationNameList class="linked-list">
+        <string></string>
+      </organizationNameList>
+      <adminUserNameList class="linked-list">
+        <string>sboeuf</string>
+        <string>clearcontainersbot</string>
+        <string>sameo</string>
+        <string>mcastelino</string>
+        <string>grahamwhaley</string>
+        <string>chavafg</string>
+        <string>jcvenegas</string>
+      </adminUserNameList>
+      <authenticatedUserReadPermission>true</authenticatedUserReadPermission>
+      <useRepositoryPermissions>true</useRepositoryPermissions>
+      <authenticatedUserCreateJobPermission>false</authenticatedUserCreateJobPermission>
+      <allowGithubWebHookPermission>true</allowGithubWebHookPermission>
+      <allowCcTrayPermission>false</allowCcTrayPermission>
+      <allowAnonymousReadPermission>true</allowAnonymousReadPermission>
+      <allowAnonymousJobStatusPermission>false</allowAnonymousJobStatusPermission>
+    </rootACL>
+  </authorizationStrategy>
+  <securityRealm class="org.jenkinsci.plugins.GithubSecurityRealm">
+    <githubWebUri>https://github.com</githubWebUri>
+    <githubApiUri>https://api.github.com</githubApiUri>
+    <clientID>dde1b1de183181e018b7</clientID>
+    <clientSecret>{AQAAABAAAAAwWLmVHCPZQnaZy6txJ2YqPk0kZup4D6uGbL1RDhzMSeUsTsFpkOzKa7rKY+jgUF5sVTGn/aQ8Tpnu1J3kapjgcw==}</clientSecret>
+    <oauthScopes>read:org,user:email</oauthScopes>
+  </securityRealm>
+  <disableRememberMe>false</disableRememberMe>
+  <projectNamingStrategy class="jenkins.model.ProjectNamingStrategy$DefaultProjectNamingStrategy"/>
+  <workspaceDir>${JENKINS_HOME}/workspace/${ITEM_FULLNAME}</workspaceDir>
+  <buildsDir>${ITEM_ROOTDIR}/builds</buildsDir>
+  <markupFormatter class="hudson.markup.EscapedMarkupFormatter"/>
+  <jdks/>
+  <viewsTabBar class="hudson.views.DefaultViewsTabBar"/>
+  <myViewsTabBar class="hudson.views.DefaultMyViewsTabBar"/>
+  <clouds>
+    <com.microsoft.azure.vmagent.AzureVMCloud plugin="azure-vm-agents@0.4.7.1">
+      <name>jenkins-azure-cloud</name>
+      <cloudName>jenkins-azure-cloud</cloudName>
+      <credentialsId>1073bb96-1dc9-493d-a716-5d32119156d9</credentialsId>
+      <maxVirtualMachinesLimit>10</maxVirtualMachinesLimit>
+      <resourceGroupReferenceType>existing</resourceGroupReferenceType>
+      <newResourceGroupName>jenkins-resource-group</newResourceGroupName>
+      <existingResourceGroupName>cc-jenkins-resources</existingResourceGroupName>
+      <vmTemplates>
+        <com.microsoft.azure.vmagent.AzureVMAgentTemplate>
+          <templateName>jenkins-azure-vm-ubuntu-16-04-template</templateName>
+          <templateDesc>Ubuntu 16.04 Template for Jenkins VM agents on Azure</templateDesc>
+          <labels>ubuntu_16_04_azure_cloud</labels>
+          <location>West US 2</location>
+          <virtualMachineSize>Standard_D2s_v3</virtualMachineSize>
+          <storageAccountNameReferenceType>new</storageAccountNameReferenceType>
+          <diskType>managed</diskType>
+          <newStorageAccountName>ccjenkins</newStorageAccountName>
+          <existingStorageAccountName></existingStorageAccountName>
+          <storageAccountType>Standard_LRS</storageAccountType>
+          <noOfParallelJobs>1</noOfParallelJobs>
+          <usageMode>EXCLUSIVE</usageMode>
+          <shutdownOnIdle>false</shutdownOnIdle>
+          <imageTopLevelType>advanced</imageTopLevelType>
+          <imageReferenceType>reference</imageReferenceType>
+          <builtInImage>Ubuntu 16.04 LTS</builtInImage>
+          <isInstallGit>true</isInstallGit>
+          <isInstallMaven>false</isInstallMaven>
+          <isInstallDocker>true</isInstallDocker>
+          <osType>Linux</osType>
+          <imagePublisher>Canonical</imagePublisher>
+          <imageOffer>UbuntuServer</imageOffer>
+          <imageSku>16.04-LTS</imageSku>
+          <imageVersion>latest</imageVersion>
+          <agentLaunchMethod>SSH</agentLaunchMethod>
+          <preInstallSsh>true</preInstallSsh>
+          <initScript># Install java
+sudo add-apt-repository ppa:openjdk-r/ppa -y
+sudo apt-get -y update
+sudo apt-get install openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk -y
+
+# Install git
+sudo apt-get install -y git
+
+echo &quot;USER=$USER&quot;
+
+# Install docker
+sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository &quot;deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable&quot;
+sudo apt-get -y update
+sudo apt-get install -y docker-ce
+sudo gpasswd -a ${USER} docker
+sudo chmod g+rw /var/run/docker.sock
+
+# Install go
+curl -O https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.8.3.linux-amd64.tar.gz
+</initScript>
+          <credentialsId>e235e5e5-9648-46a4-a774-e95e9ef96b1f</credentialsId>
+          <agentWorkspace>/home/jenkins/jenkins_slave</agentWorkspace>
+          <retentionTimeInMin>1</retentionTimeInMin>
+          <virtualNetworkName></virtualNetworkName>
+          <virtualNetworkResourceGroupName></virtualNetworkResourceGroupName>
+          <subnetName></subnetName>
+          <usePrivateIP>false</usePrivateIP>
+          <nsgName></nsgName>
+          <jvmOptions></jvmOptions>
+          <templateDisabled>false</templateDisabled>
+          <templateStatusDetails></templateStatusDetails>
+          <templateVerified>true</templateVerified>
+          <executeInitScriptAsRoot>false</executeInitScriptAsRoot>
+          <doNotUseMachineIfInitFails>true</doNotUseMachineIfInitFails>
+        </com.microsoft.azure.vmagent.AzureVMAgentTemplate>
+        <com.microsoft.azure.vmagent.AzureVMAgentTemplate>
+          <templateName>jenkins-azure-vm-ubuntu-17-04-template</templateName>
+          <templateDesc>Ubuntu 17.04 Template for Jenkins VM agents on Azure</templateDesc>
+          <labels>ubuntu_17_04_azure_cloud</labels>
+          <location>West US 2</location>
+          <virtualMachineSize>Standard_D2s_v3</virtualMachineSize>
+          <storageAccountNameReferenceType>new</storageAccountNameReferenceType>
+          <diskType>managed</diskType>
+          <newStorageAccountName>ccjenkins</newStorageAccountName>
+          <existingStorageAccountName></existingStorageAccountName>
+          <storageAccountType>Standard_LRS</storageAccountType>
+          <noOfParallelJobs>1</noOfParallelJobs>
+          <usageMode>EXCLUSIVE</usageMode>
+          <shutdownOnIdle>false</shutdownOnIdle>
+          <imageTopLevelType>advanced</imageTopLevelType>
+          <imageReferenceType>reference</imageReferenceType>
+          <builtInImage>Windows Server 2016</builtInImage>
+          <isInstallGit>false</isInstallGit>
+          <isInstallMaven>false</isInstallMaven>
+          <isInstallDocker>false</isInstallDocker>
+          <osType>Linux</osType>
+          <imagePublisher>Canonical</imagePublisher>
+          <imageOffer>UbuntuServer</imageOffer>
+          <imageSku>17.04</imageSku>
+          <imageVersion>latest</imageVersion>
+          <agentLaunchMethod>SSH</agentLaunchMethod>
+          <preInstallSsh>true</preInstallSsh>
+          <initScript># Install java
+sudo apt-get -y update
+sudo apt-get install openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk -y
+
+# Install git
+sudo apt-get install -y git
+
+echo &quot;USER=$USER&quot;
+
+# Install docker
+sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository &quot;deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable&quot;
+sudo apt-get -y update
+sudo apt-get install -y docker-ce
+sudo gpasswd -a ${USER} docker
+sudo chmod g+rw /var/run/docker.sock
+
+# Install go
+curl -O https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.8.3.linux-amd64.tar.gz
+</initScript>
+          <credentialsId>e235e5e5-9648-46a4-a774-e95e9ef96b1f</credentialsId>
+          <agentWorkspace>/home/jenkins/jenkins_slave</agentWorkspace>
+          <retentionTimeInMin>1</retentionTimeInMin>
+          <virtualNetworkName></virtualNetworkName>
+          <virtualNetworkResourceGroupName></virtualNetworkResourceGroupName>
+          <subnetName></subnetName>
+          <usePrivateIP>false</usePrivateIP>
+          <nsgName></nsgName>
+          <jvmOptions></jvmOptions>
+          <templateDisabled>false</templateDisabled>
+          <templateStatusDetails></templateStatusDetails>
+          <templateVerified>true</templateVerified>
+          <executeInitScriptAsRoot>false</executeInitScriptAsRoot>
+          <doNotUseMachineIfInitFails>true</doNotUseMachineIfInitFails>
+        </com.microsoft.azure.vmagent.AzureVMAgentTemplate>
+      </vmTemplates>
+      <deploymentTimeout>1200</deploymentTimeout>
+      <approximateVirtualMachineCount>2</approximateVirtualMachineCount>
+    </com.microsoft.azure.vmagent.AzureVMCloud>
+  </clouds>
+  <quietPeriod>5</quietPeriod>
+  <scmCheckoutRetryCount>0</scmCheckoutRetryCount>
+  <views>
+    <hudson.model.AllView>
+      <owner class="hudson" reference="../../.."/>
+      <name>all</name>
+      <filterExecutors>false</filterExecutors>
+      <filterQueue>false</filterQueue>
+      <properties class="hudson.model.View$PropertyList"/>
+    </hudson.model.AllView>
+    <listView>
+      <owner class="hudson" reference="../../.."/>
+      <name>Ubuntu_16.04</name>
+      <filterExecutors>false</filterExecutors>
+      <filterQueue>false</filterQueue>
+      <properties class="hudson.model.View$PropertyList"/>
+      <jobNames>
+        <comparator class="hudson.util.CaseInsensitiveComparator"/>
+        <string>clear-containers-agent-azure-ubuntu-16-04</string>
+        <string>clear-containers-proxy-azure-ubuntu-16-04</string>
+        <string>clear-containers-runtime-azure-ubuntu-16-04</string>
+        <string>clear-containers-shim-azure-ubuntu-16-04</string>
+        <string>clear-containers-tests-azure-ubuntu-16-04</string>
+      </jobNames>
+      <jobFilters/>
+      <columns>
+        <hudson.views.StatusColumn/>
+        <hudson.views.WeatherColumn/>
+        <hudson.views.JobColumn/>
+        <hudson.views.LastSuccessColumn/>
+        <hudson.views.LastFailureColumn/>
+        <hudson.views.LastDurationColumn/>
+        <hudson.views.BuildButtonColumn/>
+      </columns>
+      <recurse>false</recurse>
+    </listView>
+    <listView>
+      <owner class="hudson" reference="../../.."/>
+      <name>Ubuntu_17.04</name>
+      <filterExecutors>false</filterExecutors>
+      <filterQueue>false</filterQueue>
+      <properties class="hudson.model.View$PropertyList"/>
+      <jobNames>
+        <comparator class="hudson.util.CaseInsensitiveComparator" reference="../../../listView/jobNames/comparator"/>
+        <string>clear-containers-agent-azure-ubuntu-17-04</string>
+        <string>clear-containers-proxy-azure-ubuntu-17-04</string>
+        <string>clear-containers-runtime-azure-ubuntu-17-04</string>
+        <string>clear-containers-shim-azure-ubuntu-17-04</string>
+        <string>clear-containers-tests-azure-ubuntu-17-04</string>
+      </jobNames>
+      <jobFilters/>
+      <columns>
+        <hudson.views.StatusColumn/>
+        <hudson.views.WeatherColumn/>
+        <hudson.views.JobColumn/>
+        <hudson.views.LastSuccessColumn/>
+        <hudson.views.LastFailureColumn/>
+        <hudson.views.LastDurationColumn/>
+        <hudson.views.BuildButtonColumn/>
+      </columns>
+      <recurse>false</recurse>
+    </listView>
+    <listView>
+      <owner class="hudson" reference="../../.."/>
+      <name>Kubernetes</name>
+      <filterExecutors>false</filterExecutors>
+      <filterQueue>false</filterQueue>
+      <properties class="hudson.model.View$PropertyList"/>
+      <jobNames>
+        <comparator class="hudson.util.CaseInsensitiveComparator" reference="../../../listView/jobNames/comparator"/>
+        <string>clear-containers-tests-k8s</string>
+      </jobNames>
+      <jobFilters/>
+      <columns>
+        <hudson.views.StatusColumn/>
+        <hudson.views.WeatherColumn/>
+        <hudson.views.JobColumn/>
+        <hudson.views.LastSuccessColumn/>
+        <hudson.views.LastFailureColumn/>
+        <hudson.views.LastDurationColumn/>
+        <hudson.views.BuildButtonColumn/>
+      </columns>
+      <recurse>false</recurse>
+    </listView>
+  </views>
+  <primaryView>all</primaryView>
+  <slaveAgentPort>-1</slaveAgentPort>
+  <label></label>
+  <nodeProperties/>
+  <globalNodeProperties/>
+</hudson>
