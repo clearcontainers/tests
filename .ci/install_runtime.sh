@@ -43,6 +43,17 @@ export LOCALSTATEDIR=/var
 
 runtime_config_path="${SYSCONFDIR}/clear-containers/configuration.toml"
 
+PKGDEFAULTSDIR="${SHARE_DIR}/defaults/clear-containers"
+NEW_RUNTIME_CONFIG="${PKGDEFAULTSDIR}/configuration.toml"
+
+if [ -e "${NEW_RUNTIME_CONFIG}" ]; then
+	# Remove the legacy config file
+	sudo rm -f "${runtime_config_path}"
+
+	# Use the new path
+	runtime_config_path="${NEW_RUNTIME_CONFIG}"
+fi
+
 # Note: This will also install the config file.
 clone_build_and_install "github.com/clearcontainers/runtime"
 
