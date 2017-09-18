@@ -76,6 +76,10 @@ var _ = Describe("docker kill", func() {
 
 			DockerRun(args...)
 
+			// we have to wait for the container workload
+			// to process the trap.
+			time.Sleep(5 * time.Second)
+			
 			if signal > 0 {
 				DockerKill("-s", fmt.Sprintf("%d", signal), id)
 			} else {
