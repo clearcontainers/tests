@@ -17,43 +17,48 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 # Description:
-# This will measure latency when we do a ping
-# from one container to another (docker <-> docker)
-
-SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
-
-source "${SCRIPT_PATH}/lib/network-test-common.bash"
+# This metrics test measures the latency spent when a container makes a ping
+# to another container.
+# container-client <--- ping ---> container-server
 
 set -e
 
-# This script will perform all the measurements using a local setup
+SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
+source "${SCRIPT_PATH}/lib/network-common.bash"
+source "${SCRIPT_PATH}/../lib/common.bash"
+TEST_NAME="network ping latency"
 
-# Test latency docker<->docker using ping
-
-function latency {
+function latency() {
 	# Image name (ping installed by default)
-	local image=busybox
+	local image="busybox"
 	# Number of packets (sent)
 	local number=10
-	# Name of the containers
-	local server_name="network-server"
-	local client_name="network-client"
-	# Arguments to run the client
-	local extra_args="-ti --rm"
+	# Arguments to run the client/server
+	local client_extra_args="-ti --rm"
+	local server_extra_args="-i"
 
-	setup
-	local server_command="sleep 30"
-	local server_address=$(start_server "$server_name" "$image" "$server_command")
+	# Initialize/clean environment
+	init_env
+
+	local server_command="sh"
+	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
+
+	# Verify server IP address
+	if [ -z "$server_address" ];then
+		clean_env
+		die "server: ip address no found"
+	fi
 
 	local client_command="ping -c ${number} ${server_address}"
-	start_client "$extra_args" "$client_name" "$image" "$client_command" > "$result"
+	result=$(start_client "$image" "$client_command" "$client_extra_args")
 
-	local latency_average=$(cat $result | grep avg | tail -1 | awk '{print $4}' | cut -d '/' -f 2)
-	echo "The average latency is : $latency_average ms"
+	local latency_average="$(echo "$result" | grep "avg" | awk -F"/" '{print $4}')"
+	echo "Ping latency average: $latency_average ms"
 
-	save_results "network latency" "" "${latency_average}" "ms"
+	save_results "$TEST_NAME" "" "${latency_average}" "ms"
 
-	clean_environment "$server_name"
+	clean_env
+	echo "Finish"
 }
 
 latency
