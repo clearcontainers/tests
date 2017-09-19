@@ -16,23 +16,6 @@
 
 set -e
 
-function get_repo_slug() {
-	[ -n "$SEMAPHORE_REPO_SLUG" ] && { echo "$SEMAPHORE_REPO_SLUG"; return; }
-	[ -n "$TRAVIS_REPO_SLUG" ] && { echo "$TRAVIS_REPO_SLUG"; return; }
-}
-
-if [ "$TRAVIS" != true ]
-then
-	exit 0
-fi
-
-if [ "$(get_repo_slug)" != "clearcontainers/tests" ]
-then
-	exit 0
-fi
-
-echo "Set up tests repo"
-
 # Check the commits in the branch
 checkcommits_dir="cmd/checkcommits"
 (cd "${checkcommits_dir}" && make)
