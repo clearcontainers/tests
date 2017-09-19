@@ -46,7 +46,7 @@ runtime_config_path="${SYSCONFDIR}/clear-containers/configuration.toml"
 PKGDEFAULTSDIR="${SHAREDIR}/defaults/clear-containers"
 NEW_RUNTIME_CONFIG="${PKGDEFAULTSDIR}/configuration.toml"
 
-if [ -e "${NEW_RUNTIME_CONFIG}" ]; then
+if sudo [ -e "${NEW_RUNTIME_CONFIG}" ]; then
 	# Remove the legacy config file
 	sudo rm -f "${runtime_config_path}"
 
