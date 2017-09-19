@@ -46,19 +46,19 @@ runtime_config_path="${SYSCONFDIR}/clear-containers/configuration.toml"
 PKGDEFAULTSDIR="${SHAREDIR}/defaults/clear-containers"
 NEW_RUNTIME_CONFIG="${PKGDEFAULTSDIR}/configuration.toml"
 
-if sudo [ -e "${NEW_RUNTIME_CONFIG}" ]; then
+# Note: This will also install the config file.
+clone_build_and_install "github.com/clearcontainers/runtime"
+
+# Check system supports running Clear Containers
+cc-runtime cc-check
+
+if [ -e "${NEW_RUNTIME_CONFIG}" ]; then
 	# Remove the legacy config file
 	sudo rm -f "${runtime_config_path}"
 
 	# Use the new path
 	runtime_config_path="${NEW_RUNTIME_CONFIG}"
 fi
-
-# Note: This will also install the config file.
-clone_build_and_install "github.com/clearcontainers/runtime"
-
-# Check system supports running Clear Containers
-cc-runtime cc-check
 
 echo "Enabling global logging for runtime in file ${runtime_config_path}"
 sudo sed -i -e 's/^#\(\[runtime\]\|global_log_path =\)/\1/g' "${runtime_config_path}"
