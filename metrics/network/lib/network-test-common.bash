@@ -16,48 +16,51 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-
-# This file contains functions that are shared among the networking
+# Description: This file contains functions that are shared among the networking
 # tests that are using nuttcp and iperf
 
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 source "${SCRIPT_PATH}/../lib/common.bash"
 
-# This function will check the configured runtime, clean up the environment and
-# create a temporary file where networking results will be stored
-function setup {
-	runtime_docker
-	kill_processes_before_start
-	result=$(mktemp)
-}
+# This function will launch a container in detached mode and
+# it will return the IP address, the role of this container is as a server.
+# Arguments:
+#  Docker image.
+#  Command[s] to be executed.
+#  Extra argument for container execution.
+function start_server()
+{
+	local image="$1"
+	local cmd="$2"
+	local extra_args="$3"
 
-# This function can be used in iperf and nuttcp networking tests
-function start_server {
-	local server_name="$1"
-	local image="$2"
-	local server_command="$3"
-	local extra_args="$4"
-	$DOCKER_EXE run ${extra_args} -d --runtime="${RUNTIME}" --name=${server_name} ${image} \
-		sh -c "${server_command}" > /dev/null
-	local server_address=$($DOCKER_EXE inspect --format "{{.NetworkSettings.IPAddress}}" ${server_name})
+	# Launch container
+	instance_id="$($DOCKER_EXE run $extra_args -d --runtime "$RUNTIME" \
+		"$image" sh -c "$cmd")"
+
+	# Get IP Address
+	server_address=$($DOCKER_EXE inspect \
+		--format "{{.NetworkSettings.IPAddress}}" $instance_id)
+
 	echo "$server_address"
 }
 
-# This function is mainly required in iperf and nuttcp networking tests
-# and for PSS measurements it requires to run in detached mode
-function start_client {
-	local extra_args="$1"
-	local client_name="$2"
-	local image="$3"
-	local client_command="$4"
-	$DOCKER_EXE run ${extra_args} --runtime="${RUNTIME}" --name=${client_name} \
-		${image} sh -c "${client_command}"
-}
+# This function will launch a container and it will execute a determined
+# workload, this workload is received as an argument and this function will
+# return the output/result of the workload. The role of this container is as a client.
+# Arguments:
+#  Docker image
+#  Command[s] to be executed
+#  Extra argument for container execution
+function start_client()
+{
+	local image="$1"
+	local cmd="$2"
+	local extra_args="$3"
 
-# This function will remove the server and the temporary file where
-# networking results are stored
-function clean_environment {
-	local server_name="$1"
-	$DOCKER_EXE rm -f ${server_name} > /dev/null
-	rm -f "$result"
+	# Execute client/workload and return result output
+	output="$($DOCKER_EXE run $extra_args --runtime "$RUNTIME" \
+			"$image" sh -c "$cmd")"
+
+	echo "$output"
 }
