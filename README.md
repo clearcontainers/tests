@@ -1,3 +1,6 @@
+[![Build Status](http://cc-jenkins-ci.westus2.cloudapp.azure.com/job/clear-containers-tests-azure-ubuntu-16-04/badge/icon)](http://cc-jenkins-ci.westus2.cloudapp.azure.com/job/clear-containers-tests-azure-ubuntu-16-04/)
+[![Build Status](http://cc-jenkins-ci.westus2.cloudapp.azure.com/job/clear-containers-tests-azure-ubuntu-17-04/badge/icon)](http://cc-jenkins-ci.westus2.cloudapp.azure.com/job/clear-containers-tests-azure-ubuntu-17-04/)
+
 # Clear Containers Tests Repository
 
 This repository contains the test suite for the Clear Containers 3.0 project,
