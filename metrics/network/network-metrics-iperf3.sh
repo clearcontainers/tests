@@ -18,6 +18,8 @@
 #
 # Test inter-container network bandwidth and jitter using iperf3
 
+set -e
+
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 
 source "${SCRIPT_PATH}/lib/network-test-common.bash"
@@ -31,10 +33,13 @@ time=5
 # Name of the containers
 server_name="network-server"
 client_name="network-client"
-# Arguments to run the client
-extra_args="-ti --rm"
 
-set -e
+# Arguments to run the client
+if [ "$RUNTIME" == "runc" ];then
+	extra_args="-ti --privileged --rm"
+else
+	extra_args="-ti --rm"
+fi
 
 ## Test name for reporting purposes
 test_name="network metrics iperf3"
@@ -45,7 +50,7 @@ test_name="network metrics iperf3"
 function iperf3_bandwidth {
 	setup
 	local server_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -p ${port} -s"
-	local server_address=$(start_server "$server_name" "$image" "$server_command")
+	local server_address=$(start_server "$server_name" "$image" "$server_command" "$extra_args")
 
 	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -t ${time}"
 	start_client "$extra_args" "$client_name" "$image" "$client_command" > "$result"
@@ -67,7 +72,7 @@ function iperf3_bandwidth {
 function iperf3_jitter {
 	setup
 	local server_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -s -V"
-	local server_address=$(start_server "$server_name" "$image" "$server_command")
+	local server_address=$(start_server "$server_name" "$image" "$server_command" "$extra_args")
 
 	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -u -t ${time}"
 	start_client "$extra_args" "$client_name" "$image" "$client_command" > "$result"
@@ -89,7 +94,7 @@ function iperf3_jitter {
 function iperf3_bidirectional_bandwidth_client_server {
 	setup
 	local server_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -p ${port} -s"
-	local server_address=$(start_server "$server_name" "$image" "$server_command")
+	local server_address=$(start_server "$server_name" "$image" "$server_command" "$extra_args")
 
 	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -d -t ${time}"
 	start_client "$extra_args" "$client_name" "$image" "$client_command" > "$result"
