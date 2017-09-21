@@ -22,6 +22,9 @@ qemu_lite_sha=741f430a960b5b67745670e8270db91aeb083c5f-29
 # Go version to use for building and testing Clear Containers
 go_version="1.8.3"
 
+#Kubernetes version compatible with Clear Containers
+kubernetes_version="1.7.8-00"
+
 # Openshift Origin version compatible with Clear Containers
 origin_version="v3.6.0"
 origin_commit="c4dd4cf"
