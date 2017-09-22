@@ -26,20 +26,14 @@ source "${cidir}/lib.sh"
 # enable verbose build
 export V=1
 
-# The OBS packages install qemu-lite here
-export QEMUBINDIR=/usr/bin
+# tell the runtime build to use sane defaults
+export CC_SYSTEM_BUILD="yes"
 
 # The runtimes config file should live here
 export SYSCONFDIR=/etc
 
 # Artifacts (kernel + image) live below here
 export SHAREDIR=/usr/share
-
-# shim + proxy
-export PKGLIBEXECDIR=/usr/libexec/clear-containers
-
-# For the pause bundle
-export LOCALSTATEDIR=/var
 
 runtime_config_path="${SYSCONFDIR}/clear-containers/configuration.toml"
 
