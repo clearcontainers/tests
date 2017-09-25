@@ -17,49 +17,48 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 # Description:
-# Test inter (docker<->docker) udp network bandwidth
-# using nuttcp
-
-SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
-
-source "${SCRIPT_PATH}/lib/network-test-common.bash"
+# This metrics test measures the UDP network bandwidth using nuttcp
+# in a interconnection container-client <----> container-server.
 
 set -e
 
-# This script will perform all the measurements using a local setup
+SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
+source "${SCRIPT_PATH}/lib/network-common.bash"
+source "${SCRIPT_PATH}/../lib/common.bash"
 
-# Test single docker->docker udp bandwidth
 
-## Test name for reporting purposes
-test_name="network metrics nuttcp"
-
-function udp_bandwidth {
+function udp_bandwidth() {
 	# Currently default nuttcp has a bug
 	# see https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=745051
 	# Image name
-	local image=gabyct/nuttcp
+	local image="gabyct/nuttcp"
 	# Measurement time (seconds)
-	local time=5
-	# Name of the containers
+	local transmit_timeout=5
+	# Name of the server container
 	local server_name="network-server"
-	local client_name="network-client"
-	# Arguments to run the client
-	local extra_args="-ti --rm"
 
-	setup
-	local server_command="sleep 30"
-	local server_address=$(start_server "$server_name" "$image" "$server_command")
+	# Arguments to run the client/server
+	local server_extra_args="-i --name=$server_name"
+	local client_extra_args="-ti --rm"
 
-	local client_command="/root/nuttcp -T${time} -u -Ru -i1 -l${bl} ${server_address}"
+	# Initialize/clean environment
+	init_env
+
+	local server_command="sh"
+	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
+
+	local client_command="/root/nuttcp -T${transmit_timeout} -u -Ru -i1 -l${bl} ${server_address}"
 	local server_command="/root/nuttcp -u -S"
+
 	$DOCKER_EXE exec ${server_name} sh -c "${server_command}"
-	start_client "$extra_args" "$client_name" "$image" "$client_command" > "$result"
+	result=$(start_client "$image" "$client_command" "$client_extra_args")
 
-# 6, 7, 16, "%"
 
-	local result_line=$(tail -1 ${result})
+	local result_line=$(echo "$result" | tail -1)
 	local -a results
 	read -a results <<< ${result_line%$'\r'}
+
+	# 6, 7, 16, "%"
 	local total_bandwidth=${results[6]}
 	local total_bandwidth_units=${results[7]}
 	local total_loss=${results[16]}
@@ -70,12 +69,16 @@ function udp_bandwidth {
 		"${total_loss}${total_loss_units}"
 
 	local subtest_name="UDP ${bl}b buffer"
+	test_name="network nuttcp UDP ${bl}b bandwith"
 	save_results "${test_name}" "${subtest_name} bandwidth" \
 		"$total_bandwidth" "$total_bandwidth_units"
+	test_name="network nuttcp UDP ${bl}b packet loss"
 	save_results "${test_name}" "${subtest_name} packet loss" \
 		"$total_loss" "$total_loss_units"
 
-	clean_environment "$server_name"
+	clean_env
+	echo "Finish"
+
 }
 
 function udp_default_buffer_size {
