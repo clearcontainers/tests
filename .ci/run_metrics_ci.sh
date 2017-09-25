@@ -28,7 +28,7 @@ for cmd in "${REPORT_CMDS[@]}"; do
 	if ! command -v "$cmd" > /dev/null 2>&1; then
 		pushd "$CURRENTDIR/../cmd/$cmd"
 		make
-		make install
+		sudo make install
 		popd
 	fi
 done
