@@ -17,41 +17,39 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 # Description:
-#  Test inter (docker<->docker) bidirectional network bandwidth using iperf2
-
-SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
-
-source "${SCRIPT_PATH}/lib/network-test-common.bash"
+# This metrics test measures the network bandwidth using iperf2 in
+# a interconnection container-client <----> container-server.
 
 set -e
 
-# This script will perform all the measurements using a local setup
+SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
+source "${SCRIPT_PATH}/lib/network-common.bash"
+source "${SCRIPT_PATH}/../lib/common.bash"
 
-# Test TCP bandwidth bi-directionally (docker_iperf_server<->docker_iperf_client)
 # Extract bandwidth results for both directions from the one test
-function bidirectional_bandwidth_server_client {
+function bidirectional_bandwidth_server_client() {
 	# Port number where the server will run
-	local port=5001:5001
+	local port="5001:5001"
 	# Image name
-	local image=gabyct/network
+	local image="gabyct/network"
 	# Measurement time (seconds)
-	local time=5
-	# Name of the containers
-	local server_name="network-server"
-	local client_name="network-client"
+	local transmit_timeout=5
+
 	# Arguments to run the client
 	local extra_args="-ti --rm"
 
-	setup
+	# Initialize/clean environment
+	init_env
+
 	server_command="iperf -p ${port} -s"
-	local server_address=$(start_server "$server_name" "$image" "$server_command")
+	local server_address=$(start_server "$image" "$server_command")
 
-	client_command="iperf -c ${server_address} -d -t ${time}"
-	start_client "$extra_args" "$client_name" "$image" "$client_command" > "$result"
+	client_command="iperf -c ${server_address} -d -t ${transmit_timeout}"
+	result="$(start_client "$image" "$client_command" "$extra_args")"
 
-	local server_result=$(tail -1 $result)
+	local server_result=$(echo "$result" | tail -1)
 	read -a server_results <<< ${server_result%$'\r'}
-	local client_result=$(tail -n 2 $result | head -1)
+	local client_result=$(echo "$result" | tail -n 2 | head -1)
 	read -a client_results <<< ${client_result%$'\r'}
 
 	local total_bidirectional_server_bandwidth=${server_results[-2]}
@@ -65,14 +63,17 @@ function bidirectional_bandwidth_server_client {
 		"$total_bidirectional_server_bandwidth" \
 		"$total_bidirectional_server_bandwidth_units"
 
-	save_results "network metrics" "client to server" \
+	test_name="network bw client to server"
+	save_results "$test_name" "client to server" \
 		"$total_bidirectional_client_bandwidth" \
 		"$total_bidirectional_client_bandwidth_units"
-	save_results "network metrics" "server to client" \
+	test_name="network bw server to client"
+	save_results "$test_name" "server to client" \
 		"$total_bidirectional_server_bandwidth" \
 		"$total_bidirectional_server_bandwidth_units"
 
-	clean_environment "$server_name"
+	clean_env
+	echo "Finish"
 }
 
 bidirectional_bandwidth_server_client
