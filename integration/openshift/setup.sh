@@ -58,3 +58,4 @@ export OS_OUTPUT_GOPATH=1
 make
 sudo cp _output/local/bin/linux/amd64/{openshift,oc,oadm} /usr/bin
 popd
+echo "Openshift + CC Setup finished successfully"
