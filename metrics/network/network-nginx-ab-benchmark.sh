@@ -17,23 +17,22 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 # Description:
-#  Test (host<->docker) network performance using
-#  an nginx container and running the Apache 
-#  benchmarking tool in the host to calculate the 
-#  requests per second
+# This test measures the request per second from the interconnection
+# between a server container and the host using ab tool.
+# container-server <----> host
 
 set -e
 
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
-
 source "${SCRIPT_PATH}/../lib/common.bash"
+TEST_NAME="network nginx ab benchmark"
 
 # Ports where it will run
-port=80:80
+port="80:80"
 # Image name
-image=nginx
+image="nginx"
 # Url
-url=localhost:80
+url="localhost:80"
 # Number of requests to perform
 # (large number to reduce standard deviation)
 requests=100000
@@ -41,38 +40,31 @@ requests=100000
 # (large number to reduce standard deviation)
 concurrency=100
 
-function setup {
-	runtime_docker
-	kill_processes_before_start
-}
-
-# This script will perform all the measurements using a local setup
-
-# Test single host<->docker requests per second using nginx and ab
-
-function nginx_ab_networking {
+function nginx_ab_networking() {
+	# Verify apache benchmark
 	cmds=("ab")
 	check_cmds "${cmds[@]}"
-	setup
-	container_name="docker-nginx"
-	total_requests=$(mktemp)
+	extra_args=" -p $port"
+	total_requests="tmp.log"
 
-	$DOCKER_EXE run -d --name ${container_name} --runtime $RUNTIME -p ${port} ${image} > /dev/null
+	# Initialize/clean environment
+	init_env
+
+	# Launch nginx container
+	$DOCKER_EXE run -d -p $port $image
 	sleep_secs=2
-	echo >&2 "WARNING: sleeping for $sleep_secs seconds (see https://github.com/01org/cc-oci-runtime/issues/828)"
+	echo >&2 "WARNING: sleeping for $sleep_secs seconds to let the container start correctly"
 	sleep "$sleep_secs"
-	ab -n ${requests} -c ${concurrency} http://${url}/ > "$total_requests"
+	result="$(ab -n ${requests} -c ${concurrency} http://${url}/)"
+	rps="$(echo "$result" | grep "Requests" | awk '{print $4}')"
 
-	cp -p $total_requests result.test
+	echo "Requests per second: $rps"
+	save_results "$TEST_NAME" \
+		"requests=${requests} concurrency=${concurrency}" \
+		"$rps" "requests/s"
 
-	local result=$(grep "^Requests per second" $total_requests)
-	[[ $result =~ :[[:blank:]]*([[:digit:]]+(\.[[:digit:]]*)?) ]] && rps=${BASH_REMATCH[1]}
-	$DOCKER_EXE rm -f ${container_name} > /dev/null	
-	rm -f "$total_requests"
+	clean_env
+	echo "Finish"
 }
 
 nginx_ab_networking
-echo "The total of requests per second is : $rps"
-save_results "network nginx ab benchmark" \
-	"requests=${requests} concurrency=${concurrency}" \
-	"$rps" "requests/s"
