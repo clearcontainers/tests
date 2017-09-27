@@ -254,3 +254,8 @@ func DockerSwarm(args ...string) (string, string, int) {
 func DockerService(args ...string) (string, string, int) {
 	return runDockerCommand("service", args...)
 }
+
+// DockerStart starts one or more stopped containers
+func DockerStart(args ...string) (string, string, int) {
+	return runDockerCommand("start", args...)
+}
