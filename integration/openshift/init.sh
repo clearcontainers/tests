@@ -44,6 +44,8 @@ kubeletArguments:
   - "15m"
   enable-cri:
   - "true"
+  cgroup-driver:
+  - "cgroupfs"
 EOF
 
 echo "Start Master"

@@ -22,6 +22,7 @@ setup() {
 	pod_name="hello-openshift"
 	image="openshift/${pod_name}"
 	sudo -E /usr/local/bin/crioctl image pull "$image"
+	cc_runtime_bin=$(command -v cc-runtime)
 }
 
 @test "Hello Openshift using CC" {
@@ -37,7 +38,7 @@ setup() {
 	waitForProcess "$wait_time" "$sleep_time" "$cmd"
 	container_id=$(sudo -E oc describe pod/${pod_name} | grep "Container ID" | cut -d '/' -f3)
 	# Verify that the running container is a Clear Container
-	sudo -E cc-runtime list | grep "$container_id" | grep "running"
+	sudo -E "$cc_runtime_bin" list | grep "$container_id" | grep "running"
 	# Verify connectivity
 	container_ip=$(sudo -E oc get pod "${pod_name}" -o yaml | grep "podIP" | awk '{print $2}')
 	container_port=$(sudo -E oc get pod "${pod_name}" -o yaml | grep "Port" | awk '{print $3}')
