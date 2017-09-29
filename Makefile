@@ -55,6 +55,9 @@ all: functional checkcommits integration
 checkcommits:
 	cd cmd/checkcommits && make
 
+cc-log-parser:
+	cd cmd/cc-log-parser && make
+
 clean:
 	cd cmd/checkcommits && make clean
 
