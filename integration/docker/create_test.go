@@ -27,6 +27,10 @@ var _ = Describe("docker create", func() {
 		stdout   string
 	)
 
+	BeforeEach(func() {
+		id = randomDockerName()
+	})
+
 	AfterEach(func() {
 		Expect(RemoveDockerContainer(id)).To(BeTrue())
 		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
@@ -34,7 +38,6 @@ var _ = Describe("docker create", func() {
 
 	Context("check create functionality", func() {
 		It("create a container", func() {
-			id = randomDockerName()
 			_, _, exitCode = DockerCreate("-t", "--name", id, Image)
 			Expect(exitCode).To(Equal(0))
 
@@ -43,4 +46,19 @@ var _ = Describe("docker create", func() {
 			Expect(stdout).To(ContainSubstring(id))
 		})
 	})
+
+	Context("check create --read-only option", func() {
+		It("should not allowed to modify the filesystem", func() {
+			Skip("Issue https://github.com/clearcontainers/runtime/issues/614")
+			_, _, exitCode = DockerCreate("--name", id, "--read-only", Image, "sh", "-c", "sleep 30")
+			Expect(exitCode).To(Equal(0))
+
+			_, _, exitCode = DockerStart(id)
+			Expect(exitCode).To(Equal(0))
+
+			args := []string{id, "sh", "-c", "ls -ld /root; touch /root/foo.txt && ls -l /root/foo.txt"}
+			_, _, exitCode = DockerExec(args...)
+			Expect(exitCode).To(Equal(1))
+                })
+        })
 })
