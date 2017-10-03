@@ -49,13 +49,15 @@ make binary-local
 sudo -E make install-binary
 popd
 
-echo "Install Openshift"
+echo "Install Openshift Origin"
 openshift_repo="github.com/openshift/origin"
-go get -d "$openshift_repo" || true
-pushd "$GOPATH/src/$openshift_repo"
-git checkout "$origin_version"
-export OS_OUTPUT_GOPATH=1
-make
-sudo cp _output/local/bin/linux/amd64/{openshift,oc,oadm} /usr/bin
-popd
+openshift_tarball="openshift-origin-server-${origin_version}-${origin_commit}-linux-64bit.tar.gz"
+openshift_dir="${openshift_tarball/.tar.gz/}"
+openshift_url="https://${openshift_repo}/releases/download/${origin_version}/${openshift_tarball}"
+
+curl -L -O "$openshift_url"
+tar -xf "$openshift_tarball"
+sudo install ${openshift_dir}/{openshift,oc,oadm} /usr/bin
+rm -rf "$openshift_dir" "${openshift_tarball}"
+
 echo "Openshift + CC Setup finished successfully"

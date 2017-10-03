@@ -20,4 +20,5 @@ qemu_lite_sha=741f430a960b5b67745670e8270db91aeb083c5f-29
 go_version="1.8.3"
 
 # Openshift Origin version compatible with Clear Containers
-origin_version="release-3.6"
+origin_version="v3.6.0"
+origin_commit="c4dd4cf"
