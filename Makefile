@@ -39,7 +39,10 @@ metrics:
 integration: ginkgo
 	./ginkgo ./integration/docker/ -- -timeout ${TIMEOUT}
 
-check: functional crio integration
+swarm:
+	bats integration/swarm/swarm.bats
+
+check: functional crio integration swarm
 
 all: functional checkcommits integration
 
