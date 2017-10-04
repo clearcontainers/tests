@@ -1,5 +1,6 @@
-[![Build Status](http://cc-jenkins-ci.westus2.cloudapp.azure.com/job/clear-containers-tests-azure-ubuntu-16-04/badge/icon)](http://cc-jenkins-ci.westus2.cloudapp.azure.com/job/clear-containers-tests-azure-ubuntu-16-04/)
-[![Build Status](http://cc-jenkins-ci.westus2.cloudapp.azure.com/job/clear-containers-tests-azure-ubuntu-17-04/badge/icon)](http://cc-jenkins-ci.westus2.cloudapp.azure.com/job/clear-containers-tests-azure-ubuntu-17-04/)
+[![Build Status](http://cc-jenkins-ci.westus2.cloudapp.azure.com/job/clear-containers-tests-azure-ubuntu-16-04-master/badge/icon)](http://cc-jenkins-ci.westus2.cloudapp.azure.com/job/clear-containers-tests-azure-ubuntu-16-04-master/)
+[![Build Status](http://cc-jenkins-ci.westus2.cloudapp.azure.com/job/clear-containers-tests-azure-ubuntu-17-04-master/badge/icon)](http://cc-jenkins-ci.westus2.cloudapp.azure.com/job/clear-containers-tests-azure-ubuntu-17-04-master/)
+[![Build Status](http://cc-jenkins-ci.westus2.cloudapp.azure.com/job/clear-containers-tests-fedora-26-master/badge/icon)](http://cc-jenkins-ci.westus2.cloudapp.azure.com/job/clear-containers-tests-fedora-26-master/)
 
 # Clear Containers Tests Repository
 
