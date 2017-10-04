@@ -318,15 +318,16 @@ func (g *Github) downloadPullRequest(pr int, branch string, workingDir string) e
 	}
 
 	// fetch the branch
+	branchName := fmt.Sprintf("pr%d_%s_%d", pr, branch, time.Now().Unix())
 	stderr.Reset()
-	cmd := exec.Command("git", "fetch", "origin", fmt.Sprintf("pull/%d/head:%s", pr, branch))
+	cmd := exec.Command("git", "fetch", "origin", fmt.Sprintf("pull/%d/head:%s", pr, branchName))
 	cmd.Dir = workingDir
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to run git fetch %s %s", stderr.String(), err)
 	}
 
-	if err := g.checkoutBranch(branch, workingDir); err != nil {
+	if err := g.checkoutBranch(branchName, workingDir); err != nil {
 		return err
 	}
 
