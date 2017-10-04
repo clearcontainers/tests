@@ -31,6 +31,9 @@ const (
 	// AlpineImage is the alpine image
 	AlpineImage = "alpine"
 
+	// PostgresImage is the postgres image
+	PostgresImage = "postgres"
+
 	// timeout for docker rmi command
 	// 15 seconds should be enough to complete this task
 	dockerRmiTimeout = 15

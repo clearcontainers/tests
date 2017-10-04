@@ -63,7 +63,7 @@ var _ = Describe("users and groups", func() {
 			if user != "" {
 				cmd = append(cmd, "-u", user)
 			}
-			cmd = append(cmd, "postgres", "id")
+			cmd = append(cmd, PostgresImage, "id")
 
 			stdout, stderr, exitCode := DockerRun(cmd...)
 			if fail {
