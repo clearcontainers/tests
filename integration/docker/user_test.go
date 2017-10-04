@@ -56,8 +56,6 @@ var _ = Describe("users and groups", func() {
 
 	DescribeTable("running container",
 		func(user string, additionalGroups []string, fail bool) {
-			Skip("Issue https://github.com/clearcontainers/runtime/issues/386")
-
 			cmd := []string{"--name", id, "--rm"}
 			for _, ag := range additionalGroups {
 				cmd = append(cmd, "--group-add", ag)
