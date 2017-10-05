@@ -259,3 +259,13 @@ func DockerService(args ...string) (string, string, int) {
 func DockerStart(args ...string) (string, string, int) {
 	return runDockerCommand("start", args...)
 }
+
+// DockerPause pauses all processes within one or more containers
+func DockerPause(args ...string) (string, string, int) {
+	return runDockerCommand("pause", args...)
+}
+
+// DockerUnpause unpauses all processes within one or more containers
+func DockerUnpause(args ...string) (string, string, int) {
+	return runDockerCommand("unpause", args...)
+}
