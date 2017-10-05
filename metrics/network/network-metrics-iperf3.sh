@@ -16,46 +16,50 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-# Test inter-container network bandwidth and jitter using iperf3
+# This test measures the following network essentials:
+# - bandwith simplex
+# - bandwith duplex
+# - jitter
+#
+# These metrics/results will be got from the interconnection between a container
+# server and client using the iperf tool.
+# container-server <----> container-client
 
 set -e
 
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
-
-source "${SCRIPT_PATH}/lib/network-test-common.bash"
+source "${SCRIPT_PATH}/lib/network-common.bash"
+source "${SCRIPT_PATH}/../lib/common.bash"
 
 # Port number where the server will run
-port=5201:5201
+port="5201:5201"
 # Image name
-image=gabyct/network
+image="gabyct/network"
 # Measurement time (seconds)
-time=5
-# Name of the containers
-server_name="network-server"
-client_name="network-client"
-
-# Arguments to run the client
-if [ "$RUNTIME" == "runc" ];then
-	extra_args="-ti --privileged --rm"
-else
-	extra_args="-ti --rm"
-fi
-
-## Test name for reporting purposes
-test_name="network metrics iperf3"
-
-# This script will perform all the measurements using a local setup using iperf3
+transmit_timeout=5
+# Arguments to run the client/server
+# "privileged" argument enables access to all devices on
+# the host and it allows to avoid conflicts with AppArmor
+# or SELinux configurations.
+client_extra_args="-ti --privileged --rm"
+server_extra_args="--privileged"
 
 # Test single direction TCP bandwith
-function iperf3_bandwidth {
-	setup
+function iperf3_bandwidth() {
+	local test_name="network iperf bandwidth"
 	local server_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -p ${port} -s"
-	local server_address=$(start_server "$server_name" "$image" "$server_command" "$extra_args")
+	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
 
-	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -t ${time}"
-	start_client "$extra_args" "$client_name" "$image" "$client_command" > "$result"
+	# Verify server IP address
+	if [ -z "$server_address" ];then
+		clean_env
+		die "server: ip address no found"
+	fi
 
-	local result_line=$(grep -m1 -E '\breceiver\b' $result)
+	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -t ${transmit_timeout}"
+	result=$(start_client "$image" "$client_command" "$client_extra_args")
+
+	local result_line=$(echo "$result" | grep -m1 -E '\breceiver\b')
 	local -a results
 	read -a results <<< $result_line
 	local total_bandwidth=${results[6]}
@@ -64,20 +68,26 @@ function iperf3_bandwidth {
 
 	save_results "${test_name}" "network bandwidth" \
 		"$total_bandwidth" "$total_bandwidth_units"
-
-	clean_environment "$server_name"
+	clean_env
+	echo "Finish"
 }
 
 # Test jitter on single direction UDP
-function iperf3_jitter {
-	setup
+function iperf3_jitter() {
+	local test_name="network iperf jitter"
 	local server_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -s -V"
-	local server_address=$(start_server "$server_name" "$image" "$server_command" "$extra_args")
+	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
 
-	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -u -t ${time}"
-	start_client "$extra_args" "$client_name" "$image" "$client_command" > "$result"
+	# Verify server IP address
+	if [ -z "$server_address" ];then
+		clean_env
+		die "server: ip address no found"
+	fi
 
-	local result_line=$(grep -m1 -A1 -E '\bJitter\b' $result | tail -1)
+	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -u -t ${transmit_timeout}"
+	result=$(start_client "$image" "$client_command" "$client_extra_args")
+
+	local result_line=$(echo "$result" | grep -m1 -A1 -E '\bJitter\b' | tail -1)
 	local -a results
 	read -a results <<< $result_line
 	local total_jitter=${results[8]}
@@ -86,21 +96,27 @@ function iperf3_jitter {
 
 	save_results "${test_name}" "network jitter" \
 		"$total_jitter" "$total_jitter_units"
-
-	clean_environment "$server_name"
+	clean_env
+	echo "Finish"
 }
 
 # Run bi-directional TCP test, and extract results for both directions
-function iperf3_bidirectional_bandwidth_client_server {
-	setup
+function iperf3_bidirectional_bandwidth_client_server() {
+	local test_name="network iperf client to server"
 	local server_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -p ${port} -s"
-	local server_address=$(start_server "$server_name" "$image" "$server_command" "$extra_args")
+	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
 
-	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -d -t ${time}"
-	start_client "$extra_args" "$client_name" "$image" "$client_command" > "$result"
+	# Verify server IP address
+	if [ -z "$server_address" ];then
+		clean_env
+		die "server: ip address no found"
+	fi
 
-	local client_result=$(grep -m1 -E '\breceiver\b' $result)
-	local server_result=$(grep -m1 -E '\bsender\b'   $result)
+	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -d -t ${transmit_timeout}"
+	result=$(start_client "$image" "$client_command" "$client_extra_args")
+
+	local client_result=$(echo "$result" | grep -m1 -E '\breceiver\b')
+	local server_result=$(echo "$result" | grep -m1 -E '\bsender\b')
 	local -a client_results
 	read -a client_results <<< ${client_result}
 	read -a server_results <<< ${server_result}
@@ -118,11 +134,15 @@ function iperf3_bidirectional_bandwidth_client_server {
 	save_results "${test_name}" "network bidir bw client to server" \
 		"$total_bidirectional_client_bandwidth" \
 		"$total_bidirectional_client_bandwidth_units"
+
+	# Save results in different files
+	test_name="network iperf server to client"
+
 	save_results "${test_name}" "network bidir bw server to client" \
 		"$total_bidirectional_server_bandwidth" \
 		"$total_bidirectional_server_bandwidth_units"
-
-	clean_environment "$server_name"
+	clean_env
+	echo "Finish"
 }
 
 echo "Currently this script is using ramfs for tmp (see https://github.com/01org/cc-oci-runtime/issues/152)"

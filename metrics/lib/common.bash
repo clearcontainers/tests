@@ -70,19 +70,37 @@ function check_cmds()
 function init_env()
 {
 	cmd=("docker")
-	contr_running=$(docker ps -qa)
 
+	# check dependencies
 	check_cmds "${cmd[@]}"
 
-	# Verify containers running
-	if [ ! -z "$contr_running" ];then
-		docker rm -f $(docker ps -qa)
-	fi
+	# Remove all stopped containers
+	clean_env
+
+	# This clean up is more aggressive, this is in order to
+	# decrease the factors that could affect the metrics results.
+	kill_processes_before_start
 
 	# Restart services
-	systemctl restart docker
+	sudo systemctl restart docker
 	if [[ "${RUNTIME}" == "cor" || "${RUNTIME}" == "cc-runtime" ]];then
-		systemctl restart cc-proxy
+		sudo systemctl restart cc-proxy
+	fi
+}
+
+# Clean environment, this function will try to remove all
+# stopped/running containers, it is advisable to use this function
+# in the final of each metrics test.
+function clean_env()
+{
+	containers_running=$(docker ps -q)
+
+	if [ ! -z "$containers_running" ]; then
+		# First stop all containers that are running
+		sudo $DOCKER_EXE stop $containers_running
+
+		# Remove all containers
+		sudo $DOCKER_EXE rm -f $(docker ps -qa)
 	fi
 }
 
