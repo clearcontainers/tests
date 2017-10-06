@@ -44,6 +44,7 @@ func TestIntegration(t *testing.T) {
 	images := []string{
 		Image,
 		AlpineImage,
+		PostgresImage,
 	}
 
 	for _, i := range images {
