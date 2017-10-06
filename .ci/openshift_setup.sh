@@ -21,8 +21,8 @@ source /etc/os-release
 source "$SCRIPT_PATH/../test-versions.txt"
 
 if [ "$ID" != fedora ]; then
-	echo "Currently this script only works for Fedora."
-	exit 1
+	echo "Currently this script only works for Fedora. Skipped Openshift Setup"
+	exit
 fi
 
 sudo -E dnf -y update

@@ -15,9 +15,12 @@
 # limitations under the License.
 
 set -e
+source /etc/os-release
 
-if [ "$OPENSHIFT_CI" = true ]; then
+sudo -E PATH="$PATH" bash -c "make check"
+
+# Currently, Openshift tests only work on Fedora.
+# We should delete this condition, when it works for Ubuntu.
+if [ "$ID" == fedora  ]; then
 	sudo -E PATH="$PATH" bash -c "make openshift"
-else
-	sudo -E PATH="$PATH" bash -c "make check"
 fi
