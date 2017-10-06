@@ -18,7 +18,7 @@ set -e
 
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 source /etc/os-release
-source "$SCRIPT_PATH/../../test-versions.txt"
+source "$SCRIPT_PATH/../test-versions.txt"
 
 if [ "$ID" != fedora ]; then
 	echo "Currently this script only works for Fedora."
@@ -31,11 +31,6 @@ echo "Install Dependencies for Openshift"
 sudo -E dnf -y install bind-utils bsdtar container-selinux createrepo \
 		file jq json-glib-devel krb5-devel mercurial libassuan-devel \
 		libselinux-python NetworkManager rsync skopeo-containers tito
-
-echo "Install Clear Containers, including dependencies"
-pushd "${SCRIPT_PATH}/../../.ci"
-./setup.sh
-popd
 
 echo "Set Overlay as storage driver for CRI-O"
 crio_config_file="/etc/crio/crio.conf"

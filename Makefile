@@ -39,6 +39,12 @@ metrics:
 integration: ginkgo
 	./ginkgo ./integration/docker/ -- -timeout ${TIMEOUT}
 
+openshift:
+	bash .ci/install_bats.sh
+	cd integration/openshift && \
+	./init.sh && \
+	bats hello_world.bats
+
 swarm:
 	bats integration/swarm/swarm.bats
 

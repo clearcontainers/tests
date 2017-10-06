@@ -19,6 +19,12 @@ load "${BATS_TEST_DIRNAME}/openshiftrc"
 load "${BATS_TEST_DIRNAME}/../kubernetes/lib.sh"
 
 setup() {
+	# Verify there is a node ready to run containers,
+	# if not, sleep 5s and check again until maximum of 30s
+	cmd="sudo -E oc get nodes | grep \" Ready\""
+	wait_time=30
+	sleep_time=5
+	waitForProcess "$wait_time" "$sleep_time" "$cmd"
 	pod_name="hello-openshift"
 	image="openshift/${pod_name}"
 	sudo -E /usr/local/bin/crioctl image pull "$image"

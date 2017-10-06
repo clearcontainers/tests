@@ -16,4 +16,8 @@
 
 set -e
 
-sudo -E PATH=$PATH bash -c "make check"
+if [ "$OPENSHIFT_CI" = true ]; then
+	sudo -E PATH="$PATH" bash -c "make openshift"
+else
+	sudo -E PATH="$PATH" bash -c "make check"
+fi
