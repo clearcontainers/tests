@@ -53,11 +53,7 @@ bash -f ${cidir}/install_cni_plugins.sh
 echo "Install CRI-O"
 bash -f ${cidir}/install_crio.sh
 
-# If OPENSHIFT_CI envar is defined to true,
-# this setup will install the OpenShift dependencies
-if [ "$OPENSHIFT_CI" = true ]; then
-	bash -f "${cidir}/openshift_setup.sh"
-fi
+bash -f "${cidir}/openshift_setup.sh"
 
 echo "Drop caches"
 sync
