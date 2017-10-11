@@ -38,9 +38,6 @@ type Container struct {
 	// if nil then try to run the container without --pid-file option
 	PidFile *string
 
-	// Debug enables debug output
-	Debug bool
-
 	// LogFile where debug information is written
 	// if nil then try to run the container without --log option
 	LogFile *string
@@ -79,7 +76,6 @@ func NewContainer(workload []string, detach bool) (*Container, error) {
 		Bundle:  b,
 		Console: &console,
 		PidFile: &pidFile,
-		Debug:   true,
 		LogFile: &logFile,
 		Detach:  detach,
 		ID:      &id,
@@ -90,10 +86,6 @@ func NewContainer(workload []string, detach bool) (*Container, error) {
 // calls to run command returning its stdout, stderr and exit code
 func (c *Container) Run() (string, string, int) {
 	args := []string{}
-
-	if c.Debug {
-		args = append(args, "--debug")
-	}
 
 	if c.LogFile != nil {
 		args = append(args, "--log", *c.LogFile)
@@ -173,10 +165,6 @@ func (c *Container) Kill(all bool, signal interface{}) (string, string, int) {
 // calls into exec command returning its stdout, stderr and exit code
 func (c *Container) Exec(process Process) (string, string, int) {
 	args := []string{}
-
-	if c.Debug {
-		args = append(args, "--debug")
-	}
 
 	if c.LogFile != nil {
 		args = append(args, "--log", *c.LogFile)
