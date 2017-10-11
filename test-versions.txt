@@ -2,7 +2,7 @@
 crio_version=959aab4fd5dbc315ca2dc84a90599c2108756a2c
 
 # Clear Containers image version
-image_version=17270
+image_version=18220
 
 # Kernel Version to use on recent Linux Distros
 kernel_clear_release=17580
