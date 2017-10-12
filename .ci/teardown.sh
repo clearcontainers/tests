@@ -31,6 +31,8 @@ if [[ ! $(ps -p 1 | grep systemd) ]]; then
 else
 	echo "Clear Containers Proxy Log:"
 	sudo journalctl --no-pager -u cc-proxy
+	echo "Clear Containers Shim Log:"
+	sudo journalctl --no-pager -t cc-shim
 	echo "CRI-O Log:"
 	sudo journalctl --no-pager -u crio
 fi
