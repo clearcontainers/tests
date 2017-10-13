@@ -37,7 +37,7 @@ echo "Install clear containers dependencies"
 chronic sudo -E apt install -y libtool automake autotools-dev autoconf bc alien libpixman-1-dev
 
 echo "Install qemu-lite binary"
-"${cidir}/install_qemu_lite.sh" "${qemu_clear_release}" "${qemu_lite_sha}"
+"${cidir}/install_qemu_lite.sh" "${qemu_clear_release}" "${qemu_lite_sha}" "$ID"
 
 echo "Install clear-containers image"
 "${cidir}/install_clear_image.sh" "$image_version" "${cc_kernel_path}"

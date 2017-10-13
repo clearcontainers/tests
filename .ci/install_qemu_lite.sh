@@ -16,14 +16,15 @@
 
 set -e
 
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <CLEAR_RELEASE> <QEMU_LITE_VERSION>"
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 <CLEAR_RELEASE> <QEMU_LITE_VERSION> <DISTRO>"
     echo "       Install the QEMU_LITE_VERSION from clear CLEAR_RELEASE."
     exit 1
 fi
 
 clear_release="$1"
 qemu_lite_version="$2"
+distro="$3"
 qemu_lite_bin="qemu-lite-bin-${qemu_lite_version}.x86_64.rpm"
 qemu_lite_data="qemu-lite-data-${qemu_lite_version}.x86_64.rpm"
 
@@ -33,9 +34,14 @@ echo -e "Install qemu-lite ${qemu_lite_version}"
 curl -LO "https://download.clearlinux.org/releases/${clear_release}/clear/x86_64/os/Packages/${qemu_lite_bin}"
 curl -LO "https://download.clearlinux.org/releases/${clear_release}/clear/x86_64/os/Packages/${qemu_lite_data}"
 
-# install packages using alien
-sudo alien -i "./${qemu_lite_bin}"
-sudo alien -i "./${qemu_lite_data}"
+# install packages
+if [ "$distro" == "fedora" ]; then
+    sudo rpm -ihv "./${qemu_lite_bin}" --nodeps
+    sudo rpm -ihv "./${qemu_lite_data}" --nodeps
+elif [ "$distro" == "ubuntu" ];  then
+    sudo alien -i "./${qemu_lite_bin}"
+    sudo alien -i "./${qemu_lite_data}"
+fi
 
 # cleanup
 rm -f "./${qemu_lite_bin}"
