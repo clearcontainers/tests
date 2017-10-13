@@ -26,8 +26,10 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
+	"strconv"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/olekukonko/tablewriter"
@@ -43,15 +45,18 @@ const usage = name + ` checks CSV metrics results against a TOML baseline`
 // The TOML basefile
 var ciBasefile *baseFile
 
-// processMetrics locates the CSV file matching each entry in the TOML
+// Create a report using a basfile
+var baseline = true
+
+// processMetricsBaseline locates the CSV file matching each entry in the TOML
 // baseline, loads and processes it, and checks if the metrics were in range.
 // Finally it generates a summary report
-func processMetrics(context *cli.Context) (err error) {
+func processMetricsBaseline(context *cli.Context) (err error) {
 	var report [][]string // summary report table
 	var passes int
 	var fails int
 
-	log.Debug("processMetrics")
+	log.Debug("processMetricsBaseline")
 
 	// Process each Metrics TOML entry one at a time
 	for _, m := range ciBasefile.Metric {
@@ -128,6 +133,47 @@ func processMetrics(context *cli.Context) (err error) {
 	return
 }
 
+
+// processMetrics generates a report using the metrics results
+// available in CSV files provided as input without use a basefile
+// as reference. This report shows basic statitistics just in
+// order to get an overview about the results.
+func processMetrics(context *cli.Context) (err error) {
+	var mtrdir string
+
+	mtrdir = context.GlobalString("metricsdir")
+	csvFiles, err := ioutil.ReadDir(mtrdir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"NAME", "MEAN", "MAX", "MIN", "SD", "COV", "ITERS"})
+	for _, csvf := range csvFiles {
+		var thisCsv csvRecord
+		filepath := path.Join(mtrdir, csvf.Name())
+		err = thisCsv.load(filepath)
+		if  err != nil {
+			return err
+		}
+
+		row := []string{thisCsv.TestName,
+			strconv.FormatFloat(thisCsv.Mean, 'f', -1, 64),
+			strconv.FormatFloat(thisCsv.MaxVal, 'f', -1, 64),
+			strconv.FormatFloat(thisCsv.MinVal, 'f', -1, 64),
+			strconv.FormatFloat(thisCsv.SD, 'f', -1, 64),
+			strconv.FormatFloat(thisCsv.CoV, 'f', -1, 64),
+			strconv.Itoa(thisCsv.Iterations)}
+
+		table.Append(row)
+	}
+
+	table.Render()
+
+	return err
+}
+
+
 // System default path for baseline file
 // the value will be set by Makefile
 var sysBaseFile string = ""
@@ -153,11 +199,16 @@ func main() {
 			Name:  "log",
 			Usage: "set the log file path",
 		},
+		cli.BoolFlag{
+			Name: "nobaseline",
+			Usage: "enable parsing metrics without basefile",
+		},
 		cli.StringFlag{
 			Name:  "metricsdir",
 			Usage: "directory containing CSV metrics",
 		},
 	}
+
 
 	app.Before = func(context *cli.Context) error {
 		var err error
@@ -180,6 +231,10 @@ func main() {
 			return errors.New("Must supply metricsdir argument")
 		}
 
+		if context.GlobalBool("nobaseline") {
+			processMetrics(context)
+			os.Exit(0)
+		}
 		baseFilePath = context.GlobalString("basefile")
 		if baseFilePath == "" {
 			baseFilePath = sysBaseFile
@@ -191,7 +246,7 @@ func main() {
 	}
 
 	app.Action = func(context *cli.Context) error {
-		return processMetrics(context)
+		return processMetricsBaseline(context)
 	}
 
 	if err := app.Run(os.Args); err != nil {
