@@ -62,32 +62,24 @@ sudo sed -i -e 's/^#\(enable_debug\).*=.*$/\1 = true/g' "${runtime_config_path}"
 
 echo "Add runtime as a new/default Docker runtime. Docker version \"$(docker --version)\" could change according to Semaphore CI updates."
 docker_options="-D --add-runtime cc-runtime=/usr/local/bin/cc-runtime --default-runtime=cc-runtime"
-if [[ ! $(ps -p 1 | grep systemd) ]]; then
-	config_path="/etc/default"
-	sudo mkdir -p ${config_path}
-	cat << EOF | sudo tee ${config_path}/docker
-DOCKER_OPTS="${docker_options}"
-EOF
-	echo "Restart docker service"
-	sudo service docker restart
-else
-	config_path="/etc/systemd/system/docker.service.d/"
-	sudo mkdir -p ${config_path}
 
-	# Check if the system has set http[s] proxy
-	if [ ! -z "$http_proxy" ] && [ ! -z "$https_proxy" ] ;then
-		docker_http_proxy="HTTP_PROXY=$http_proxy"
-		docker_https_proxy="HTTPS_PROXY=$https_proxy"
+config_path="/etc/systemd/system/docker.service.d/"
+sudo mkdir -p ${config_path}
 
-	fi
-	cat << EOF | sudo tee ${config_path}/clear-containers.conf
+# Check if the system has set http[s] proxy
+if [ ! -z "$http_proxy" ] && [ ! -z "$https_proxy" ] ;then
+	docker_http_proxy="HTTP_PROXY=$http_proxy"
+	docker_https_proxy="HTTPS_PROXY=$https_proxy"
+fi
+
+cat << EOF | sudo tee ${config_path}/clear-containers.conf
 [Service]
 Environment="$docker_http_proxy"
 Environment="$docker_https_proxy"
 ExecStart=
 ExecStart=/usr/bin/dockerd ${docker_options}
 EOF
-	echo "Restart docker service"
-	sudo systemctl daemon-reload
-	sudo systemctl restart docker
-fi
+
+echo "Restart docker service"
+sudo systemctl daemon-reload
+sudo systemctl restart docker
