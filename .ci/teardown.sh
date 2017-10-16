@@ -32,38 +32,20 @@ shim_log_path="${log_copy_dest}/${shim_log_filename}"
 crio_log_filename="crio.log"
 crio_log_path="${log_copy_dest}/${crio_log_filename}"
 
-upstart_logs_path="/var/log/upstart"
-upstart_proxy_path="${upstart_logs_path}/${proxy_log_filename}"
-upstart_crio_path="${upstart_logs_path}/${crio_log_filename}"
-
 # Copy log files if a destination path is provided, otherwise simply
 # display them.
 if [ ${log_copy_dest} ]; then
 	sudo cp "${runtime_log_location}" "${runtime_log_path}"
-
-	if [[ -n $(ps -p 1 | grep systemd) ]]; then
-		sudo journalctl --no-pager -u cc-proxy > "${proxy_log_path}"
-		sudo journalctl --no-pager -t cc-shim > "${shim_log_path}"
-		sudo journalctl --no-pager -u crio > "${crio_log_path}"
-	else
-		sudo cp "${upstart_proxy_path}" > "${proxy_log_path}"
-		sudo cp "${upstart_crio_path}" > "${crio_log_path}"
-	fi
+	sudo journalctl --no-pager -u cc-proxy > "${proxy_log_path}"
+	sudo journalctl --no-pager -t cc-shim > "${shim_log_path}"
+	sudo journalctl --no-pager -u crio > "${crio_log_path}"
 else
 	echo "Clear Containers Runtime Log:"
 	sudo cat "${runtime_log_location}"
-
-	if [[ -n $(ps -p 1 | grep systemd) ]]; then
-		echo "Clear Containers Proxy Log:"
-		sudo journalctl --no-pager -u cc-proxy
-		echo "Clear Containers Shim Log:"
-		sudo journalctl --no-pager -t cc-shim
-		echo "CRI-O Log:"
-		sudo journalctl --no-pager -u crio
-	else
-		echo "Clear Containers Proxy Log:"
-		sudo cat "${upstart_proxy_path}"
-		echo "CRI-O Log:"
-		sudo cat "${upstart_crio_path}"
-	fi
+	echo "Clear Containers Proxy Log:"
+	sudo journalctl --no-pager -u cc-proxy
+	echo "Clear Containers Shim Log:"
+	sudo journalctl --no-pager -t cc-shim
+	echo "CRI-O Log:"
+	sudo journalctl --no-pager -u crio
 fi
