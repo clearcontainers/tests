@@ -17,18 +17,31 @@
 # This script will get any execution log that may be useful for
 # debugging any issue related to Clear Containers.
 
-runtime_log_file="/var/lib/clear-containers/runtime/runtime.log"
+log_copy_dest="$1"
 
-echo "Clear Containers Runtime Log:"
-sudo cat "$runtime_log_file"
+runtime_log_location="/var/lib/clear-containers/runtime/runtime.log"
+runtime_log_filename="cc-runtime.log"
+runtime_log_path="${log_copy_dest}/${runtime_log_filename}"
 
-if [[ ! $(ps -p 1 | grep systemd) ]]; then
-	upstart_logs_path="/var/log/upstart"
-	echo "Clear Containers Proxy Log:"
-	sudo cat "${upstart_logs_path}/cc-proxy.log"
-	echo "CRI-O Log:"
-	sudo cat "${upstart_logs_path}/crio.log"
+proxy_log_filename="cc-proxy.log"
+proxy_log_path="${log_copy_dest}/${proxy_log_filename}"
+
+shim_log_filename="cc-shim.log"
+shim_log_path="${log_copy_dest}/${shim_log_filename}"
+
+crio_log_filename="crio.log"
+crio_log_path="${log_copy_dest}/${crio_log_filename}"
+
+# Copy log files if a destination path is provided, otherwise simply
+# display them.
+if [ ${log_copy_dest} ]; then
+	sudo cp "${runtime_log_location}" "${runtime_log_path}"
+	sudo journalctl --no-pager -u cc-proxy > "${proxy_log_path}"
+	sudo journalctl --no-pager -t cc-shim > "${shim_log_path}"
+	sudo journalctl --no-pager -u crio > "${crio_log_path}"
 else
+	echo "Clear Containers Runtime Log:"
+	sudo cat "${runtime_log_location}"
 	echo "Clear Containers Proxy Log:"
 	sudo journalctl --no-pager -u cc-proxy
 	echo "Clear Containers Shim Log:"
