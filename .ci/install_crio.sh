@@ -53,6 +53,7 @@ popd
 echo "Install runc for CRI-O"
 go get -d github.com/opencontainers/runc
 pushd "${GOPATH}/src/github.com/opencontainers/runc"
+git checkout "$runc_version"
 make
 sudo -E install -D -m0755 runc "/usr/local/bin/crio-runc"
 popd
