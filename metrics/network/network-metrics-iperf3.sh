@@ -21,9 +21,12 @@
 # - bandwith duplex
 # - jitter
 #
-# These metrics/results will be got from the interconnection between a container
-# server and client using the iperf tool.
-# container-server <----> container-client
+# These metrics/results will be got from the interconnection between
+# a client and a server using iperf tool.
+# The following cases are covered:
+#
+# case 1:
+#  container-server <----> container-client
 
 set -e
 
@@ -43,13 +46,22 @@ transmit_timeout=5
 # "privileged" argument enables access to all devices on
 # the host and it allows to avoid conflicts with AppArmor
 # or SELinux configurations.
-client_extra_args="-ti --privileged --rm"
-server_extra_args="--privileged"
+if [ "$RUNTIME" == "runc" ]; then
+	extra_capability="--privileged"
+fi
+
+# Client/Server extra configuration
+client_extra_args="-ti $extra_capability --rm"
+server_extra_args="$extra_capability"
+
+# Iperf server configuration
+mount_ramfs="mount -t ramfs -o size=20M ramfs /tmp"
+server_command="$mount_ramfs && iperf3 -s"
+
 
 # Test single direction TCP bandwith
 function iperf3_bandwidth() {
 	local test_name="network iperf bandwidth"
-	local server_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -p ${port} -s"
 	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
 
 	# Verify server IP address
@@ -58,7 +70,7 @@ function iperf3_bandwidth() {
 		die "server: ip address no found"
 	fi
 
-	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -t ${transmit_timeout}"
+	local client_command="$mount_ramfs && iperf3 -c ${server_address} -t ${transmit_timeout}"
 	result=$(start_client "$image" "$client_command" "$client_extra_args")
 
 	local result_line=$(echo "$result" | grep -m1 -E '\breceiver\b')
@@ -77,7 +89,6 @@ function iperf3_bandwidth() {
 # Test jitter on single direction UDP
 function iperf3_jitter() {
 	local test_name="network iperf jitter"
-	local server_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -s -V"
 	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
 
 	# Verify server IP address
@@ -86,7 +97,7 @@ function iperf3_jitter() {
 		die "server: ip address no found"
 	fi
 
-	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -u -t ${transmit_timeout}"
+	local client_command="$mount_ramfs && iperf3 -c ${server_address} -u -t ${transmit_timeout}"
 	result=$(start_client "$image" "$client_command" "$client_extra_args")
 
 	local result_line=$(echo "$result" | grep -m1 -A1 -E '\bJitter\b' | tail -1)
@@ -105,7 +116,6 @@ function iperf3_jitter() {
 # Run bi-directional TCP test, and extract results for both directions
 function iperf3_bidirectional_bandwidth_client_server() {
 	local test_name="network iperf client to server"
-	local server_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -p ${port} -s"
 	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
 
 	# Verify server IP address
@@ -114,7 +124,7 @@ function iperf3_bidirectional_bandwidth_client_server() {
 		die "server: ip address no found"
 	fi
 
-	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -d -t ${transmit_timeout}"
+	local client_command="$mount_ramfs && iperf3 -c ${server_address} -d -t ${transmit_timeout}"
 	result=$(start_client "$image" "$client_command" "$client_extra_args")
 
 	local client_result=$(echo "$result" | grep -m1 -E '\breceiver\b')
