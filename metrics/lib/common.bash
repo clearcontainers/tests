@@ -65,6 +65,26 @@ function check_cmds()
 	done
 }
 
+# A one time (per uber test cycle) init that tries to get the
+# system to a 'known state' as much as possible
+function onetime_init()
+{
+	# The onetime init must be called once, and only once
+	if [ ! -z "$onetime_init_done" ]; then
+		die "onetime_init() called more than once"
+	fi
+
+	# Restart services
+	sudo systemctl restart docker
+	if [[ "${RUNTIME}" == "cor" || "${RUNTIME}" == "cc-runtime" ]];then
+		sudo systemctl restart cc-proxy
+	fi
+
+	# We want this to be seen in sub shells as well...
+	# otherwise init_env() cannot check us
+	export onetime_init_done=1
+}
+
 # Initialization/verification environment. This function makes
 # minimal steps for metrics/tests execution.
 function init_env()
@@ -80,12 +100,6 @@ function init_env()
 	# This clean up is more aggressive, this is in order to
 	# decrease the factors that could affect the metrics results.
 	kill_processes_before_start
-
-	# Restart services
-	sudo systemctl restart docker
-	if [[ "${RUNTIME}" == "cor" || "${RUNTIME}" == "cc-runtime" ]];then
-		sudo systemctl restart cc-proxy
-	fi
 }
 
 # Clean environment, this function will try to remove all
