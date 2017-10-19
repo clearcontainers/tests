@@ -85,10 +85,19 @@ function onetime_init()
 	export onetime_init_done=1
 }
 
+# Print a clear banner to the logs noting clearly which test
+# we are about to run
+function test_banner()
+{
+	echo -e "\n===== starting test [$1] ====="
+}
+
 # Initialization/verification environment. This function makes
 # minimal steps for metrics/tests execution.
 function init_env()
 {
+	test_banner "${TEST_NAME}"
+
 	cmd=("docker")
 
 	# check dependencies
