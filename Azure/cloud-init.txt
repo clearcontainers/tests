@@ -19,10 +19,21 @@
 #
 # OS: ubuntu 16.04
 
+# The version currently are tested by CI
+KUBELET_VER="1.7.8-00"
+KUBEADM_VER="1.7.8-00"
+KUBECTL_VER="1.7.8-00"
+RELEASE_KEY="Release.key"
+
 # Add repository key
-wget -nv https://download.opensuse.org/repositories/home:clearcontainers:clear-containers-3/xUbuntu_16.04/Release.key -O Release.key
-apt-key add - < Release.key
+curl -OL "https://download.opensuse.org/repositories/home:clearcontainers:clear-containers-3/xUbuntu_16.04/$RELEASE_KEY"
+apt-key add - < "$RELEASE_KEY"
 apt-get update
+
+if [ $? -eq 0 ]; then
+	echo "Key added Successfully"
+	rm -f "$RELEASE_KEY"
+fi
 
 # Add repositories and install runtime
 echo "Installing Clear Containers"
@@ -39,7 +50,7 @@ apt-get install -y \
 	curl \
 	software-properties-common
 
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 apt-key fingerprint 0EBFCD88
 
 add-apt-repository \
@@ -57,13 +68,13 @@ apt-get install -y \
 	apache2-utils \
 	iperf
 
-# Install thin tools for devicemapper congifuration
+# Install thin tools for devicemapper configuration
 apt-get install -y thin-provisioning-tools
 
-# Configre the clear containers runtime using devicemapper as
+# Configure the clear containers runtime using devicemapper as
 # storage driver
 mkdir -p /etc/systemd/system/docker.service.d/
-cat << EOF | sudo tee /etc/systemd/system/docker.service.d/clr-containers.conf
+cat <<EOF | tee /etc/systemd/system/docker.service.d/clr-containers.conf
 [Service]
 ExecStart=
 ExecStart=/usr/bin/dockerd -D --add-runtime cc-runtime=/usr/bin/cc-runtime --default-runtime=cc-runtime
@@ -73,7 +84,7 @@ EOF
 mkdir -p /etc/docker
 
 mkdir -p /etc/lvm/profile
-cat << EOF | sudo tee /etc/docker/daemon.json
+cat <<EOF | tee /etc/docker/daemon.json
 {
 "storage-driver": "devicemapper",
 "storage-opts": [
@@ -90,14 +101,104 @@ EOF
 # Load devicemapper changes
 systemctl daemon-reload
 
-# Clone tests/metrics repository
-git clone https://github.com/clearcontainers/tests.git
+# Enable CC proxy
+systemctl enable cc-proxy
+
+# Restart Clear Containers  services
+systemctl restart docker
+systemctl restart cc-proxy
 
 # Update kernel
 echo deb http://archive.ubuntu.com/ubuntu/ xenial-proposed restricted main multiverse universe >> /etc/apt/sources.list
 apt-get update
-apt-get install -y linux-azure
 
-# Reboot Azure/VM, this in order to load the new
-# installed kernel.
-reboot
+# Install Kubernetes and kubeadm
+apt-get install -y ebtables ethtool
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+cat << EOF > /etc/apt/sources.list.d/kubernetes.list
+deb http://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+apt-get update
+sudo -E apt install -y kubelet="$KUBELET_VER" kubeadm="$KUBEADM_VER" kubectl="$KUBECTL_VER"
+
+# Create kubelet systemd service
+cat <<EOF | tee /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+[Service]
+Environment="KUBELET_KUBECONFIG_ARGS=--kubeconfig=/etc/kubernetes/kubelet.conf --require-kubeconfig=true"
+Environment="KUBELET_SYSTEM_PODS_ARGS=--pod-manifest-path=/etc/kubernetes/manifests --allow-privileged=true"
+Environment="KUBELET_NETWORK_ARGS=--network-plugin=cni --cni-conf-dir=/etc/cni/net.d --cni-bin-dir=/opt/cni/bin"
+Environment="KUBELET_DNS_ARGS=--cluster-dns=10.96.0.10 --cluster-domain=cluster.local"
+Environment="KUBELET_AUTHZ_ARGS=--authorization-mode=Webhook --client-ca-file=/etc/kubernetes/pki/ca.crt"
+Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote --container-runtime-endpoint=/var/run/crio.sock --runtime-request-timeout=30m"
+Environment="KUBELET_CADVISOR_ARGS=--cadvisor-port=0"
+ExecStart=
+ExecStart=/usr/bin/kubelet \
+\$KUBELET_KUBECONFIG_ARGS \
+\$KUBELET_SYSTEM_PODS_ARGS \
+\$KUBELET_NETWORK_ARGS \
+\$KUBELET_DNS_ARGS \
+\$KUBELET_AUTHZ_ARGS \
+\$KUBELET_CADVISOR_ARGS \
+\$KUBELET_EXTRA_ARGS
+EOF
+
+# Clone, build and install CRI-O
+add-apt-repository -y ppa:projectatomic/ppa
+add-apt-repository -y ppa:alexlarsson/flatpak
+add-apt-repository -y ppa:longsleep/golang-backports
+apt-get update
+
+# Install CRI-O dependencies
+apt-get install -y \
+	btrfs-tools \
+	git \
+	golang-go \
+	libassuan-dev \
+	libdevmapper-dev \
+	libglib2.0-dev \
+	libc6-dev \
+	libgpgme11-dev \
+	libgpg-error-dev \
+	libseccomp-dev \
+	libselinux1-dev \
+	pkg-config \
+	cri-o-runc \
+	runc \
+	skopeo \
+	libostree-dev \
+	skopeo-containers \
+	go-md2man \
+	make
+
+git clone https://github.com/kubernetes-incubator/cri-o
+pushd cri-o
+git reset --hard v1.0.0
+make
+make install
+make install.config
+popd
+
+# Add CRI-O systemd service
+cat <<EOF | tee /etc/systemd/system/crio.service
+[Unit]
+Description=OCI-based implementation of Kubernetes Container Runtime Interface
+Documentation=https://github.com/kubernetes-incubator/cri-o
+
+[Service]
+ExecStart=/usr/local/bin/crio -log-level debug
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Configure CRI-O
+sed -i 's/storage_option = \[/storage_option = \["dm.directlvm_device=\/dev\/sdd", "dm.thinp_percent=95", "dm.thinp_metapercent=1", "dm.thinp_autoextend_threshold=80", "dm.thinp_autoextend_percent=20", "dm.directlvm_device_force=true"/' "/etc/crio/crio.conf"
+sed -i 's/runtime = "\/usr\/bin\/runc"/runtime = "\/usr\/lib\/cri-o-runc\/sbin\/runc"/' "/etc/crio/crio.conf"
+sed -i 's/runtime_untrusted_workload = ""/runtime_untrusted_workload = "\/usr\/bin\/cc-runtime"/' "/etc/crio/crio.conf"
+sed -i 's/default_workload_trust = "trusted"/default_workload_trust = "untrusted"/' "/etc/crio/crio.conf"
+mkdir -p /etc/cni/net.d/
+
+systemctl enable crio
+systemctl start crio
