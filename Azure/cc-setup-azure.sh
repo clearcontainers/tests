@@ -14,17 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Description: This script will make the next flow
-#
-# 1) Create a group in azure
-# 2) Create a VM
-# 3) Create a disk
-# 4) Attach previous disk to VM
-# 5) Set up Clear containers stuff.
-#
-# Requirments:
-# Azure-cli V2.0 https://github.com/Azure/azure-cli
-# Being logged previously (az login)
+# Description: This script will launch a VM using Azure API, and install
+# all components needed for Clear Containers.
 
 MYSELF="${0##*/}"
 
@@ -35,10 +26,17 @@ OS_SYSTEM="UbuntuLTS"
 VM_SIZE="Standard_D2s_v3"
 CLOUD_INIT_FILE="cloud-init.txt"
 VM_ADMIN_USER="adminazure"
+GRP_LOCATION="eastus"
 
-# Disk configuration
-DISK_NAME="devicemapper"
+# Disks configuration
+DISK_NAME="${VM_NAME}_devmapper"
+DISK_NAME_CRIO="${VM_NAME}_devmapper_crio"
 DISK_CACHING="ReadWrite"
+
+# This disk size was selected due to it gets
+# a better estimation performance in:
+# - IOPS limit
+# - Througput limit
 DISK_SIZE=1025
 
 # Help menu
@@ -47,20 +45,24 @@ function help()
 	echo "$(cat << EOF
 Usage: $MYSELF [-h] [--help] [-v] [--version]
    Description:
-	 This script will launch a VM using Azure
-         API, and install all stuff needed for
-         Clear Containers.
-         NOTE: it is necessary to be logged (az login)
-         before to run this script.
+   This script will make the next flow:
+         1- Create a group in azure.
+         2- Create a VM.
+         3- Create a disk.
+         4- Attach previous disk to VM.
+         5- Set up Clear containers components.
+         6- Install and setup Kubelet, kubeadm and CRI-O.
    Options:
-         -c   Cloud init file
-         -d   Devicemapper disk size
-         -g   Resource group
-         -h   Help page
-         -n   VM name
-         -o   OS system
-         -s   VM size (e.g. Standard_D2s_v3)
-         -v   Show version
+         -c <file>     : Cloud init file.
+         -d <size>     : Devicemapper disk size.
+         -g <name>     : Resource group.
+         -h            : Help page.
+         -l <location> : Resource group location.
+         -n <name>     : VM name.
+         -o <name>     : OS system.
+         -s <vm size>  : VM size (e.g. Standard_D2s_v3).
+         -u <user>     : VM admin user.
+         -v            : Show version.
 EOF
 )"
 }
@@ -69,7 +71,7 @@ function create_group() {
 	# Create Resource group
 	az group create \
 		--name "$RESOURCE_GROUP" \
-		--location eastus
+		--location "$GRP_LOCATION"
 }
 
 function create_vm() {
@@ -107,6 +109,21 @@ function attach_dvm_disk() {
 		--caching "$DISK_CACHING"
 }
 
+function create_dvm_crio_disk() {
+	az disk create \
+		--resource-group $RESOURCE_GROUP \
+		--name $DISK_NAME_CRIO \
+		--size-gb $DISK_SIZE
+}
+
+function attach_dvm_crio_disk() {
+	az vm disk attach \
+		--resource-group $RESOURCE_GROUP \
+		--vm-name $VM_NAME \
+		--disk $DISK_NAME_CRIO \
+		--caching $DISK_CACHING
+}
+
 function main() {
 	local OPTIND
 	while getopts ":c:d:g:hn:o:s:v " opt; do
@@ -121,11 +138,15 @@ function main() {
 		   help
 		   exit 0;
 		   ;;
+		l) GRP_LOCATION="${OPTARG}"
+		   ;;
 		n) VM_NAME="${OPTARG}"
 		   ;;
 		o) OS_SYSTEM="${OPTARG}"
 		   ;;
 		s) VM_SIZE="${OPTARG}"
+		   ;;
+		u) VM_ADMIN_USER="${OPTARG}"
 		   ;;
 		v)
 		   echo "$MYSELF version 0.1"
@@ -138,8 +159,11 @@ function main() {
 	# Execute azure/VM creation flow
 	create_group
 	create_dvm_disk
+	create_dvm_crio_disk
 	create_vm
 	attach_dvm_disk
+	attach_dvm_crio_disk
+
 }
 
 main "$@"
