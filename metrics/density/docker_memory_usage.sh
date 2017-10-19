@@ -80,7 +80,7 @@ function get_runc_pss_memory(){
         shim_instances=$(pgrep  -f "^$docker_shim")
         for shim in $shim_instances; do
                 child_pid="$(pgrep -P $shim)"
-                child_mem=$(smem -c "pid pss" | \
+                child_mem=$("$SMEM_BIN" -c "pid pss" | \
                                 grep "$child_pid" | awk '{print $2}')
                 if (( $child_mem > 0 ));then
                         mem_amount=$(( $child_mem + $mem_amount ))
