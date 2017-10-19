@@ -15,12 +15,17 @@
 # limitations under the License.
 
 CURRENTDIR=$(dirname "$(readlink -f "$0")")
+source "${CURRENTDIR}/../metrics/lib/common.bash"
+
 REPORT_CMDS=("checkmetrics" "emailreport")
 
 KSM_ENABLE_FILE="/sys/kernel/mm/ksm/run"
 GITHUB_URL="https://github.com"
 RESULTS_BACKUP_PATH="/var/local/localCI/backup"
 RESULTS_DIR="results"
+
+# Set up the initial state
+onetime_init
 
 # Verify/install report tools. These tools will
 # parse/send the results from metrics scripts execution.
