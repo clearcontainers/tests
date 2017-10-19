@@ -26,6 +26,8 @@ SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 source "${SCRIPT_PATH}/lib/network-common.bash"
 source "${SCRIPT_PATH}/../lib/common.bash"
 
+TEST_NAME="iperf2 tests"
+
 # Extract bandwidth results for both directions from the one test
 function bidirectional_bandwidth_server_client() {
 	# Port number where the server will run

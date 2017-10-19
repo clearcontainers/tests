@@ -153,8 +153,8 @@ function main()
 	done
 	shift $((OPTIND-1))
 
-	check_cmds "${cmds[@]}"
 	init_env
+	check_cmds "${cmds[@]}"
 	create_fio_job
 
 	# Launch container

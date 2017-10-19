@@ -68,7 +68,7 @@ function run_workload(){
 	rm -f $TMP_FILE
 }
 
-echo "Executing test: ${TEST_NAME} ${TEST_ARGS}"
+init_env
 prewarm
 for i in $(seq 1 "$TIMES"); do
 	run_workload

@@ -31,6 +31,8 @@ SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 source "${SCRIPT_PATH}/lib/network-common.bash"
 source "${SCRIPT_PATH}/../lib/common.bash"
 
+TEST_NAME="iperf3 tests"
+
 # Port number where the server will run
 port="5201:5201"
 # Image name
@@ -145,9 +147,9 @@ function iperf3_bidirectional_bandwidth_client_server() {
 	echo "Finish"
 }
 
-echo "Currently this script is using ramfs for tmp (see https://github.com/01org/cc-oci-runtime/issues/152)"
-
 init_env
+
+echo "Currently this script is using ramfs for tmp (see https://github.com/01org/cc-oci-runtime/issues/152)"
 
 iperf3_bandwidth
 

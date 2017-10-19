@@ -41,14 +41,15 @@ requests=100000
 concurrency=100
 
 function nginx_ab_networking() {
-	# Verify apache benchmark
-	cmds=("ab")
-	check_cmds "${cmds[@]}"
 	extra_args=" -p $port"
 	total_requests="tmp.log"
 
 	# Initialize/clean environment
 	init_env
+
+	# Verify apache benchmark
+	cmds=("ab")
+	check_cmds "${cmds[@]}"
 
 	# Launch nginx container
 	$DOCKER_EXE run -d -p $port $image

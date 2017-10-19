@@ -26,6 +26,7 @@ SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 source "${SCRIPT_PATH}/lib/network-common.bash"
 source "${SCRIPT_PATH}/../lib/common.bash"
 
+TEST_NAME="nuttcp tests"
 
 function udp_bandwidth() {
 	# Currently default nuttcp has a bug
