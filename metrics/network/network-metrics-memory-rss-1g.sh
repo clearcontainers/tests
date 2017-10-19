@@ -82,7 +82,7 @@ function rss_memory() {
 		die "Unknown runtime: $RUNTIME"
 	fi
 
-	local memory_command="smem --no-header -c rss"
+	local memory_command="sudo smem --no-header -c rss"
 	result=$(${memory_command} -P ^${process})
 
 	local memory=$(echo "$result" | awk '{ total += $1 } END { print total/NR }')

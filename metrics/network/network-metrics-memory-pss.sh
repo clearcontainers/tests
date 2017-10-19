@@ -72,7 +72,7 @@ function pss_memory() {
                 die "Unknown runtime: $RUNTIME"
         fi
 
-	local memory_command="smem --no-header -c pss"
+	local memory_command="sudo smem --no-header -c pss"
 	result=$(${memory_command} -P ^${process})
 
 	local total_pss_memory=$(echo "$result" | awk '{ total += $1 } END { print total/NR }')
