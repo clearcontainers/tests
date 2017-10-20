@@ -5,11 +5,11 @@ crio_version=400713a58bedb88678e84b72d4620847c8d27fec
 runc_version=84a082bfef6f932de921437815355186db37aeb1
 
 # Clear Containers image version
-image_version=18220
+image_version=18400
 
 # Kernel Version to use on recent Linux Distros
-kernel_clear_release=17580
-kernel_version="4.9.47-77"
+kernel_clear_release=18340
+kernel_version="4.9.54-78"
 
 # Kernel Version to use for Ubuntu 14.04 (Semaphore Env)
 semaphore_kernel_clear_release=12760
