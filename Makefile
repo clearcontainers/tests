@@ -23,7 +23,7 @@ crio:
 	bash .ci/install_bats.sh
 	cp $(PWD)/integration/cri-o/crio.bats ${CRIO_REPO_PATH}/test/
 	cd ${CRIO_REPO_PATH} && \
-	RUNTIME=${RUNTIME} ./test/test_runner.sh crio.bats
+	RUNTIME=${RUNTIME} STORAGE_OPTS="${CRIO_STORAGE_DRIVER_OPTS}" ./test/test_runner.sh crio.bats
 
 ginkgo:
 	ln -sf . vendor/src

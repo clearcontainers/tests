@@ -17,6 +17,10 @@
 set -e
 source /etc/os-release
 
+if [ "$ID" == "ubuntu" ] && [ "$VERSION_ID" == "17.04" ]; then
+	export CRIO_STORAGE_DRIVER_OPTS="--storage-driver=devicemapper"
+fi
+
 sudo -E PATH="$PATH" bash -c "make check"
 
 # Currently, Openshift tests only work on Fedora.
