@@ -195,9 +195,8 @@ fi
 #Check for KSM before reporting test name, as it can modify it
 check_for_ksm
 
-echo "Executing Test: ${TEST_NAME}"
+init_env
 
 check_cmds "${SMEM_BIN}" bc
-init_env
 
 get_docker_memory_usage
