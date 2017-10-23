@@ -19,6 +19,7 @@ set -e
 cidir=$(dirname "$0")
 source "$cidir/../test-versions.txt"
 source /etc/os-release
+cc_kernel_path="/usr/share/clear-containers"
 
 if grep -q "N" /sys/module/kvm_intel/parameters/nested; then
 	echo "enable Nested Virtualization"
@@ -27,23 +28,20 @@ if grep -q "N" /sys/module/kvm_intel/parameters/nested; then
 fi
 
 sudo -E dnf -y install dnf-plugins-core
-sudo -E dnf config-manager --add-repo \
-http://download.opensuse.org/repositories/home:/clearcontainers:/clear-containers-3/Fedora_$VERSION_ID/home:clearcontainers:clear-containers-3.repo
-
 sudo -E dnf makecache
 
 echo "Install clear containers dependencies"
 sudo -E dnf -y groupinstall "Development tools"
-sudo -E dnf -y install libtool automake autoconf bc
+sudo -E dnf -y install libtool automake autoconf bc pixman numactl-libs
 
 echo "Install qemu-lite binary"
-sudo -E dnf -y install qemu-lite
+"${cidir}/install_qemu_lite.sh" "${qemu_clear_release}" "${qemu_lite_sha}" "$ID"
 
 echo "Install clear-containers image"
-sudo -E dnf -y install clear-containers-image
+"${cidir}/install_clear_image.sh" "$image_version" "${cc_kernel_path}"
 
 echo "Install Clear Containers Kernel"
-sudo -E dnf -y install linux-container
+"${cidir}/install_clear_kernel.sh" "${kernel_clear_release}" "${kernel_version}" "${cc_kernel_path}"
 
 echo "Install CRI-O dependencies"
 sudo -E dnf -y install btrfs-progs-devel device-mapper-devel \
