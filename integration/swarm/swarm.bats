@@ -28,6 +28,14 @@ SERVICE_NAME="testswarm"
 number_of_replicas=4
 # Saves the name of the replicas
 declare -a REPLICAS_UP
+# Saves the hostname of the replicas
+declare -a REPLICAS
+# Url to retrieve hostname
+url="http://127.0.0.1:8080/hostname"
+# Timeout in seconds to verify replicas are running
+timeout=10
+# Retry number for the curl
+number_of_retries=5
 
 setup() {
 	$DOCKER_EXE swarm init
@@ -36,13 +44,14 @@ setup() {
 		--name "${SERVICE_NAME}" --replicas $number_of_replicas \
 		--publish 8080:80 "${nginx_image}" sh -c "$nginx_command"
 	running_regex='Running\s+\d+\s(seconds|minutes)\s+ago'
-	replicas_running=$(docker service ps "$service" | grep -P "${running_regex}"  | wc -l)
-	if [ "$replicas_running" -ne "$number_of_replicas" ]; then
-		# this is needed as replicas do not run inmediately
+	for i in $(seq "$timeout") ; do
+		$DOCKER_EXE service ls --filter name="$SERVICE_NAME"
+		replicas_running=$($DOCKER_EXE service ps "$SERVICE_NAME" | grep -P "${running_regex}"  | wc -l)
+		if [ "$replicas_running" -ge "$number_of_replicas" ]; then
+			break
+		fi
 		sleep 1
-	else
-		break
-	fi
+	done
 }
 
 @test "check_replicas_interfaces" {
@@ -56,7 +65,7 @@ setup() {
 
 @test "check_service_ip_among_the_replicas" {
 	service_name=$($DOCKER_EXE service ls --filter name="${SERVICE_NAME}" -q)
-	ip_service=$($DOCKER_EXE service inspect $service_name \
+	ip_service=$($DOCKER_EXE service inspect $SERVICE_NAME \
 		--format='{{range .Endpoint.VirtualIPs}}{{.Addr}}{{end}}' | cut -d'/' -f1)
 	REPLICAS_UP=($($DOCKER_EXE ps -q))
 	for i in ${REPLICAS_UP[@]}; do
@@ -64,6 +73,20 @@ setup() {
 		# replicas have the service ip
 		$DOCKER_EXE exec $i bash -c "ip a | grep $ip_service" > /dev/null
 	done
+}
+
+@test "obtain hostname of the replicas" {
+	skip "This is not working (https://github.com/clearcontainers/runtime/issues/771)"
+	proxy="$http_proxy"
+	unset http_proxy
+	for i in $(seq 0 $((number_of_replicas-1))); do
+		REPLICAS[$i]="$(curl --connect-timeout $timeout --retry $number_of_retries $url)"
+	done
+	non_empty_elements="$(echo ${REPLICAS[@]} | egrep -o "[[:space:]]+" | wc -l)"
+	if [ "$non_empty_elements" == "$((number_of_replicas-1))" ]; then
+		break
+	fi
+	export http_proxy="$proxy"
 }
 
 teardown() {
