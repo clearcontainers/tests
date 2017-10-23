@@ -17,6 +17,7 @@
 set -e
 
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
+source "${SCRIPT_PATH}/../../test-versions.txt"
 
 echo "Install Kubernetes"
 sudo bash -c "cat <<EOF > /etc/apt/sources.list.d/kubernetes.list
@@ -24,7 +25,7 @@ deb http://apt.kubernetes.io/ kubernetes-xenial-unstable main
 EOF"
 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 sudo -E apt update
-sudo -E apt install -y docker.io kubelet=1.6.7-00 kubeadm=1.6.7-00 kubectl=1.6.7-00
+sudo -E apt install -y docker.io kubelet="$kubernetes_version" kubeadm="$kubernetes_version" kubectl="$kubernetes_version"
 sudo -E apt-mark hold kubelet kubeadm kubectl
 
 echo "Install Clear Containers, including dependencies"
