@@ -37,7 +37,8 @@ source "${SCRIPT_PATH}/../lib/common.bash"
 TEST_NAME="iperf3 tests"
 
 # Port number where the server will run
-port="5201:5201"
+port="5201"
+fwd_port="${port}:${port}"
 # Image name
 image="gabyct/network"
 # Measurement time (seconds)
@@ -157,12 +158,124 @@ function iperf3_bidirectional_bandwidth_client_server() {
 	echo "Finish"
 }
 
-init_env
+# This function checks/verify if the iperf server
+# is ready/up for requests.
+function check_iperf_server() {
+	# timeout of 3 seconds aprox.
+	local time_out=6
+	local period=0.5
+	local test_cmd="iperf3 -c "$server_address" -t 1"
+
+	# check tools dependencies
+	local cmds=("netstat")
+	check_cmds "${cmds[@]}"
+
+	while [ 1 ]; do
+		if ! bash -c "$test_cmd" > /dev/null 2>&1; then
+			echo "waiting for server..."
+			count=$((count+1))
+			sleep $period
+		else
+			echo "iperf server is up!"
+			break;
+		fi
+
+		if [ "$count" == "$time_out" ]; then
+			die "iperf server init fails"
+		fi
+	done
+
+	# Check listening port
+	lport="$(netstat -atun | grep "$port" | grep "LISTEN")"
+	if [ -z "$lport" ]; then
+		die "port is not listening"
+	fi
+
+}
+
+# This function parses the output of iperf execution, and
+# saves the bandwidth results in CSV files
+function parse_iperf_bwd() {
+	local test_name="$1"
+	local result="$2"
+
+	if [ -z "$result" ]; then
+		die "no result output"
+	fi
+
+	# Filter receiver/sender results
+	rx_res=$(echo "$result" | grep "receiver" | awk -F "]" '{print $2}')
+	tx_res=$(echo "$result" | grep "sender" | awk -F "]" '{print $2}')
+
+	# Getting results
+	rx_bwd=$(echo "$rx_res" | awk '{print $5}')
+	tx_bwd=$(echo "$tx_res" | awk '{print $5}')
+	rx_uts=$(echo "$rx_res" | awk '{print $6}')
+	tx_uts=$(echo "$tx_res" | awk '{print $6}')
+
+	# Save results in CSV files
+	save_results "${test_name} receiver" "" "$rx_bwd" "$rx_uts"
+	save_results "${test_name} sender" "" "$tx_bwd" "$tx_uts"
+
+	# Show results
+	echo "Receiver bandwidth $mode : $rx_bwd $rx_uts"
+	echo "Sender bandwidth $mode : $tx_bwd $tx_uts"
+
+}
+
+# This function launches a container that will take the role of
+# server, this is order to attend requests from a client.
+# In this case the client is an instance of iperf running in the host.
+function get_host_cnt_bwd() {
+	local cli_args="$1"
+
+	# Checks iperf3 tool installed in host
+	local cmds=("iperf3")
+	check_cmds "${cmds[@]}"
+
+	# Initialize/clean environment
+	init_env
+
+	# Make port forwarding
+	local server_extra_args="$server_extra_args -p $fwd_port"
+	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
+
+	# Verify server IP address
+        if [ -z "$server_address" ];then
+                clean_env
+                die "server: ip address no found"
+        fi
+
+	# Verify the iperf server is up
+	check_iperf_server
+
+	# client test executed in host
+	local output=$(iperf3 -c $server_address -t $transmit_timeout "$cli_args")
+
+	clean_env
+	echo "Finish"
+
+	echo "$output"
+}
+
+# This test measures the bandwidth between a container and the host.
+# where the container take the server role and the iperf client lives
+# in the host.
+function iperf_host_cnt_bwd() {
+	local test_name="newtwork bwd host contr"
+	local result="$(get_host_cnt_bwd)"
+	parse_iperf_bwd "$test_name" "$result"
+}
+
 
 echo "Currently this script is using ramfs for tmp (see https://github.com/01org/cc-oci-runtime/issues/152)"
+
+init_env
 
 iperf3_bandwidth
 
 iperf3_jitter
+
+iperf_host_cnt_bwd
 
 iperf3_bidirectional_bandwidth_client_server
