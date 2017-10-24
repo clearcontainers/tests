@@ -29,8 +29,6 @@ VM_ADMIN_USER="adminazure"
 GRP_LOCATION="eastus"
 
 # Disks configuration
-DISK_NAME="${VM_NAME}_devmapper"
-DISK_NAME_CRIO="${VM_NAME}_devmapper_crio"
 DISK_CACHING="ReadWrite"
 
 # This disk size was selected due to it gets
@@ -157,6 +155,8 @@ function main() {
 	shift $((OPTIND-1))
 
 	# Execute azure/VM creation flow
+	DISK_NAME="${VM_NAME}_devmapper"
+	DISK_NAME_CRIO="${VM_NAME}_devmapper_crio"
 	create_group
 	create_dvm_disk
 	create_dvm_crio_disk
