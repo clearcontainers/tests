@@ -30,7 +30,7 @@ var _ = Describe("info", func() {
 		It("should has a runtime information", func() {
 			stdout, _, exitCode = DockerInfo()
 			Expect(exitCode).To(Equal(0))
-			Expect(stdout).NotTo(ContainSubstring("Default Runtime: runc"))
+			Expect(stdout).To(ContainSubstring("Default Runtime: " + Runtime))
 		})
 	})
 })

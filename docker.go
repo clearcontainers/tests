@@ -161,6 +161,13 @@ func DockerPull(args ...string) (string, string, int) {
 
 // DockerRun runs a container
 func DockerRun(args ...string) (string, string, int) {
+	if Runtime != "" {
+		args = append(args, []string{"", ""}...)
+		copy(args[2:], args[:])
+		args[0] = "--runtime"
+		args[1] = Runtime
+	}
+
 	return runDockerCommand("run", args...)
 }
 
