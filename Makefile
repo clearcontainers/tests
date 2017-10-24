@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Path of Clear Containers Runtime
-CC_RUNTIME ?= cc-runtime
+RUNTIME ?= cc-runtime
 
 # The time limit in seconds for each test
 TIMEOUT ?= 15
@@ -23,7 +23,7 @@ crio:
 	bash .ci/install_bats.sh
 	cp $(PWD)/integration/cri-o/crio.bats ${CRIO_REPO_PATH}/test/
 	cd ${CRIO_REPO_PATH} && \
-	RUNTIME=${CC_RUNTIME} ./test/test_runner.sh crio.bats
+	RUNTIME=${RUNTIME} ./test/test_runner.sh crio.bats
 
 ginkgo:
 	ln -sf . vendor/src
@@ -31,13 +31,13 @@ ginkgo:
 	unlink vendor/src
 
 functional: ginkgo
-	./ginkgo -v functional/ -- -runtime ${CC_RUNTIME} -timeout ${TIMEOUT}
+	./ginkgo -v functional/ -- -runtime ${RUNTIME} -timeout ${TIMEOUT}
 
 metrics:
-	RUNTIME=${CC_RUNTIME} ./metrics/run_all_metrics.sh
+	RUNTIME=${RUNTIME} ./metrics/run_all_metrics.sh
 
 integration: ginkgo
-	./ginkgo -v -focus "${FOCUS}" ./integration/docker/ -- -runtime=${CC_RUNTIME} -timeout ${TIMEOUT}
+	./ginkgo -v -focus "${FOCUS}" ./integration/docker/ -- -runtime=${RUNTIME} -timeout ${TIMEOUT}
 
 openshift:
 	bash .ci/install_bats.sh
