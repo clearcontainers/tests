@@ -218,6 +218,7 @@ function parse_iperf_bwd() {
 	save_results "${test_name} sender" "" "$tx_bwd" "$tx_uts"
 
 	# Show results
+	echo "$test_name"
 	echo "Receiver bandwidth $mode : $rx_bwd $rx_uts"
 	echo "Sender bandwidth $mode : $tx_bwd $tx_uts"
 
@@ -267,6 +268,14 @@ function iperf_host_cnt_bwd() {
 	parse_iperf_bwd "$test_name" "$result"
 }
 
+# This test is similar to "iperf_host_cnt_bwd", the difference is this
+# tests runs in reverse mode.
+function iperf_host_cnt_bwd_rev() {
+	local test_name="network bwd host contr reverse"
+	local result="$(get_host_cnt_bwd "-R")"
+	parse_iperf_bwd "$test_name" "$result"
+}
+
 
 echo "Currently this script is using ramfs for tmp (see https://github.com/01org/cc-oci-runtime/issues/152)"
 
@@ -277,5 +286,7 @@ iperf3_bandwidth
 iperf3_jitter
 
 iperf_host_cnt_bwd
+
+iperf_host_cnt_bwd_rev
 
 iperf3_bidirectional_bandwidth_client_server
