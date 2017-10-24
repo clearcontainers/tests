@@ -27,6 +27,9 @@
 #
 # case 1:
 #  container-server <----> container-client
+#
+# case 2"
+#  container-server <----> host-client
 
 set -e
 
@@ -276,6 +279,19 @@ function iperf_host_cnt_bwd_rev() {
 	parse_iperf_bwd "$test_name" "$result"
 }
 
+# This tests measures the bandwidth using different number of parallel
+# client streams. (2, 4, 8)
+function iperf_multiqueue() {
+	local test_name="network multiqueue"
+	local client_streams=("2" "4" "8")
+
+	for s in "${client_streams[@]}"; do
+		tn="$test_name $s"
+		result="$(get_host_cnt_bwd "-P $s")"
+		sum="$(echo "$result" | grep "SUM" | tail -n2)"
+		parse_iperf_bwd "$tn" "$sum"
+	done
+}
 
 echo "Currently this script is using ramfs for tmp (see https://github.com/01org/cc-oci-runtime/issues/152)"
 
@@ -288,5 +304,7 @@ iperf3_jitter
 iperf_host_cnt_bwd
 
 iperf_host_cnt_bwd_rev
+
+iperf_multiqueue
 
 iperf3_bidirectional_bandwidth_client_server
