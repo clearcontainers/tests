@@ -31,13 +31,13 @@ ginkgo:
 	unlink vendor/src
 
 functional: ginkgo
-	./ginkgo functional/ -- -runtime ${CC_RUNTIME} -timeout ${TIMEOUT}
+	./ginkgo -v functional/ -- -runtime ${CC_RUNTIME} -timeout ${TIMEOUT}
 
 metrics:
 	RUNTIME=${CC_RUNTIME} ./metrics/run_all_metrics.sh
 
 integration: ginkgo
-	./ginkgo ./integration/docker/ -- -runtime=${CC_RUNTIME} -timeout ${TIMEOUT}
+	./ginkgo -v -focus "${FOCUS}" ./integration/docker/ -- -runtime=${CC_RUNTIME} -timeout ${TIMEOUT}
 
 openshift:
 	bash .ci/install_bats.sh
