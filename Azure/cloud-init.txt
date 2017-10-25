@@ -73,17 +73,9 @@ apt-get install -y thin-provisioning-tools
 
 # Configure the clear containers runtime using devicemapper as
 # storage driver
-mkdir -p /etc/systemd/system/docker.service.d/
-cat <<EOF | tee /etc/systemd/system/docker.service.d/clr-containers.conf
-[Service]
-ExecStart=
-ExecStart=/usr/bin/dockerd -D --add-runtime cc-runtime=/usr/bin/cc-runtime --default-runtime=cc-runtime
-EOF
-
-# Add devicemapper configuration
 mkdir -p /etc/docker
-
 mkdir -p /etc/lvm/profile
+
 cat <<EOF | tee /etc/docker/daemon.json
 {
 "storage-driver": "devicemapper",
@@ -94,7 +86,13 @@ cat <<EOF | tee /etc/docker/daemon.json
         "dm.thinp_autoextend_threshold=80",
         "dm.thinp_autoextend_percent=20",
         "dm.directlvm_device_force=true"
-]
+],
+"default-runtime": "cc-runtime",
+	"runtimes": {
+		"cc-runtime": {
+			"path": "/usr/bin/cc-runtime"
+		}
+	}
 }
 EOF
 
@@ -194,6 +192,7 @@ WantedBy=multi-user.target
 EOF
 
 # Configure CRI-O
+sed -i 's/storage_driver = ""/storage_driver = \"devicemapper"/' "/etc/crio/crio.conf"
 sed -i 's/storage_option = \[/storage_option = \["dm.directlvm_device=\/dev\/sdd", "dm.thinp_percent=95", "dm.thinp_metapercent=1", "dm.thinp_autoextend_threshold=80", "dm.thinp_autoextend_percent=20", "dm.directlvm_device_force=true"/' "/etc/crio/crio.conf"
 sed -i 's/runtime = "\/usr\/bin\/runc"/runtime = "\/usr\/lib\/cri-o-runc\/sbin\/runc"/' "/etc/crio/crio.conf"
 sed -i 's/runtime_untrusted_workload = ""/runtime_untrusted_workload = "\/usr\/bin\/cc-runtime"/' "/etc/crio/crio.conf"
