@@ -59,6 +59,10 @@ add-apt-repository \
 	stable"
 
 apt-get update
+
+# Install thin tools for devicemapper configuration required for docker
+apt-get install -y thin-provisioning-tools
+
 apt-get install -y docker-ce
 
 # Install tests dependencies
@@ -67,9 +71,6 @@ apt-get install -y \
 	smem \
 	apache2-utils \
 	iperf
-
-# Install thin tools for devicemapper configuration
-apt-get install -y thin-provisioning-tools
 
 # Configure the clear containers runtime using devicemapper as
 # storage driver
@@ -107,8 +108,8 @@ systemctl restart docker
 systemctl restart cc-proxy
 
 # Update kernel
-echo deb http://archive.ubuntu.com/ubuntu/ xenial-proposed restricted main multiverse universe >> /etc/apt/sources.list
-apt-get update
+# echo deb http://archive.ubuntu.com/ubuntu/ xenial-proposed restricted main multiverse universe >> /etc/apt/sources.list
+# apt-get update
 
 # Install Kubernetes and kubeadm
 apt-get install -y ebtables ethtool
