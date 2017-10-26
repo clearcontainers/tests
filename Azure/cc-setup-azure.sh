@@ -109,17 +109,17 @@ function attach_dvm_disk() {
 
 function create_dvm_crio_disk() {
 	az disk create \
-		--resource-group $RESOURCE_GROUP \
-		--name $DISK_NAME_CRIO \
-		--size-gb $DISK_SIZE
+		--resource-group "$RESOURCE_GROUP" \
+		--name "$DISK_NAME_CRIO" \
+		--size-gb "$DISK_SIZE"
 }
 
 function attach_dvm_crio_disk() {
 	az vm disk attach \
-		--resource-group $RESOURCE_GROUP \
-		--vm-name $VM_NAME \
-		--disk $DISK_NAME_CRIO \
-		--caching $DISK_CACHING
+		--resource-group "$RESOURCE_GROUP" \
+		--vm-name "$VM_NAME" \
+		--disk "$DISK_NAME_CRIO" \
+		--caching "$DISK_CACHING"
 }
 
 function main() {
