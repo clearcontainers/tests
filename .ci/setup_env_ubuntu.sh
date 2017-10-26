@@ -51,88 +51,30 @@ chronic sudo -E apt install -y bison
 echo "Install libudev-dev"
 chronic sudo -E apt-get install -y libudev-dev
 
-if [ "$VERSION_ID" == "14.04" ]; then
-	echo "Install rpm2cpio"
-	chronic sudo -E apt install -y rpm2cpio
 
-	bug_url="https://github.com/clearcontainers/runtime/issues/91"
-	echo -e "\nWARNING:"
-	echo "WARNING: Using backlevel kernel version ${semaphore_kernel_version} due to bug ${bug_url}"
-	echo -e "WARNING:\n"
-	"${cidir}/install_clear_kernel.sh" "demos" "${semaphore_kernel_version}" "${cc_kernel_path}"
+echo "Install Build Tools"
+sudo -E apt install -y build-essential python pkg-config zlib1g-dev
 
-	echo "Build and Install libdevmapper"
-	devmapper_version="2.02.172"
-	curl -LOk ftp://sources.redhat.com/pub/lvm2/releases/LVM2.${devmapper_version}.tgz
-	tar -xf LVM2.${devmapper_version}.tgz
-	pushd LVM2.${devmapper_version}/
-	./configure
-	make -j$(nproc) libdm
-	sudo -E PATH=$PATH sh -c "make libdm.install"
-	popd
-	rm -rf LVM2.${devmapper_version}/ LVM2.${devmapper_version}.tgz
+echo "Install Clear Containers Kernel"
+"${cidir}/install_clear_kernel.sh" "${kernel_clear_release}" "${kernel_version}" "${cc_kernel_path}"
 
-	echo "Build Install btrfs-tools"
-	sudo -E apt install -y asciidoc xmlto --no-install-recommends
-	sudo -E apt install -y uuid-dev libattr1-dev libacl1-dev e2fslibs-dev libblkid-dev liblzo2-dev
-	git clone http://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-	pushd btrfs-progs
-	./autogen.sh
-	./configure
-	make -j$(nproc) btrfs
-	sudo -E PATH=$PATH sh -c "make install btrfs"
-	popd
+echo -e "Install CRI-O dependencies available for Ubuntu $VERSION_ID"
+sudo -E apt install -y libdevmapper-dev btrfs-tools util-linux
 
-	echo "Build and Install nsenter"
-	nsenter_version="2.30"
-	chronic sudo -E apt install -y autopoint
-	curl -LOk https://www.kernel.org/pub/linux/utils/util-linux/v${nsenter_version}/util-linux-${nsenter_version}.tar.xz
-	tar -xf util-linux-${nsenter_version}.tar.xz
-	pushd util-linux-${nsenter_version}/
-	./autogen.sh
-	./configure --without-python --disable-all-programs --enable-nsenter
-	make nsenter
-	sudo cp nsenter /usr/bin/
-	popd
-	rm -rf util-linux-${nsenter_version}/ util-linux-${nsenter_version}.tar.xz
+if [ "$VERSION_ID" == "16.04" ]; then
+	echo "Install os-tree"
+	sudo -E add-apt-repository ppa:alexlarsson/flatpak -y
+	sudo -E apt update
+fi
 
-	echo "Build and Install ostree"
-	ostree_dir="ostree"
-	chronic sudo -E apt install -y liblzma-dev e2p-dev libfuse-dev gtk-doc-tools libarchive-dev
-	git clone https://github.com/ostreedev/ostree.git
-	pushd ${ostree_dir}
-	env NOCONFIGURE=1 ./autogen.sh
-	./configure --prefix=/usr
-	make -j4
-	sudo -E PATH=$PATH sh -c "make install"
-	popd
-	rm -rf ${ostree_dir}
+sudo -E apt install -y libostree-dev
 
-elif [ "$VERSION_ID" == "16.04" ] || [ "$VERSION_ID" == "17.04" ] || [ "$VERSION_ID" == "16.10" ]; then
-	echo "Install Build Tools"
-	sudo -E apt install -y build-essential python pkg-config zlib1g-dev
-
-	echo "Install Clear Containers Kernel"
-	"${cidir}/install_clear_kernel.sh" "${kernel_clear_release}" "${kernel_version}" "${cc_kernel_path}"
-
-	echo -e "Install CRI-O dependencies available for Ubuntu $VERSION_ID"
-	sudo -E apt install -y libdevmapper-dev btrfs-tools util-linux
-
-	if [ "$VERSION_ID" == "16.04" ]; then
-		echo "Install os-tree"
-		sudo -E add-apt-repository ppa:alexlarsson/flatpak -y
-		sudo -E apt update
-	fi
-
-	sudo -E apt install -y libostree-dev
-
-	if ! command -v docker > /dev/null; then
-		echo "Install Docker"
-		docker_url="https://download.docker.com/linux/ubuntu"
-		sudo -E apt install -y apt-transport-https ca-certificates
-		sudo -E add-apt-repository "deb [arch=amd64] ${docker_url} $(lsb_release -cs) stable"
-		curl -fsSL "${docker_url}/gpg" | sudo -E apt-key add -
-		sudo -E apt update
-		sudo -E apt install -y docker-ce
-	fi
+if ! command -v docker > /dev/null; then
+	echo "Install Docker"
+	docker_url="https://download.docker.com/linux/ubuntu"
+	sudo -E apt install -y apt-transport-https ca-certificates
+	sudo -E add-apt-repository "deb [arch=amd64] ${docker_url} $(lsb_release -cs) stable"
+	curl -fsSL "${docker_url}/gpg" | sudo -E apt-key add -
+	sudo -E apt update
+	sudo -E apt install -y docker-ce
 fi
