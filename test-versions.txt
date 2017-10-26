@@ -5,15 +5,11 @@ crio_version=v1.0.0
 runc_version=84a082bfef6f932de921437815355186db37aeb1
 
 # Clear Containers image version
-image_version=18400
+image_version=18520
 
 # Kernel Version to use on recent Linux Distros
-kernel_clear_release=18340
-kernel_version="4.9.54-78"
-
-# Kernel Version to use for Ubuntu 14.04 (Semaphore Env)
-semaphore_kernel_clear_release=12760
-semaphore_kernel_version="4.5-50"
+kernel_clear_release=18670
+kernel_version="4.9.58-79"
 
 # Qemu-lite Version
 qemu_clear_release=17580
