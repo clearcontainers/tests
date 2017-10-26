@@ -36,6 +36,7 @@ FIO_TEST_NAME="io_test"
 NUM_JOBS="1"
 OPERATION="randread"
 TEST_NAME="storage fio test"
+EXTRA_ARGS=""
 
 # This docker image includes FIO tool.
 FIO_IMAGE="clusterhq/fio-tool"
@@ -63,6 +64,7 @@ Usage: $0 [-h] [options]
         -n,    Max number of jobs.
         -r,    Runtime for docker.
         -t,    Test name.
+        -x,    Extra fio arguments.
 EOF
 )
 	echo "$usage"
@@ -82,7 +84,8 @@ function create_fio_job()
 		--filename="$FILE_NAME" \
 		--bs="$BLOCK_SIZE" \
 		--size="$FILE_SIZE" \
-		--readwrite="$OPERATION" --max-jobs=$NUM_JOBS
+		--readwrite="$OPERATION" --max-jobs=$NUM_JOBS \
+		${EXTRA_ARGS}
 EOF
 )"
 }
@@ -122,7 +125,7 @@ function main()
 {
 	cmds=("bc" "awk")
 	local OPTIND
-	while getopts "b:e:hs:o:n:r:t:" opt;do
+	while getopts "b:e:hs:o:n:r:t:x:" opt;do
 		case ${opt} in
 		b)
 		    BLOCK_SIZE="${OPTARG}"
@@ -148,6 +151,9 @@ function main()
 		    ;;
 		t)
 		    TEST_NAME="${OPTARG}"
+		    ;;
+		x)
+		    EXTRA_ARGS="${OPTARG}"
 		    ;;
 		esac
 	done
