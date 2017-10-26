@@ -21,9 +21,15 @@
 # - bandwith duplex
 # - jitter
 #
-# These metrics/results will be got from the interconnection between a container
-# server and client using the iperf tool.
-# container-server <----> container-client
+# These metrics/results will be got from the interconnection between
+# a client and a server using iperf tool.
+# The following cases are covered:
+#
+# case 1:
+#  container-server <----> container-client
+#
+# case 2"
+#  container-server <----> host-client
 
 set -e
 
@@ -34,7 +40,8 @@ source "${SCRIPT_PATH}/../lib/common.bash"
 TEST_NAME="iperf3 tests"
 
 # Port number where the server will run
-port="5201:5201"
+port="5201"
+fwd_port="${port}:${port}"
 # Image name
 image="gabyct/network"
 # Measurement time (seconds)
@@ -43,13 +50,22 @@ transmit_timeout=5
 # "privileged" argument enables access to all devices on
 # the host and it allows to avoid conflicts with AppArmor
 # or SELinux configurations.
-client_extra_args="-ti --privileged --rm"
-server_extra_args="--privileged"
+if [ "$RUNTIME" == "runc" ]; then
+	extra_capability="--privileged"
+fi
+
+# Client/Server extra configuration
+client_extra_args="-ti $extra_capability --rm"
+server_extra_args="$extra_capability"
+
+# Iperf server configuration
+mount_ramfs="mount -t ramfs -o size=20M ramfs /tmp"
+server_command="$mount_ramfs && iperf3 -s"
+
 
 # Test single direction TCP bandwith
 function iperf3_bandwidth() {
 	local test_name="network iperf bandwidth"
-	local server_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -p ${port} -s"
 	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
 
 	# Verify server IP address
@@ -58,7 +74,7 @@ function iperf3_bandwidth() {
 		die "server: ip address no found"
 	fi
 
-	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -t ${transmit_timeout}"
+	local client_command="$mount_ramfs && iperf3 -c ${server_address} -t ${transmit_timeout}"
 	result=$(start_client "$image" "$client_command" "$client_extra_args")
 
 	local result_line=$(echo "$result" | grep -m1 -E '\breceiver\b')
@@ -77,7 +93,6 @@ function iperf3_bandwidth() {
 # Test jitter on single direction UDP
 function iperf3_jitter() {
 	local test_name="network iperf jitter"
-	local server_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -s -V"
 	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
 
 	# Verify server IP address
@@ -86,7 +101,7 @@ function iperf3_jitter() {
 		die "server: ip address no found"
 	fi
 
-	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -u -t ${transmit_timeout}"
+	local client_command="$mount_ramfs && iperf3 -c ${server_address} -u -t ${transmit_timeout}"
 	result=$(start_client "$image" "$client_command" "$client_extra_args")
 
 	local result_line=$(echo "$result" | grep -m1 -A1 -E '\bJitter\b' | tail -1)
@@ -105,7 +120,6 @@ function iperf3_jitter() {
 # Run bi-directional TCP test, and extract results for both directions
 function iperf3_bidirectional_bandwidth_client_server() {
 	local test_name="network iperf client to server"
-	local server_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -p ${port} -s"
 	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
 
 	# Verify server IP address
@@ -114,7 +128,7 @@ function iperf3_bidirectional_bandwidth_client_server() {
 		die "server: ip address no found"
 	fi
 
-	local client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c ${server_address} -d -t ${transmit_timeout}"
+	local client_command="$mount_ramfs && iperf3 -c ${server_address} -d -t ${transmit_timeout}"
 	result=$(start_client "$image" "$client_command" "$client_extra_args")
 
 	local client_result=$(echo "$result" | grep -m1 -E '\breceiver\b')
@@ -147,12 +161,150 @@ function iperf3_bidirectional_bandwidth_client_server() {
 	echo "Finish"
 }
 
-init_env
+# This function checks/verify if the iperf server
+# is ready/up for requests.
+function check_iperf_server() {
+	# timeout of 3 seconds aprox.
+	local time_out=6
+	local period=0.5
+	local test_cmd="iperf3 -c "$server_address" -t 1"
+
+	# check tools dependencies
+	local cmds=("netstat")
+	check_cmds "${cmds[@]}"
+
+	while [ 1 ]; do
+		if ! bash -c "$test_cmd" > /dev/null 2>&1; then
+			echo "waiting for server..."
+			count=$((count+1))
+			sleep $period
+		else
+			echo "iperf server is up!"
+			break;
+		fi
+
+		if [ "$count" == "$time_out" ]; then
+			die "iperf server init fails"
+		fi
+	done
+
+	# Check listening port
+	lport="$(netstat -atun | grep "$port" | grep "LISTEN")"
+	if [ -z "$lport" ]; then
+		die "port is not listening"
+	fi
+
+}
+
+# This function parses the output of iperf execution, and
+# saves the bandwidth results in CSV files
+function parse_iperf_bwd() {
+	local test_name="$1"
+	local result="$2"
+
+	if [ -z "$result" ]; then
+		die "no result output"
+	fi
+
+	# Filter receiver/sender results
+	rx_res=$(echo "$result" | grep "receiver" | awk -F "]" '{print $2}')
+	tx_res=$(echo "$result" | grep "sender" | awk -F "]" '{print $2}')
+
+	# Getting results
+	rx_bwd=$(echo "$rx_res" | awk '{print $5}')
+	tx_bwd=$(echo "$tx_res" | awk '{print $5}')
+	rx_uts=$(echo "$rx_res" | awk '{print $6}')
+	tx_uts=$(echo "$tx_res" | awk '{print $6}')
+
+	# Save results in CSV files
+	save_results "${test_name} receiver" "" "$rx_bwd" "$rx_uts"
+	save_results "${test_name} sender" "" "$tx_bwd" "$tx_uts"
+
+	# Show results
+	echo "$test_name"
+	echo "Receiver bandwidth $mode : $rx_bwd $rx_uts"
+	echo "Sender bandwidth $mode : $tx_bwd $tx_uts"
+
+}
+
+# This function launches a container that will take the role of
+# server, this is order to attend requests from a client.
+# In this case the client is an instance of iperf running in the host.
+function get_host_cnt_bwd() {
+	local cli_args="$1"
+
+	# Checks iperf3 tool installed in host
+	local cmds=("iperf3")
+	check_cmds "${cmds[@]}"
+
+	# Initialize/clean environment
+	init_env
+
+	# Make port forwarding
+	local server_extra_args="$server_extra_args -p $fwd_port"
+	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
+
+	# Verify server IP address
+        if [ -z "$server_address" ];then
+                clean_env
+                die "server: ip address no found"
+        fi
+
+	# Verify the iperf server is up
+	check_iperf_server
+
+	# client test executed in host
+	local output=$(iperf3 -c $server_address -t $transmit_timeout "$cli_args")
+
+	clean_env
+	echo "Finish"
+
+	echo "$output"
+}
+
+# This test measures the bandwidth between a container and the host.
+# where the container take the server role and the iperf client lives
+# in the host.
+function iperf_host_cnt_bwd() {
+	local test_name="newtwork bwd host contr"
+	local result="$(get_host_cnt_bwd)"
+	parse_iperf_bwd "$test_name" "$result"
+}
+
+# This test is similar to "iperf_host_cnt_bwd", the difference is this
+# tests runs in reverse mode.
+function iperf_host_cnt_bwd_rev() {
+	local test_name="network bwd host contr reverse"
+	local result="$(get_host_cnt_bwd "-R")"
+	parse_iperf_bwd "$test_name" "$result"
+}
+
+# This tests measures the bandwidth using different number of parallel
+# client streams. (2, 4, 8)
+function iperf_multiqueue() {
+	local test_name="network multiqueue"
+	local client_streams=("2" "4" "8")
+
+	for s in "${client_streams[@]}"; do
+		tn="$test_name $s"
+		result="$(get_host_cnt_bwd "-P $s")"
+		sum="$(echo "$result" | grep "SUM" | tail -n2)"
+		parse_iperf_bwd "$tn" "$sum"
+	done
+}
 
 echo "Currently this script is using ramfs for tmp (see https://github.com/01org/cc-oci-runtime/issues/152)"
+
+init_env
 
 iperf3_bandwidth
 
 iperf3_jitter
+
+iperf_host_cnt_bwd
+
+iperf_host_cnt_bwd_rev
+
+iperf_multiqueue
 
 iperf3_bidirectional_bandwidth_client_server
