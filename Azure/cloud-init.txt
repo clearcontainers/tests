@@ -19,7 +19,7 @@
 #
 # OS: ubuntu 16.04
 
-# The version currently are tested by CI
+# Currently these versions are tested by CI
 KUBELET_VER="1.7.8-00"
 KUBEADM_VER="1.7.8-00"
 KUBECTL_VER="1.7.8-00"
@@ -60,7 +60,7 @@ add-apt-repository \
 
 apt-get update
 
-# Install thin tools for devicemapper configuration required for docker
+# Install thin tools, they are required by devicemapper/docker
 apt-get install -y thin-provisioning-tools
 
 apt-get install -y docker-ce
@@ -72,7 +72,7 @@ apt-get install -y \
 	apache2-utils \
 	iperf
 
-# Configure the clear containers runtime using devicemapper as
+# Configure the Clear Containers runtime using devicemapper as
 # storage driver
 mkdir -p /etc/docker
 mkdir -p /etc/lvm/profile
@@ -100,10 +100,10 @@ EOF
 # Load devicemapper changes
 systemctl daemon-reload
 
-# Enable CC proxy
+# Enable Clear Containers proxy
 systemctl enable cc-proxy
 
-# Restart Clear Containers  services
+# Restart Clear Containers services
 systemctl restart docker
 systemctl restart cc-proxy
 
