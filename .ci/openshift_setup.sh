@@ -25,10 +25,10 @@ if [ "$ID" != fedora ]; then
 	exit
 fi
 
-sudo -E dnf -y update
+chronic sudo -E dnf -y update
 
 echo "Install Dependencies for Openshift"
-sudo -E dnf -y install bind-utils bsdtar container-selinux createrepo \
+chronic sudo -E dnf -y install bind-utils bsdtar container-selinux createrepo \
 		file jq json-glib-devel krb5-devel mercurial libassuan-devel \
 		libselinux-python NetworkManager rsync skopeo-containers tito
 

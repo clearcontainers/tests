@@ -27,12 +27,15 @@ if grep -q "N" /sys/module/kvm_intel/parameters/nested; then
 	sudo modprobe kvm_intel nested=1
 fi
 
-sudo -E dnf -y install dnf-plugins-core
-sudo -E dnf makecache
+echo "Install chronic"
+sudo -E dnf -y install moreutils
+
+chronic sudo -E dnf -y install dnf-plugins-core
+chronic sudo -E dnf makecache
 
 echo "Install clear containers dependencies"
-sudo -E dnf -y groupinstall "Development tools"
-sudo -E dnf -y install libtool automake autoconf bc pixman numactl-libs
+chronic sudo -E dnf -y groupinstall "Development tools"
+chronic sudo -E dnf -y install libtool automake autoconf bc pixman numactl-libs
 
 echo "Install qemu-lite binary"
 "${cidir}/install_qemu_lite.sh" "${qemu_clear_release}" "${qemu_lite_sha}" "$ID"
@@ -44,18 +47,18 @@ echo "Install Clear Containers Kernel"
 "${cidir}/install_clear_kernel.sh" "${kernel_clear_release}" "${kernel_version}" "${cc_kernel_path}"
 
 echo "Install CRI-O dependencies"
-sudo -E dnf -y install btrfs-progs-devel device-mapper-devel \
-	glib2-devel glibc-devel glibc-static gpgme-devel         \
-	libassuan-devel libgpg-error-devel libseccomp-devel      \
-	libselinux-devel ostree-devel pkgconfig
+chronic sudo -E dnf -y install btrfs-progs-devel device-mapper-devel 	  \
+	glib2-devel glibc-devel glibc-static gpgme-devel libassuan-devel  \
+	libgpg-error-devel libseccomp-devel libselinux-devel ostree-devel \
+	pkgconfig
 
 echo "Install bison binary"
-sudo -E dnf -y install bison
+chronic sudo -E dnf -y install bison
 
 if ! command -v docker > /dev/null; then
 	echo "Install Docker"
 	docker_url="https://download.docker.com/linux/fedora"
-	sudo -E dnf config-manager --add-repo "${docker_url}/docker-ce.repo"
-	sudo -E dnf makecache
-	sudo -E dnf -y install docker-ce
+	chronic sudo -E dnf config-manager --add-repo "${docker_url}/docker-ce.repo"
+	chronic sudo -E dnf makecache
+	chronic sudo -E dnf -y install docker-ce
 fi
