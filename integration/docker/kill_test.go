@@ -38,16 +38,16 @@ func withSignal(signal syscall.Signal, trap bool) TableEntry {
 		expectedExitCode += 128
 	}
 
-	return Entry(fmt.Sprintf("with '%d'(%s) signal", signal, syscall.Signal(signal)), signal, expectedExitCode)
+	return Entry(fmt.Sprintf("with '%d'(%s) signal", signal, syscall.Signal(signal)), signal, expectedExitCode, true)
 }
 
 func withoutSignal() TableEntry {
 	// 137 = 128(command interrupted by a signal) + 9(SIGKILL)
-	return Entry(fmt.Sprintf("without a signal"), syscall.Signal(0), 137)
+	return Entry(fmt.Sprintf("without a signal"), syscall.Signal(0), 137, true)
 }
 
 func withSignalNotExitCode(signal syscall.Signal) TableEntry {
-	return Entry(fmt.Sprintf("with '%d' (%s) signal, don't change the exit code", signal, signal), signal, 0)
+	return Entry(fmt.Sprintf("with '%d' (%s) signal, don't change the exit code", signal, signal), signal, 0, false)
 }
 
 var _ = Describe("docker kill", func() {
@@ -66,7 +66,7 @@ var _ = Describe("docker kill", func() {
 	})
 
 	DescribeTable("killing container",
-		func(signal syscall.Signal, expectedExitCode int) {
+		func(signal syscall.Signal, expectedExitCode int, waitForExit bool) {
 			args = []string{"--name", id, "-dt", Image, "sh", "-c"}
 
 			switch signal {
@@ -96,11 +96,7 @@ var _ = Describe("docker kill", func() {
 				DockerKill(id)
 			}
 
-			// we have to wait for signal processing (trap)
-			// this is needed even with runc
-			time.Sleep(5 * time.Second)
-
-			exitCode, err := ExitCodeDockerContainer(id)
+			exitCode, err := ExitCodeDockerContainer(id, waitForExit)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(exitCode).To(Equal(expectedExitCode))
 		},

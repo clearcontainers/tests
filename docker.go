@@ -67,8 +67,64 @@ func StatusDockerContainer(name string) string {
 	return state[0]
 }
 
+// hasExitedDockerContainer checks if the container has exited.
+func hasExitedDockerContainer(name string) (bool, error) {
+	args := []string{"--format={{.State.Status}}", name}
+
+	stdout, _, exitCode := runDockerCommand("inspect", args...)
+
+	if exitCode != 0 || stdout == "" {
+		return false, fmt.Errorf("failed to run docker inspect command")
+	}
+
+	status := strings.TrimSpace(stdout)
+
+	if status == "exited" {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 // ExitCodeDockerContainer returns the container exit code
-func ExitCodeDockerContainer(name string) (int, error) {
+func ExitCodeDockerContainer(name string, waitForExit bool) (int, error) {
+	// It makes no sense to try to retrieve the exit code of the container
+	// if it is still running. That's why this infinite loop takes care of
+	// waiting for the status to become "exited" before to ask for the exit
+	// code.
+	// However, we might want to bypass this check on purpose, that's why
+	// we check waitForExit boolean.
+	if waitForExit {
+		errCh := make(chan error)
+		exitCh := make(chan bool)
+
+		go func() {
+			for {
+				exited, err := hasExitedDockerContainer(name)
+				if err != nil {
+					errCh <- err
+				}
+
+				if exited {
+					break
+				}
+
+				time.Sleep(time.Second)
+			}
+
+			close(exitCh)
+		}()
+
+		select {
+		case <-exitCh:
+			break
+		case err := <-errCh:
+			return -1, err
+		case <-time.After(time.Duration(Timeout)*time.Second):
+			return -1, fmt.Errorf("Timeout reached after %ds", Timeout)
+		}
+	}
+
 	args := []string{"--format={{.State.ExitCode}}", name}
 
 	stdout, _, exitCode := runDockerCommand("inspect", args...)
