@@ -16,6 +16,7 @@ package docker
 
 import (
 	"fmt"
+	"strings"
 	"syscall"
 	"time"
 
@@ -78,19 +79,47 @@ var _ = Describe("docker kill", func() {
 					"https://github.com/clearcontainers/runtime/issues/768")
 			}
 
+			trapTag := "TRAP_RUNNING"
+			trapCmd := fmt.Sprintf("trap \"exit %d\" %d; echo %s", signal, signal, trapTag)
+			infiniteLoop := "while :; do sleep 1; done"
+
 			if signal > 0 {
-				args = append(args, fmt.Sprintf("trap \"exit %d\" %d ; while : ; do sleep 1; done", signal, signal))
+				args = append(args, fmt.Sprintf("%s; %s", trapCmd, infiniteLoop))
 			} else {
-				args = append(args, fmt.Sprintf("while : ; do sleep 1; done"))
+				args = append(args, infiniteLoop)
 			}
 
 			DockerRun(args...)
 
-			// we have to wait for the container workload
-			// to process the trap.
-			time.Sleep(5 * time.Second)
-
 			if signal > 0 {
+				exitCh := make(chan bool)
+
+				go func() {
+					for {
+						// Don't check for error here since the command
+						// can fail if the container is not running yet.
+						logs, _ := LogsDockerContainer(id)
+						if strings.Contains(logs, trapTag) {
+							break
+						}
+
+						time.Sleep(time.Second)
+					}
+
+					close(exitCh)
+				}()
+
+				var err error
+
+				select {
+				case <-exitCh:
+					err = nil
+				case <-time.After(time.Duration(Timeout)*time.Second):
+					err = fmt.Errorf("Timeout reached after %ds", Timeout)
+				}
+
+				Expect(err).ToNot(HaveOccurred())
+
 				DockerKill("-s", fmt.Sprintf("%d", signal), id)
 			} else {
 				DockerKill(id)

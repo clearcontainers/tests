@@ -53,6 +53,19 @@ func runDockerCommand(command string, args ...string) (string, string, int) {
 	return runDockerCommandWithTimeout(time.Duration(Timeout), command, args...)
 }
 
+// LogsDockerContainer returns the container logs
+func LogsDockerContainer(name string) (string, error) {
+	args := []string{name}
+
+	stdout, _, exitCode := runDockerCommand("logs", args...)
+
+	if exitCode != 0 {
+		return "", fmt.Errorf("failed to run docker logs command")
+	}
+
+	return strings.TrimSpace(stdout), nil
+}
+
 // StatusDockerContainer returns the container status
 func StatusDockerContainer(name string) string {
 	args := []string{"-a", "-f", "name=" + name, "--format", "{{.Status}}"}
