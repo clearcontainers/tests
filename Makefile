@@ -16,7 +16,7 @@
 RUNTIME ?= cc-runtime
 
 # The time limit in seconds for each test
-TIMEOUT ?= 15
+TIMEOUT ?= 60
 
 CRIO_REPO_PATH="${GOPATH}/src/github.com/kubernetes-incubator/cri-o"
 crio:
