@@ -33,10 +33,6 @@ const (
 
 	// PostgresImage is the postgres image
 	PostgresImage = "postgres"
-
-	// timeout for docker rmi command
-	// 15 seconds should be enough to complete this task
-	dockerRmiTimeout = 15
 )
 
 func runDockerCommandWithTimeout(timeout time.Duration, command string, args ...string) (string, string, int) {
@@ -219,7 +215,7 @@ func DockerRm(args ...string) (string, string, int) {
 // returns true on success else false
 func DockerStop(args ...string) (string, string, int) {
 	// docker stop takes ~15 seconds
-	return runDockerCommandWithTimeout(15, "stop", args...)
+	return runDockerCommand("stop", args...)
 }
 
 // DockerPull downloads the specific image
@@ -252,8 +248,7 @@ func DockerVolume(args ...string) (string, string, int) {
 
 // DockerAttach attach to a running container
 func DockerAttach(args ...string) (string, string, int) {
-	// 15 seconds should be enough to wait for the container workload
-	return runDockerCommandWithTimeout(15, "attach", args...)
+	return runDockerCommand("attach", args...)
 }
 
 // DockerCommit creates a new image from a container's changes
@@ -271,7 +266,7 @@ func DockerRmi(args ...string) (string, string, int) {
 	// docker takes more than 5 seconds to remove an image, it depends
 	// of the image size and this operation does not involve to the
 	// runtime
-	return runDockerCommandWithTimeout(dockerRmiTimeout, "rmi", args...)
+	return runDockerCommand("rmi", args...)
 }
 
 // DockerCp copies files/folders between a container and the local filesystem
