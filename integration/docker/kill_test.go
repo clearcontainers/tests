@@ -34,10 +34,11 @@ func withSignal(signal syscall.Signal, trap bool) TableEntry {
 	expectedExitCode := int(signal)
 	if !trap {
 		// 128 -> command interrupted by a signal
+		// http://www.tldp.org/LDP/abs/html/exitcodes.html
 		expectedExitCode += 128
 	}
 
-	return Entry(fmt.Sprintf("with '%d' signal", signal), signal, expectedExitCode)
+	return Entry(fmt.Sprintf("with '%d'(%s) signal", signal, syscall.Signal(signal)), signal, expectedExitCode)
 }
 
 func withoutSignal() TableEntry {
@@ -46,7 +47,7 @@ func withoutSignal() TableEntry {
 }
 
 func withSignalNotExitCode(signal syscall.Signal) TableEntry {
-	return Entry(fmt.Sprintf("with '%d' signal, don't change the exit code", signal), signal, 0)
+	return Entry(fmt.Sprintf("with '%d' (%s) signal, don't change the exit code", signal, signal), signal, 0)
 }
 
 var _ = Describe("docker kill", func() {
@@ -68,6 +69,15 @@ var _ = Describe("docker kill", func() {
 		func(signal syscall.Signal, expectedExitCode int) {
 			args = []string{"--name", id, "-dt", Image, "sh", "-c"}
 
+			switch signal {
+			case syscall.SIGQUIT, syscall.SIGILL, syscall.SIGBUS, syscall.SIGFPE, syscall.SIGSEGV, syscall.SIGPIPE:
+				Skip("This is not forwarded by cc-shim " +
+					"https://github.com/clearcontainers/runtime/issues/769")
+			case syscall.SIGWINCH:
+				Skip("Signal is not being forwared,  see " +
+					"https://github.com/clearcontainers/runtime/issues/768")
+			}
+
 			if signal > 0 {
 				args = append(args, fmt.Sprintf("trap \"exit %d\" %d ; while : ; do sleep 1; done", signal, signal))
 			} else {
@@ -79,7 +89,7 @@ var _ = Describe("docker kill", func() {
 			// we have to wait for the container workload
 			// to process the trap.
 			time.Sleep(5 * time.Second)
-			
+
 			if signal > 0 {
 				DockerKill("-s", fmt.Sprintf("%d", signal), id)
 			} else {
@@ -96,23 +106,22 @@ var _ = Describe("docker kill", func() {
 		},
 		withSignal(syscall.SIGHUP, canBeTrapped),
 		withSignal(syscall.SIGINT, canBeTrapped),
-		withSignal(syscall.SIGQUIT, cannotBeTrapped), //131
-		withSignal(syscall.SIGILL, cannotBeTrapped),  //132
+		withSignal(syscall.SIGQUIT, canBeTrapped),
+		withSignal(syscall.SIGILL, canBeTrapped),
 		withSignal(syscall.SIGTRAP, canBeTrapped),
 		withSignal(syscall.SIGIOT, canBeTrapped),
-		withSignal(syscall.SIGBUS, cannotBeTrapped),  //135
-		withSignal(syscall.SIGFPE, cannotBeTrapped),  //136
+		withSignal(syscall.SIGFPE, canBeTrapped),
 		withSignal(syscall.SIGKILL, cannotBeTrapped), //137
 		withSignal(syscall.SIGUSR1, canBeTrapped),
-		withSignal(syscall.SIGSEGV, cannotBeTrapped), //139
+		withSignal(syscall.SIGSEGV, canBeTrapped),
 		withSignal(syscall.SIGUSR2, canBeTrapped),
-		withSignal(syscall.SIGPIPE, cannotBeTrapped), //141
+		withSignal(syscall.SIGPIPE, canBeTrapped),
 		withSignal(syscall.SIGALRM, canBeTrapped),
 		withSignal(syscall.SIGTERM, canBeTrapped),
 		withSignal(syscall.SIGSTKFLT, canBeTrapped),
 		withSignal(syscall.SIGCHLD, canBeTrapped),
 		withSignal(syscall.SIGCONT, canBeTrapped),
-		withSignalNotExitCode(syscall.SIGSTOP), //0 - don't change exit code
+		withSignalNotExitCode(syscall.SIGSTOP),
 		withSignal(syscall.SIGTSTP, canBeTrapped),
 		withSignal(syscall.SIGTTIN, canBeTrapped),
 		withSignal(syscall.SIGTTOU, canBeTrapped),
@@ -121,7 +130,7 @@ var _ = Describe("docker kill", func() {
 		withSignal(syscall.SIGXFSZ, canBeTrapped),
 		withSignal(syscall.SIGVTALRM, canBeTrapped),
 		withSignal(syscall.SIGPROF, canBeTrapped),
-		withSignalNotExitCode(syscall.SIGWINCH), //0 - don't change exit code
+		withSignal(syscall.SIGWINCH, canBeTrapped),
 		withSignal(syscall.SIGIO, canBeTrapped),
 		withSignal(syscall.SIGPWR, canBeTrapped),
 		withoutSignal(),
