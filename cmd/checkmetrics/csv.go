@@ -39,6 +39,7 @@ type csvRecord struct {
 	MaxVal        float64   // Largest value we saw
 	SD            float64   // Standard Deviation
 	CoV           float64   // Co-efficient of Variation
+	TestName      string    // Test name field
 }
 
 // load reads in a CSV 'Metrics' results file from the file path given
@@ -75,6 +76,9 @@ func (c *csvRecord) load(filepath string) error {
 	// The Results column for the CSV metrics files is expected to be in the 5th column
 	const resultsColumn = 4
 
+	// The Test Name column for the CSV metrics files is expected to be in the 3rd column
+	const testNameColumn = 2
+
 	// Sanity check that the CSV file appears to have the Result column where
 	// we expect to find it
 	numZeroRecords := len(c.Records[0])
@@ -87,6 +91,9 @@ func (c *csvRecord) load(filepath string) error {
 		log.Errorf("Column %d is [%s], not [Result]", resultsColumn+1, c.Records[0][resultsColumn])
 		return errors.New("Expected Results column is not [Result]")
 	}
+
+	// Filter the test name
+	c.TestName = c.Records[1][testNameColumn]
 
 	// Build a slice containing just the 'Result' strings
 	for _, r := range c.Records {

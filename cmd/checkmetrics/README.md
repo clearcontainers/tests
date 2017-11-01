@@ -47,7 +47,7 @@ maxval = 1.5
 ## Options
 `checkmetrics` takes a number of options. Some are mandatory.
 
-### TOML basefile path (mandatory)
+### TOML basefile path (mandatory unless `nobaseline` is used)
 
 ```
 --basefile value    path to baseline TOML metrics file
@@ -61,6 +61,11 @@ maxval = 1.5
 ### Log file path
 ```
 --log value         set the log file path
+```
+
+### No baseline
+```
+--nobaseline        enable parsing metrics without a basefile
 ```
 
 ### Metrics CSV directory path
