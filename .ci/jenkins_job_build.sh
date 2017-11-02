@@ -45,23 +45,31 @@ then
 	go get github.com/mattn/goveralls
 fi
 
-# Get the repository and move HEAD to the appropriate commit.
+# Get the repository and move to the correct commit
 go get ${cc_repo} || true
 pushd ${GOPATH}/src/${cc_repo}
 if [ ${ghprbPullId} ] && [ ${ghprbTargetBranch} ]
 then
+	# For PRs we rebase the PR commits onto the defined target branch
 	git fetch origin pull/${ghprbPullId}/head && git checkout FETCH_HEAD && git rebase origin/${ghprbTargetBranch}
 else
+	# Othewise we test the master branch
 	git fetch origin && git checkout origin/master
 fi
 
-# Setup and run the tests.
+# All repos apart from the test repo run some setup/checks from their own
+# .ci/setup.sh before invoking the test repo .ci/setup.sh. Thus, the test
+# repo has its own pre-setup.sh script that needs running
 if [ "${cc_repo}" == "${tests_repo}" ]
 then
         .ci/setup_tests.sh
 fi
 
+# Set up the distro environment. Get, build and install all the latest
+# components
 .ci/setup.sh
+
+# Run the test suite
 .ci/run.sh
 
 # Publish the code coverage if needed.
