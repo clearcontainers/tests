@@ -26,7 +26,6 @@ mkdir -p ${HOME}/go
 export GOROOT="/usr/local/go"
 export GOPATH=${HOME}/go
 export PATH=${GOPATH}/bin:/usr/local/go/bin:/usr/sbin:${PATH}
-export CI=true
 
 # Download and build goveralls binary in case we need to submit the code
 # coverage.
