@@ -34,8 +34,8 @@ function latency() {
 	# Number of packets (sent)
 	local number=10
 	# Arguments to run the client/server
-	local client_extra_args="-ti --rm"
-	local server_extra_args="-i"
+	local client_extra_args="--rm"
+	local server_extra_args=""
 
 	# Initialize/clean environment
 	init_env
