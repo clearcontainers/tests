@@ -20,11 +20,22 @@ set -e
 cc_repo=$1
 
 tests_repo="github.com/clearcontainers/tests"
-mkdir -p ${HOME}/go
+
+# This script is intended to execute under Jenkins
+# If we do not know where the Jenkins defined WORKSPACE area is
+# then quit
+if [ -z "${WORKSPACE}" ]
+then
+	echo "Jenkins WORKSPACE env var not set - exiting" >&2
+	exit 1
+fi
+
+# Put our go area into the Jenkins job WORKSPACE tree
+export GOPATH=${WORKSPACE}/go
+mkdir -p ${GOPATH}
 
 # Export all environment variables needed.
 export GOROOT="/usr/local/go"
-export GOPATH=${HOME}/go
 export PATH=${GOPATH}/bin:/usr/local/go/bin:/usr/sbin:${PATH}
 
 # Download and build goveralls binary in case we need to submit the code
