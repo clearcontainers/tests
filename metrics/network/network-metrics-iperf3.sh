@@ -55,7 +55,7 @@ if [ "$RUNTIME" == "runc" ]; then
 fi
 
 # Client/Server extra configuration
-client_extra_args="-ti $extra_capability --rm"
+client_extra_args="$extra_capability --rm"
 server_extra_args="$extra_capability"
 
 # Iperf server configuration

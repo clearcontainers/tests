@@ -39,8 +39,8 @@ function udp_bandwidth() {
 	local server_name="network-server"
 
 	# Arguments to run the client/server
-	local server_extra_args="-i --name=$server_name"
-	local client_extra_args="-ti --rm"
+	local server_extra_args="--name=$server_name"
+	local client_extra_args="--rm"
 
 	# Initialize/clean environment
 	init_env

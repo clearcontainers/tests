@@ -38,7 +38,7 @@ function bidirectional_bandwidth_server_client() {
 	local transmit_timeout=5
 
 	# Arguments to run the client
-	local extra_args="-ti --rm"
+	local extra_args="--rm"
 
 	# Initialize/clean environment
 	init_env
