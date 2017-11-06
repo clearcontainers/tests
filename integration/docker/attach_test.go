@@ -33,7 +33,7 @@ var _ = Describe("docker attach", func() {
 		containerExitCode = 13
 		id = randomDockerName()
 		_, _, exitCode = DockerRun("--name", id, "-d", Image, "sh", "-c",
-			fmt.Sprintf("sleep 10 && exit %d", containerExitCode))
+			fmt.Sprintf("sleep 3 && exit %d", containerExitCode))
 		Expect(exitCode).To(Equal(0))
 	})
 
@@ -44,7 +44,6 @@ var _ = Describe("docker attach", func() {
 
 	Context("check attach functionality", func() {
 		It("should attach exit code", func() {
-			Skip("Issue https://github.com/clearcontainers/runtime/issues/363")
 			_, _, exitCode = DockerAttach(id)
 			Expect(exitCode).To(Equal(containerExitCode))
 		})
