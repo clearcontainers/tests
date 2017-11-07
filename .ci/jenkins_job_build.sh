@@ -38,6 +38,9 @@ mkdir -p ${GOPATH}
 export GOROOT="/usr/local/go"
 export PATH=${GOPATH}/bin:/usr/local/go/bin:/usr/sbin:${PATH}
 
+# We need to set CI in order to enable proper coverage tool operation
+export CI=true
+
 # Download and build goveralls binary in case we need to submit the code
 # coverage.
 if [ ${COVERALLS_REPO_TOKEN} ]
