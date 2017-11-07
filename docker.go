@@ -145,6 +145,26 @@ func ExitCodeDockerContainer(name string, waitForExit bool) (int, error) {
 	return strconv.Atoi(strings.TrimSpace(stdout))
 }
 
+func WaitForRunningDockerContainer(name string, running bool) error {
+	ch := make(chan bool)
+	go func() {
+		if IsRunningDockerContainer(name) == running {
+			close(ch)
+			return
+		}
+
+		time.Sleep(time.Second)
+	}()
+
+	select {
+	case <-ch:
+	case <-time.After(time.Duration(Timeout)*time.Second):
+		return fmt.Errorf("Timeout reached after %ds", Timeout)
+	}
+
+	return nil
+}
+
 // IsRunningDockerContainer inspects a container
 // returns true if is running
 func IsRunningDockerContainer(name string) bool {

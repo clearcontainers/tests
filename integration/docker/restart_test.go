@@ -41,10 +41,10 @@ var _ = Describe("restart", func() {
 		Context("restart a container", func() {
 			It("should be running", func() {
 				Expect(StopDockerContainer(id)).To(BeTrue())
-				Expect(IsRunningDockerContainer(id)).To(BeFalse())
+				Expect(WaitForRunningDockerContainer(id, false)).To(BeNil())
 				args = []string{"restart", id}
 				runDockerCommand(0, args...)
-				Expect(IsRunningDockerContainer(id)).To(BeTrue())
+				Expect(WaitForRunningDockerContainer(id, true)).To(BeNil())
 			})
 		})
 	})
