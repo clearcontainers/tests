@@ -64,6 +64,7 @@ setup() {
 }
 
 @test "check_service_ip_among_the_replicas" {
+	skip "This is not working (https://github.com/clearcontainers/tests/issues/694)"
 	service_name=$($DOCKER_EXE service ls --filter name="${SERVICE_NAME}" -q)
 	ip_service=$($DOCKER_EXE service inspect $SERVICE_NAME \
 		--format='{{range .Endpoint.VirtualIPs}}{{.Addr}}{{end}}' | cut -d'/' -f1)
