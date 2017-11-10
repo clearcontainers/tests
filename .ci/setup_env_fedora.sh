@@ -37,8 +37,11 @@ echo "Install clear containers dependencies"
 chronic sudo -E dnf -y groupinstall "Development tools"
 chronic sudo -E dnf -y install libtool automake autoconf bc pixman numactl-libs
 
-echo "Install qemu-lite binary"
-"${cidir}/install_qemu_lite.sh" "${qemu_clear_release}" "${qemu_lite_sha}" "$ID"
+echo "Install qemu-cc binary"
+source /etc/os-release
+sudo -E VERSION_ID=$VERSION_ID dnf config-manager --add-repo \
+	http://download.opensuse.org/repositories/home:/clearcontainers:/clear-containers-3-staging/Fedora\_$VERSION_ID/home:clearcontainers:clear-containers-3-staging.repo
+sudo -E dnf -y install qemu-cc
 
 echo "Install clear-containers image"
 "${cidir}/install_clear_image.sh" "$image_version" "${cc_kernel_path}"
