@@ -19,7 +19,6 @@
 
 log_copy_dest="$1"
 
-runtime_log_location="/var/lib/clear-containers/runtime/runtime.log"
 runtime_log_filename="cc-runtime.log"
 runtime_log_path="${log_copy_dest}/${runtime_log_filename}"
 runtime_log_prefix="cc-runtime_"
@@ -40,8 +39,7 @@ crio_log_prefix="crio_"
 # display them.
 if [ ${log_copy_dest} ]; then
 	# Create the log files
-	sudo cp "${runtime_log_location}" "${runtime_log_path}"
-	sudo chown ${USER}:${USER} "${runtime_log_path}"
+	journalctl --no-pager -t cc-runtime > "${runtime_log_path}"
 	journalctl --no-pager -u cc-proxy > "${proxy_log_path}"
 	journalctl --no-pager -t cc-shim > "${shim_log_path}"
 	journalctl --no-pager -u crio > "${crio_log_path}"
@@ -56,7 +54,7 @@ if [ ${log_copy_dest} ]; then
 	popd
 else
 	echo "Clear Containers Runtime Log:"
-	sudo cat "${runtime_log_location}"
+	journalctl --no-pager -t cc-runtime
 	echo "Clear Containers Proxy Log:"
 	journalctl --no-pager -u cc-proxy
 	echo "Clear Containers Shim Log:"
