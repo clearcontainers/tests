@@ -51,6 +51,16 @@ if [ ${log_copy_dest} ]; then
 	split -b ${subfile_size} -d ${proxy_log_path} ${proxy_log_prefix}
 	split -b ${subfile_size} -d ${shim_log_path} ${shim_log_prefix}
 	split -b ${subfile_size} -d ${crio_log_path} ${crio_log_prefix}
+
+	for prefix in \
+		"${runtime_log_prefix}" \
+		"${proxy_log_prefix}" \
+		"${shim_log_prefix}" \
+		"${crio_log_prefix}"
+	do
+		gzip -9 "$prefix"*
+	done
+
 	popd
 else
 	echo "Clear Containers Runtime Log:"
