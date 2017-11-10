@@ -54,10 +54,10 @@ pushd ${GOPATH}/src/${cc_repo}
 if [ ${ghprbPullId} ] && [ ${ghprbTargetBranch} ]
 then
 	# For PRs we rebase the PR commits onto the defined target branch
-	git fetch origin pull/${ghprbPullId}/head && git checkout FETCH_HEAD && git rebase origin/${ghprbTargetBranch}
+	git fetch origin "pull/${ghprbPullId}/head" && git checkout master && git reset --hard FETCH_HEAD && git rebase origin/${ghprbTargetBranch}
 else
 	# Othewise we test the master branch
-	git fetch origin && git checkout origin/master
+	git fetch origin && git checkout master && git reset --hard origin/master
 fi
 
 # All repos apart from the test repo run some setup/checks from their own
