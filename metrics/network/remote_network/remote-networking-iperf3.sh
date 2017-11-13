@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-# This script will measure network bandwidth with iperf3 tool using a
+# This script will measure network bandwidth or jitter with iperf3 tool using a
 # remote setup, where host A will run a server container and host B will
 # run a client container.
 
@@ -32,16 +32,18 @@ function help {
 echo "$(cat << EOF
 Usage: $0 "[options]"
 	Description:
-		This script will measure network bandwidth with iperf3
+		This script will measure network bandwidth or jitter with iperf3
 		tool using a remote setup, where host A will run a server
 		container and host B will run a client container. In order
 		to run this script, these inputs are needed:
-		- The interface name where swarm will run.
-		- The user of the host B.
-		- The IP address of the host B
+		- Interface name where swarm will run.
+		- User of the host B.
+		- IP address of the host B
 	Options:
 		-h	Shows help
 		-b	Run remote bandwidth
+		-j	Run remote jitter
+		-t	Run remote bandwidth and jitter
 		-i	Interface name to run Swarm (mandatory)
 		-u	User of host B (mandatory)
 		-a	IP address of host B (mandatory)
@@ -68,9 +70,27 @@ function remote_network_bandwidth_iperf3 {
 	clean_environment
 }
 
+# This function will measure the jitter using iperf3
+function remote_network_jitter_iperf3 {
+	setup_swarm
+	client_replica_status
+	server_replica_status
+
+	server_ip_address=$(check_server_address)
+	start_server
+
+	client_id=$($DOCKER_EXE ps -q)
+	client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c $server_ip_address -u -t $server_time"
+	result=$(start_client "$client_id" "$client_command")
+	total_jitter=$(echo "$result" | tail -n 4 | head -1 | awk '{print $(NF-3), $(NF-2)}')
+	echo "Network jitter is : $total_jitter"
+
+	clean_environment
+}
+
 function main {
 	local OPTIND
-	while getopts "hbj:i:u:a" opt
+	while getopts "hbjt:i:u:a" opt
 	do
 		case "${opt}" in
 		h)
@@ -79,6 +99,12 @@ function main {
 		;;
 		b)
 			bandwidth_test="1"
+		;;
+		j)
+			jitter_test="1"
+		;;
+		t)
+			total_test="1"
 		;;
 		i)
 			interface_name="${OPTARG}"
@@ -100,6 +126,11 @@ function main {
 
 	if [ "$bandwidth_test" == "1" ]; then
 		remote_network_bandwidth_iperf3
+	elif [ "$jitter_test" == "1" ]; then
+		remote_network_jitter_iperf3
+	elif [ "$total_test" == "1" ]; then
+		remote_network_bandwidth_iperf3
+		remote_network_jitter_iperf3
 	else
 		exit 0
 	fi
