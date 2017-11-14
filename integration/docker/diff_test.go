@@ -28,7 +28,9 @@ var _ = Describe("diff", func() {
 
 	BeforeEach(func() {
 		id = randomDockerName()
-		_, _, exitCode := DockerRun("--name", id, "-d", Image, "sh")
+		// Run this command with -i flag to make sure we keep the
+		// container up and running.
+		_, _, exitCode := DockerRun("--name", id, "-d", "-i", Image, "sh")
 		Expect(exitCode).To(Equal(0))
 		_, _, exitCode = DockerExec(id, "mkdir", name)
 		Expect(exitCode).To(Equal(0))
