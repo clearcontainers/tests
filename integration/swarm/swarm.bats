@@ -91,7 +91,7 @@ setup() {
 }
 
 @test "check mtu values in different interfaces" {
-	skip "This is not working (https://github.com/clearcontainers/tests/issues/714)
+	skip "This is not working (https://github.com/clearcontainers/tests/issues/714)"
 	REPLICAS_UP=$($DOCKER_EXE ps -q --filter name="${SERVICE_NAME}")
 	for i in ${REPLICAS_UP[@]}; do
 		network_settings_file=$($DOCKER_EXE inspect $i | grep "SandboxKey" | cut -d ':' -f2 | cut -d '"' -f2)
