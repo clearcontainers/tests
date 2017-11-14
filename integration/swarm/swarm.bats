@@ -90,6 +90,21 @@ setup() {
 	export http_proxy="$proxy"
 }
 
+@test "check mtu values in different interfaces" {
+	REPLICAS_UP=$($DOCKER_EXE ps -q --filter name="${SERVICE_NAME}")
+	for i in ${REPLICAS_UP[@]}; do
+		network_settings_file=$($DOCKER_EXE inspect $i | grep "SandboxKey" | cut -d ':' -f2 | cut -d '"' -f2)
+		[ -f "$network_settings_file" ]
+		ip_addresses=$(nsenter --net="$network_settings_file" ip a)
+		mtu_value_eth0=$(echo "$ip_addresses" | grep -w "eth0" | grep "mtu" | cut -d ' ' -f5)
+		mtu_value_tap0=$(echo "$ip_addresses" | grep -w "tap0" | grep "mtu" | cut -d ' ' -f5)
+		[ "$mtu_value_eth0" = "$mtu_value_tap0" ]
+		mtu_value_eth1=$(echo "$ip_addresses" | grep -w "eth1" | grep "mtu" | cut -d ' ' -f5)
+		mtu_value_tap1=$(echo "$ip_addresses" | grep -w "tap1" | grep "mtu" | cut -d ' ' -f5)
+		[ "$mtu_value_eth1" = "$mtu_value_tap1" ]
+	done
+}
+
 teardown() {
 	$DOCKER_EXE service remove "${SERVICE_NAME}"
 	$DOCKER_EXE swarm leave --force
