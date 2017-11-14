@@ -72,8 +72,15 @@ fi
 # components
 .ci/setup.sh
 
-# Run the test suite
-.ci/run.sh
+# The metrics CI does not need to do the QA checks - it only runs once
+# it knows the QA CI has passed already.
+if [ -z "${METRICS_CI}" ]
+then
+	# Run the test suite
+	.ci/run.sh
+else
+	echo "Under METRICS_CI - skipping test run"
+fi
 
 # Publish the code coverage if needed.
 if [ ${COVERALLS_REPO_TOKEN} ]
