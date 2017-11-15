@@ -14,6 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Note - no 'set -e' in this file - if one of the metrics tests fails
+# then we wish to continue to try the rest.
+# Finally at the end, in some situations, we explicitly exit with a
+# failure code if necessary.
+
 CURRENTDIR=$(dirname "$(readlink -f "$0")")
 source "${CURRENTDIR}/../metrics/lib/common.bash"
 
@@ -95,29 +100,49 @@ pushd "$CURRENTDIR/../metrics"
 	bash storage/fio_job.sh -b 16k -o read -t "storage IO linear read bs 16k"
 	bash storage/fio_job.sh -b 16k -o write -t "storage IO linear write bs 16k"
 
-	# Pull request URL
-	PR_URL="$GITHUB_URL/$LOCALCI_REPO_SLUG/pull/$LOCALCI_PR_NUMBER"
+	# If we are running under a CI, the do some extra work
+	# We check we are under a CI before doing this, as that still leaves us
+	# the ability to run this script by hand outside a CI if we need
+	if [ -n "${METRICS_CI}" ]; then
 
-	# Subject for emailreport tool about Pull Request
-	SUBJECT="[${LOCALCI_REPO_SLUG}] metrics report (#${LOCALCI_PR_NUMBER})"
+		# If we are under LOCALCI, then use emailreport to process the metrics
+		# and store the results in a known backup area
+		if [ -n "${LOCALCI}" ]; then
+			# Pull request URL
+			PR_URL="$GITHUB_URL/$LOCALCI_REPO_SLUG/pull/$LOCALCI_PR_NUMBER"
 
-	# Parse/Report results
-	emailreport -c "Pull request: $PR_URL" -s "$SUBJECT"
+			# Subject for emailreport tool about Pull Request
+			SUBJECT="[${LOCALCI_REPO_SLUG}] metrics report (#${LOCALCI_PR_NUMBER})"
 
-	# Save the results directory in a backup path. The metrics tests will be
-	# executed each new pull request or when a Pull Request has been modified,
-	# then the results from the same Pull Request number will be identified
-	# by epoch point time as name of the direcory.
-	REPO="$(cut -d"/" -f2 <<<"$LOCALCI_REPO_SLUG")"
-	PR_BK_RESULTS="$RESULTS_BACKUP_PATH/$REPO/$LOCALCI_PR_NUMBER"
-	DEST="$PR_BK_RESULTS/$(date --iso-8601=seconds)"
+			# Parse/Report results
+			emailreport -c "Pull request: $PR_URL" -s "$SUBJECT"
 
-	if [ ! -d "$PR_BK_RESULTS" ]; then
-		mkdir -p "$PR_BK_RESULTS"
+			# Save the results directory in a backup path. The metrics tests will be
+			# executed each new pull request or when a Pull Request has been modified,
+			# then the results from the same Pull Request number will be identified
+			# by epoch point time as name of the direcory.
+			REPO="$(cut -d"/" -f2 <<<"$LOCALCI_REPO_SLUG")"
+			PR_BK_RESULTS="$RESULTS_BACKUP_PATH/$REPO/$LOCALCI_PR_NUMBER"
+			DEST="$PR_BK_RESULTS/$(date --iso-8601=seconds)"
+
+			if [ ! -d "$PR_BK_RESULTS" ]; then
+				mkdir -p "$PR_BK_RESULTS"
+			fi
+
+			mv "$RESULTS_DIR" "$DEST"
+		else
+			# Not a localCI CI - check the metrics using the checkmetrics
+			# tool, utilising a host-specific named config file, and let
+			# the pass/fail of checkmetrics dictate the 'outcome' of
+			# this script
+			checkmetrics --basefile /etc/checkmetrics/checkmetrics-$(uname -n).toml --metricsdir ${RESULTS_DIR}
+			cm_result=$?
+			if [ ${cm_result} != 0 ]; then
+				echo "checkmetrics FAILED (${cm_result})"
+				exit ${cm_result}
+			fi
+		fi
 	fi
-
-	mv "$RESULTS_DIR" "$DEST"
-
 
 popd
 
