@@ -88,21 +88,21 @@ func (c *Container) Run() (string, string, int) {
 	args := []string{}
 
 	if c.LogFile != nil {
-		args = append(args, "--log", *c.LogFile)
+		args = append(args, fmt.Sprintf("--log=%s", *c.LogFile))
 	}
 
 	args = append(args, "run")
 
 	if c.Bundle != nil {
-		args = append(args, "--bundle", c.Bundle.Path)
+		args = append(args, fmt.Sprintf("--bundle=%s", c.Bundle.Path))
 	}
 
 	if c.Console != nil {
-		args = append(args, "--console", *c.Console)
+		args = append(args, fmt.Sprintf("--console=%s", *c.Console))
 	}
 
 	if c.PidFile != nil {
-		args = append(args, "--pid-file", *c.PidFile)
+		args = append(args, fmt.Sprintf("--pid-file=%s", *c.PidFile))
 	}
 
 	if c.Detach {
@@ -167,17 +167,17 @@ func (c *Container) Exec(process Process) (string, string, int) {
 	args := []string{}
 
 	if c.LogFile != nil {
-		args = append(args, "--log", *c.LogFile)
+		args = append(args, fmt.Sprintf("--log=%s", *c.LogFile))
 	}
 
 	args = append(args, "exec")
 
 	if process.Console != nil {
-		args = append(args, "--console", *process.Console)
+		args = append(args, fmt.Sprintf("--console=%s", *process.Console))
 	}
 
 	if process.Tty != nil {
-		args = append(args, "--tty", *process.Tty)
+		args = append(args, fmt.Sprintf("--tty=%s", *process.Tty))
 	}
 
 	if process.Detach {
@@ -201,7 +201,7 @@ func (c *Container) List(format string, quiet bool, all bool) (string, string, i
 	args := []string{"list"}
 
 	if format != "" {
-		args = append(args, "--format", format)
+		args = append(args, fmt.Sprintf("--format=%s", format))
 	}
 
 	if quiet {

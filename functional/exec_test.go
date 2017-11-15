@@ -43,16 +43,13 @@ func execDetachTiming(detach bool) TableEntry {
 }
 
 func execDetachOutput(detach bool) TableEntry {
-	output := "HelloWorld"
+	expectedOutput := "HelloWorld"
 
+	tty := "false"
 	process := Process{
-		Workload: []string{"echo", output},
+		Workload: []string{"echo", expectedOutput},
 		Detach:   detach,
-	}
-
-	expectedOutput := output
-	if detach {
-		expectedOutput = ""
+		Tty:      &tty,
 	}
 
 	return Entry(fmt.Sprintf("check output as detach=%t", detach), process, expectedOutput)
