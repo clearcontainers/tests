@@ -8,3 +8,7 @@ This number of containers could be working under different configurations/condit
    for a number of containers launched in idle mode. This test uses the `sleep` command
    to allow any memory optimizations to 'settle' (e.g. KSM execution) for a configurable
    period of time.
+- `footprint_data.sh`: Sequentially runs a number of identical containers and takes a
+   number of memory related measurements after each launch. Generally not used in a CI
+   type environment, but more for hand run/analysis. Refer to the
+   [footprint_data.md](footprint_data.md) file for more details.
