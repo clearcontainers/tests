@@ -161,6 +161,7 @@ var _ = Describe("run", func() {
 	)
 
 	BeforeEach(func() {
+		Skip("Issue: https://github.com/clearcontainers/tests/issues/728")
 		if os.Getuid() != 0 {
 			Skip("only root user can create loop devices")
 		}
@@ -172,6 +173,7 @@ var _ = Describe("run", func() {
 	})
 
 	AfterEach(func() {
+		Skip("Issue: https://github.com/clearcontainers/tests/issues/728")
 		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 		err = deleteLoopDevice(loopFile)
 		Expect(err).ToNot(HaveOccurred())
@@ -181,8 +183,7 @@ var _ = Describe("run", func() {
 
 	Context("hot plug a block device", func() {
 		It("should be attached", func() {
-			//FIXME
-			//Skip("Issue: https://github.com/clearcontainers/runtime/issues/789")
+			Skip("Issue: https://github.com/clearcontainers/tests/issues/728")
 			_, _, exitCode := DockerRun(dockerArgs...)
 			Expect(exitCode).To(BeZero())
 		})
