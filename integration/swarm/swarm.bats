@@ -33,7 +33,7 @@ declare -a REPLICAS
 # Url to retrieve hostname
 url="http://127.0.0.1:8080/hostname"
 # Timeout in seconds to verify replicas are running
-timeout=10
+timeout=20
 # Retry number for the curl
 number_of_retries=5
 
@@ -91,16 +91,15 @@ setup() {
 }
 
 @test "check mtu values in different interfaces" {
-	skip "This is not working (https://github.com/clearcontainers/tests/issues/714)"
 	REPLICAS_UP=$($DOCKER_EXE ps -q --filter name="${SERVICE_NAME}")
 	for i in ${REPLICAS_UP[@]}; do
 		network_settings_file=$($DOCKER_EXE inspect $i | grep "SandboxKey" | cut -d ':' -f2 | cut -d '"' -f2)
 		[ -f "$network_settings_file" ]
 		ip_addresses=$(nsenter --net="$network_settings_file" ip a)
-		mtu_value_eth0=$(echo "$ip_addresses" | grep -w "eth0" | grep "mtu" | cut -d ' ' -f5)
+		mtu_value_eth0=$(echo "$ip_addresses" | grep -w "eth0" | grep "mtu" | cut -d ' ' -f5 | head -1)
 		mtu_value_tap0=$(echo "$ip_addresses" | grep -w "tap0" | grep "mtu" | cut -d ' ' -f5)
 		[ "$mtu_value_eth0" = "$mtu_value_tap0" ]
-		mtu_value_eth1=$(echo "$ip_addresses" | grep -w "eth1" | grep "mtu" | cut -d ' ' -f5)
+		mtu_value_eth1=$(echo "$ip_addresses" | grep -w "eth1" | grep "mtu" | cut -d ' ' -f5 | head -1)
 		mtu_value_tap1=$(echo "$ip_addresses" | grep -w "tap1" | grep "mtu" | cut -d ' ' -f5)
 		[ "$mtu_value_eth1" = "$mtu_value_tap1" ]
 	done
