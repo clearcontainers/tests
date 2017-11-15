@@ -1,5 +1,5 @@
 # Well known working crio tag/commit/branch
-crio_version=v1.0.2
+crio_version=v1.0.4
 
 # Runc version compatible with crio_version
 runc_version=84a082bfef6f932de921437815355186db37aeb1
@@ -19,7 +19,7 @@ qemu_lite_sha=741f430a960b5b67745670e8270db91aeb083c5f-29
 go_version="1.8.3"
 
 #Kubernetes version compatible with Clear Containers
-kubernetes_version="1.7.8-00"
+kubernetes_version="1.8.3-00"
 
 # Openshift Origin version compatible with Clear Containers
 origin_version="v3.6.0"

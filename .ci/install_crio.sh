@@ -41,6 +41,7 @@ echo "Installing CRI-O"
 sudo -E PATH=$PATH sh -c "make clean"
 sudo -E PATH=$PATH sh -c "make install.tools"
 sudo -E PATH=$PATH sh -c "make"
+sudo -E PATH=$PATH sh -c "make test-binaries"
 sudo -E PATH=$PATH sh -c "make install"
 sudo -E PATH=$PATH sh -c "make install.config"
 
