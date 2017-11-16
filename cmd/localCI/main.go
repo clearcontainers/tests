@@ -89,22 +89,38 @@ func main() {
 			Name:  "daemon",
 			Usage: "run " + name + " as a daemon monitoring the repositories specified in the configuration file",
 		},
-		cli.BoolFlag{
-			Name:  "debug",
-			Usage: "enable debug output for logging",
-		},
 		cli.StringFlag{
 			Name:  "log",
 			Value: "/dev/null",
 			Usage: "set the log file path where internal debug information is written",
+		},
+		cli.StringFlag{
+			Name: "loglevel",
+			Value: "error",
+			Usage: "log level messages: <debug|error|fatal|info|panic|warn>",
 		},
 	}
 
 	app.Before = func(context *cli.Context) error {
 		var err error
 
-		if context.GlobalBool("debug") {
-			ciLog.Level = logrus.DebugLevel
+		// Set log level messages, error by default
+		switch logl := context.GlobalString("loglevel"); logl {
+			case "debug":
+				ciLog.Level = logrus.DebugLevel
+			case "error":
+				ciLog.Level = logrus.ErrorLevel
+			case "fatal":
+				ciLog.Level = logrus.FatalLevel
+			case "info":
+				ciLog.Level = logrus.InfoLevel
+			case "panic":
+				ciLog.Level = logrus.PanicLevel
+			case "warn":
+				ciLog.Level = logrus.WarnLevel
+			default:
+				ciLog.Errorf("%s: unknown log level", logl)
+				os.Exit(1)
 		}
 
 		if path := context.GlobalString("log"); path != "" {
