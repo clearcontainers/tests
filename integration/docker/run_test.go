@@ -18,13 +18,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"regexp"
 
 	. "github.com/clearcontainers/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
+
+// some machines support until 32 loop devices
+var losetupMaxTries = 32
 
 func withWorkload(workload string, expectedExitCode int) TableEntry {
 	return Entry(fmt.Sprintf("with '%v' as workload", workload), workload, expectedExitCode)
@@ -125,24 +127,20 @@ func createLoopDevice() (string, string, error) {
 	}
 
 	// create loop device
-	partxArgs := []string{"-av", f.Name()}
-	partxCmd := NewCommand("partx", partxArgs...)
-	stdout, stderr, exitCode := partxCmd.Run()
-	if exitCode != 0 {
-		return "", "", fmt.Errorf("%s", stderr)
-	}
-	partxRegexp := regexp.MustCompile("/dev/loop[[:digit:]]+")
-	loopFile := partxRegexp.Find([]byte(stdout))
-	if len(loopFile) == 0 {
-		return "", "", fmt.Errorf("failed to create loop device")
+	for i := 0; i < losetupMaxTries; i++ {
+		loopPath := fmt.Sprintf("/dev/loop%d", i)
+		losetupCmd := NewCommand("losetup", "-P", loopPath, f.Name())
+		_, _, exitCode := losetupCmd.Run()
+		if exitCode == 0 {
+			return f.Name(), loopPath, nil
+		}
 	}
 
-	return f.Name(), string(loopFile), nil
+	return "", "", fmt.Errorf("unable to create loop device for disk %s", f.Name())
 }
 
 func deleteLoopDevice(loopFile string) error {
-	partxArgs := []string{"-d", loopFile}
-	partxCmd := NewCommand("partx", partxArgs...)
+	partxCmd := NewCommand("losetup", "-d", loopFile)
 	_, stderr, exitCode := partxCmd.Run()
 	if exitCode != 0 {
 		return fmt.Errorf("%s", stderr)
@@ -161,7 +159,6 @@ var _ = Describe("run", func() {
 	)
 
 	BeforeEach(func() {
-		Skip("Issue: https://github.com/clearcontainers/tests/issues/728")
 		if os.Getuid() != 0 {
 			Skip("only root user can create loop devices")
 		}
@@ -173,7 +170,6 @@ var _ = Describe("run", func() {
 	})
 
 	AfterEach(func() {
-		Skip("Issue: https://github.com/clearcontainers/tests/issues/728")
 		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
 		err = deleteLoopDevice(loopFile)
 		Expect(err).ToNot(HaveOccurred())
@@ -183,7 +179,6 @@ var _ = Describe("run", func() {
 
 	Context("hot plug a block device", func() {
 		It("should be attached", func() {
-			Skip("Issue: https://github.com/clearcontainers/tests/issues/728")
 			_, _, exitCode := DockerRun(dockerArgs...)
 			Expect(exitCode).To(BeZero())
 		})
