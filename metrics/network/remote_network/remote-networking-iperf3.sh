@@ -15,9 +15,9 @@
 # limitations under the License.
 #
 
-# This script will measure network bandwidth, jitter or parallel bandwidth
-# with iperf3 tool using a remote setup, where host A will run a server
-# container and host B will run a client container.
+# This script will measure network bandwidth, jitter, latency or parallel
+# bandwidth with iperf3 tool using a remote setup, where host A will run a
+# server container and host B will run a client container.
 
 set -e
 
@@ -32,8 +32,8 @@ function help {
 echo "$(cat << EOF
 Usage: $0 "[options]"
 	Description:
-		This script will measure network bandwidth, jitter and parallel
-		bandwidth with iperf3 tool using a remote setup, where host A
+		This script will measure network bandwidth, jitter, latency and
+		parallel bandwidth with iperf3 tool using a remote setup, where host A
 		will run a server container and host B will run a client container.
 		In order to run this script, these inputs are needed:
 		- Interface name where swarm will run.
@@ -43,8 +43,9 @@ Usage: $0 "[options]"
 		-h	Shows help
 		-b	Run remote bandwidth
 		-j	Run remote jitter
-		-p	Run parallel bandwidth (-P4)
-		-t	Run remote bandwidth, jitter and parallel bandwidth
+		-p	Run remote parallel bandwidth (-P4)
+		-l	Run remote latency
+		-t	Run all remote tests
 		-i	Interface name to run Swarm (mandatory)
 		-u	User of host B (mandatory)
 		-a	IP address of host B (mandatory)
@@ -107,10 +108,27 @@ function remote_network_parallel_iperf3 {
 	clean_environment
 }
 
+# This function will measure latency across containers
+function remote_network_latency {
+	#Number of packages
+	number_of_packages=10
+	setup_swarm
+	client_replica_status
+	server_replica_status
+
+	server_ip_address=$(check_server_address)
+	client_id=$($DOCKER_EXE ps -q)
+	client_command="ping -c "$number_of_packages" "$server_ip_address""
+	result=$(start_client "$client_id" "$client_command")
+	total_latency=$(echo $result | grep avg | awk '{print $(NF-1)}' | cut -d '/' -f 2)
+	echo "Network latency is : $total_latency ms"
+
+	clean_environment
+}
 
 function main {
 	local OPTIND
-	while getopts "hbjpt:i:u:a" opt
+	while getopts "hbjplt:i:u:a" opt
 	do
 		case "${opt}" in
 		h)
@@ -129,11 +147,16 @@ function main {
 			parallel_test="1"
 			remote_network_parallel_iperf3
 		;;
+		l)
+			latency_test="1"
+			remote_network_latency
+		;;
 		t)
 			total_test="1"
 			remote_network_bandwidth_iperf3
 			remote_network_jitter_iperf3
 			remote_network_parallel_iperf3
+			remote_network_latency
 		;;
 		i)
 			interface_name="${OPTARG}"
