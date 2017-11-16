@@ -15,9 +15,9 @@
 # limitations under the License.
 #
 
-# This script will measure network bandwidth or jitter with iperf3 tool using a
-# remote setup, where host A will run a server container and host B will
-# run a client container.
+# This script will measure network bandwidth, jitter or parallel bandwidth
+# with iperf3 tool using a remote setup, where host A will run a server
+# container and host B will run a client container.
 
 set -e
 
@@ -32,10 +32,10 @@ function help {
 echo "$(cat << EOF
 Usage: $0 "[options]"
 	Description:
-		This script will measure network bandwidth or jitter with iperf3
-		tool using a remote setup, where host A will run a server
-		container and host B will run a client container. In order
-		to run this script, these inputs are needed:
+		This script will measure network bandwidth, jitter and parallel
+		bandwidth with iperf3 tool using a remote setup, where host A
+		will run a server container and host B will run a client container.
+		In order to run this script, these inputs are needed:
 		- Interface name where swarm will run.
 		- User of the host B.
 		- IP address of the host B
@@ -43,7 +43,8 @@ Usage: $0 "[options]"
 		-h	Shows help
 		-b	Run remote bandwidth
 		-j	Run remote jitter
-		-t	Run remote bandwidth and jitter
+		-p	Run parallel bandwidth (-P4)
+		-t	Run remote bandwidth, jitter and parallel bandwidth
 		-i	Interface name to run Swarm (mandatory)
 		-u	User of host B (mandatory)
 		-a	IP address of host B (mandatory)
@@ -88,9 +89,28 @@ function remote_network_jitter_iperf3 {
 	clean_environment
 }
 
+# This function will measure parallel bandwidth using iperf3
+function remote_network_parallel_iperf3 {
+	setup_swarm
+	client_replica_status
+	server_replica_status
+
+	server_ip_address=$(check_server_address)
+	start_server
+
+	client_id=$($DOCKER_EXE ps -q)
+	client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c $server_ip_address -P4 -t $server_time"
+	result=$(start_client "$client_id" "$client_command")
+	total_parallel=$(echo "$result" | tail -n 4 | head -1 | awk '{print $(NF-3), $(NF-2)}')
+	echo "Parallel network is : $total_parallel"
+
+	clean_environment
+}
+
+
 function main {
 	local OPTIND
-	while getopts "hbjt:i:u:a" opt
+	while getopts "hbjpt:i:u:a" opt
 	do
 		case "${opt}" in
 		h)
@@ -99,12 +119,21 @@ function main {
 		;;
 		b)
 			bandwidth_test="1"
+			remote_network_bandwidth_iperf3
 		;;
 		j)
 			jitter_test="1"
+			remote_network_jitter_iperf3
+		;;
+		p)
+			parallel_test="1"
+			remote_network_parallel_iperf3
 		;;
 		t)
 			total_test="1"
+			remote_network_bandwidth_iperf3
+			remote_network_jitter_iperf3
+			remote_network_parallel_iperf3
 		;;
 		i)
 			interface_name="${OPTARG}"
@@ -124,15 +153,5 @@ function main {
 	[ -z "$ssh_user" ] && help && die "Mandatory user of host B not supplied"
 	[ -z "$interface_name" ] && help && die "Mandatory interface name to run Swarm not supplied"
 
-	if [ "$bandwidth_test" == "1" ]; then
-		remote_network_bandwidth_iperf3
-	elif [ "$jitter_test" == "1" ]; then
-		remote_network_jitter_iperf3
-	elif [ "$total_test" == "1" ]; then
-		remote_network_bandwidth_iperf3
-		remote_network_jitter_iperf3
-	else
-		exit 0
-	fi
 }
 main "$@"
