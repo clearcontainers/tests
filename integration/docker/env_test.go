@@ -44,4 +44,14 @@ var _ = Describe("docker env", func() {
 			Expect(stdout).To(ContainSubstring("HOSTNAME=" + hostname))
 		})
 	})
+
+	Context("set environment variables", func() {
+		It("should have the environment variables", func() {
+			id = randomDockerName()
+			envar := "ENVAR=VALUE_ENVAR"
+			stdout, _, exitCode = DockerRun("-e", envar, "--name", id, Image, "env")
+			Expect(exitCode).To(Equal(0))
+			Expect(stdout).To(ContainSubstring(envar))
+		})
+	})
 })
