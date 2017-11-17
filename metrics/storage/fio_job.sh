@@ -164,7 +164,7 @@ function main()
 	create_fio_job
 
 	# Launch container
-	output=$(docker run --runtime="$RUNTIME" \
+	output=$(docker run --rm --runtime="$RUNTIME" \
 		"$FIO_IMAGE" bash -c "$FIO_JOB")
 
 	# Parse results
