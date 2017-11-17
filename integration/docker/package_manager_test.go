@@ -15,46 +15,39 @@
 package docker
 
 import (
-	"testing"
+	"os"
 
 	. "github.com/clearcontainers/tests"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-const (
-	shouldFail    = true
-	shouldNotFail = false
-)
+var _ = Describe("package manager apt-get", func() {
+	var (
+		id         string
+		args       []string
+		proxyVar   string
+		proxyValue string
+	)
 
-func randomDockerName() string {
-	return RandID(30)
-}
-
-func runDockerCommand(expectedExitCode int, args ...string) string {
-	cmd := NewCommand(Docker, args...)
-	Expect(cmd).ToNot(BeNil())
-	stdout, _, exitCode := cmd.Run()
-	Expect(exitCode).To(Equal(expectedExitCode))
-	return stdout
-}
-
-func TestIntegration(t *testing.T) {
-	// before start we have to download the docker images
-	images := []string{
-		Image,
-		AlpineImage,
-		PostgresImage,
-		DebianImage,
-	}
-
-	for _, i := range images {
-		_, _, exitCode := DockerPull(i)
-		if exitCode != 0 {
-			t.Fatalf("failed to pull docker image: %s\n", i)
+	BeforeEach(func() {
+		id = RandID(30)
+		proxyVar = "http_proxy"
+		proxyValue = os.Getenv(proxyVar)
+		if proxyValue != "" {
+			args = append(args, "-e", proxyVar+"="+proxyValue)
 		}
-	}
+		args = append(args, "--rm", "--name", id, DebianImage, "apt-get", "update")
+	})
 
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Integration Suite")
-}
+	AfterEach(func() {
+		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
+	})
+
+	Context("check apt-get update", func() {
+		It("should not fail", func() {
+			_, _, exitCode := DockerRun(args...)
+			Expect(exitCode).To(BeZero())
+		})
+	})
+})
