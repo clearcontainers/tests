@@ -33,6 +33,9 @@ const (
 
 	// PostgresImage is the postgres image
 	PostgresImage = "postgres"
+
+	// DebianImage is the debian image
+	DebianImage = "debian"
 )
 
 func runDockerCommandWithTimeout(timeout time.Duration, command string, args ...string) (string, string, int) {
@@ -129,7 +132,7 @@ func ExitCodeDockerContainer(name string, waitForExit bool) (int, error) {
 			break
 		case err := <-errCh:
 			return -1, err
-		case <-time.After(time.Duration(Timeout)*time.Second):
+		case <-time.After(time.Duration(Timeout) * time.Second):
 			return -1, fmt.Errorf("Timeout reached after %ds", Timeout)
 		}
 	}
@@ -158,7 +161,7 @@ func WaitForRunningDockerContainer(name string, running bool) error {
 
 	select {
 	case <-ch:
-	case <-time.After(time.Duration(Timeout)*time.Second):
+	case <-time.After(time.Duration(Timeout) * time.Second):
 		return fmt.Errorf("Timeout reached after %ds", Timeout)
 	}
 
