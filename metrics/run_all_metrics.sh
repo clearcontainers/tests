@@ -56,6 +56,14 @@ EOF
 function run_latency_tests() {
 	# Run the time tests
 	bash ${SCRIPT_PATH}/time/docker_workload_time.sh true busybox $RUNTIME 100
+	# Launch time for first container - no scaling, with network
+	bash ${SCRIPT_PATH}/time/launch_times.sh -i ubuntu -n 100
+	# With scaling
+	bash ${SCRIPT_PATH}/time/launch_times.sh -i ubuntu -n 100 -s
+	# With no network, no scaling
+	bash ${SCRIPT_PATH}/time/launch_times.sh -i ubuntu -n 100 -d
+	# With scaling, no network
+	bash ${SCRIPT_PATH}/time/launch_times.sh -i ubuntu -n 100 -s -d
 }
 
 # Only run network metrics tests
