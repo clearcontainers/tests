@@ -36,7 +36,7 @@ mkdir -p ${GOPATH}
 
 # Export all environment variables needed.
 export GOROOT="/usr/local/go"
-export PATH=${GOPATH}/bin:/usr/local/go/bin:/usr/sbin:${PATH}
+export PATH=${GOPATH}/bin:/usr/local/go/bin:/usr/sbin:/sbin:${PATH}
 
 # We need to set CI in order to enable proper coverage tool operation
 export CI=true
