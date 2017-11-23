@@ -32,6 +32,14 @@ die(){
 	exit 1
 }
 
+# Sometimes we just want to warn about something - let's have a standard
+# method for that, so maybe we can make a standard form that can be searched
+# for in the logs/tooling
+warning(){
+	msg="$*"
+	echo "WARNING: $msg" >&2
+}
+
 # Save a test/metric result.
 # This is a wrapper function to the send_results.sh command, which ultimately decides
 # where and in what format to store or process the data.
