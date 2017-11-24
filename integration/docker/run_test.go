@@ -28,6 +28,9 @@ import (
 // some machines support until 32 loop devices
 var losetupMaxTries = 32
 
+// number of loop devices to hotplug
+var loopDevices = 10
+
 func withWorkload(workload string, expectedExitCode int) TableEntry {
 	return Entry(fmt.Sprintf("with '%v' as workload", workload), workload, expectedExitCode)
 }
@@ -152,7 +155,9 @@ func deleteLoopDevice(loopFile string) error {
 var _ = Describe("run", func() {
 	var (
 		err        error
+		diskFiles  []string
 		diskFile   string
+		loopFiles  []string
 		loopFile   string
 		dockerArgs []string
 		id         string
@@ -163,21 +168,36 @@ var _ = Describe("run", func() {
 			Skip("only root user can create loop devices")
 		}
 		id = RandID(30)
-		diskFile, loopFile, err = createLoopDevice()
-		Expect(err).ToNot(HaveOccurred())
-		dockerArgs = []string{"--rm", "--name", id, "--device", loopFile,
-			Image, "stat", loopFile}
+
+		for i := 0; i < loopDevices; i++ {
+			diskFile, loopFile, err = createLoopDevice()
+			Expect(err).ToNot(HaveOccurred())
+
+			diskFiles = append(diskFiles, diskFile)
+			loopFiles = append(loopFiles, loopFile)
+			dockerArgs = append(dockerArgs, "--device", loopFile)
+		}
+
+		dockerArgs = append(dockerArgs, "--rm", "--name", id, Image, "stat")
+
+		for _, lf := range loopFiles {
+			dockerArgs = append(dockerArgs, lf)
+		}
 	})
 
 	AfterEach(func() {
 		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
-		err = deleteLoopDevice(loopFile)
-		Expect(err).ToNot(HaveOccurred())
-		err = os.Remove(diskFile)
-		Expect(err).ToNot(HaveOccurred())
+		for _, lf := range loopFiles {
+			err = deleteLoopDevice(lf)
+			Expect(err).ToNot(HaveOccurred())
+		}
+		for _, df := range diskFiles {
+			err = os.Remove(df)
+			Expect(err).ToNot(HaveOccurred())
+		}
 	})
 
-	Context("hot plug a block device", func() {
+	Context("hot plug block devices", func() {
 		It("should be attached", func() {
 			_, _, exitCode := DockerRun(dockerArgs...)
 			Expect(exitCode).To(BeZero())
