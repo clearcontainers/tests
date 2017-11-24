@@ -32,6 +32,14 @@ die(){
 	exit 1
 }
 
+# Sometimes we just want to warn about something - let's have a standard
+# method for that, so maybe we can make a standard form that can be searched
+# for in the logs/tooling
+warning(){
+	msg="$*"
+	echo "WARNING: $msg" >&2
+}
+
 # Save a test/metric result.
 # This is a wrapper function to the send_results.sh command, which ultimately decides
 # where and in what format to store or process the data.
@@ -219,9 +227,9 @@ function runtime_docker(){
 function check_active_process() {
 	process=$1
 	if pgrep -f "$process" > /dev/null; then
-		return 1
+		echo "1"
 	else
-		return 0
+		echo "0"
 	fi
 }
 
@@ -231,9 +239,21 @@ function check_active_process() {
 function kill_processes_before_start() {
 	DOCKER_PROCS=$(${DOCKER_EXE} ps -q)
 	[[ -n "${DOCKER_PROCS}" ]] && "${DOCKER_EXE}" kill ${DOCKER_PROCS}
+
 	HYPERVISOR_PATH="$(get_qemu_path)"
-	check_active_process "$HYPERVISOR_PATH" || killall "$HYPERVISOR_PATH"
-	check_active_process "$CC_SHIM_PATH" || killall "$CC_SHIM_PATH"
+	result=$(check_active_process "$HYPERVISOR_PATH")
+	if [[ $result -ne 0 ]]; then
+		warning "Found unexpected ${HYPERVISOR_PATH} processes present"
+		pgrep -a -f "$HYPERVISOR_PATH"
+		sudo killall "$HYPERVISOR_PATH"
+	fi
+
+	result=$(check_active_process "$CC_SHIM_PATH")
+	if [[ $result -ne 0 ]]; then
+		warning "Found unexpected ${CC_SHIM_PATH} processes present"
+		pgrep -a -f "$CC_SHIM_PATH"
+		sudo killall "$CC_SHIM_PATH"
+	fi
 }
 
 # Generate a random name - generally used when creating containers, but can
