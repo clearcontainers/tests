@@ -20,6 +20,7 @@
 
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 source "${SCRIPT_PATH}/../../lib/common.bash"
+LIB_DIR="${SCRIPT_PATH}/../../lib"
 
 # Argument of the test to run
 argument="$1"
