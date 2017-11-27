@@ -48,7 +48,10 @@ openshift:
 swarm:
 	bats integration/swarm/swarm.bats
 
-check: functional crio integration swarm
+conformance:
+	bats conformance/posixfs/fstest.bats
+
+check: functional crio integration swarm conformance
 
 all: functional checkcommits integration
 
@@ -58,4 +61,4 @@ checkcommits:
 clean:
 	cd cmd/checkcommits && make clean
 
-.PHONY: functional check ginkgo crio metrics integration
+.PHONY: functional check ginkgo crio metrics integration conformance
