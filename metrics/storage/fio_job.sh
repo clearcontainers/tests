@@ -37,16 +37,21 @@ NUM_JOBS="1"
 OPERATION="randread"
 TEST_NAME="storage fio test"
 EXTRA_ARGS=""
+TEST_TIME="30"
 
 # This docker image includes FIO tool.
 FIO_IMAGE="clusterhq/fio-tool"
+
+# We need to know which QEMU to monitor
+QEMU_PATH=${QEMU_PATH:-$(get_qemu_path)}
 
 # The FIO tool included in clusterhq/fio-tool docker image
 # works in "/tmp" by default. "/tmp" is overridden by /home
 # mount point in order to avoid tmpfs and use the disk.
 FILE_NAME="/home/fio_test"
 
-declare FIO_JOB
+declare FIO_RUN_JOB
+declare FIO_PREP_JOB
 
 function help()
 {
@@ -72,10 +77,33 @@ EOF
 
 # Create the job configuration for FIO
 # this job will run inside of the container.
-function create_fio_job()
+# This job sets up the image - creates the test file
+function create_fio_prep_job()
 {
-	FIO_JOB="$(cat << EOF
-	#!/bin/bash
+	FIO_PREP_JOB="$(cat << EOF
+	# This fio job will run inside of
+	# the container.
+	# It only runs for 1s, its job is to create
+	# the test file
+
+	fio --ioengine="$ENGINE" \
+		--name="$FIO_TEST_NAME" \
+		--filename="$FILE_NAME" \
+		--bs="$BLOCK_SIZE" \
+		--size="$FILE_SIZE" \
+		--readwrite="$OPERATION" --max-jobs=$NUM_JOBS \
+		--runtime=1 \
+		${EXTRA_ARGS}
+EOF
+)"
+}
+
+# Create the job configuration for FIO
+# this job will run inside of the container.
+# This job runs the actual test
+function create_fio_run_job()
+{
+	FIO_RUN_JOB="$(cat << EOF
 	# This fio job will run inside of
 	# the container.
 
@@ -85,11 +113,11 @@ function create_fio_job()
 		--bs="$BLOCK_SIZE" \
 		--size="$FILE_SIZE" \
 		--readwrite="$OPERATION" --max-jobs=$NUM_JOBS \
+		--runtime="$TEST_TIME" \
 		${EXTRA_ARGS}
 EOF
 )"
 }
-
 # Parse the output of FIO tool in order to get
 # the bandwidth average cosunmed by the FIO job.
 # Also this function will convert results in KB/s
@@ -123,9 +151,9 @@ function parse_fio_results()
 
 function main()
 {
-	cmds=("bc" "awk")
+	cmds=("bc" "awk" "smem")
 	local OPTIND
-	while getopts "b:e:hs:o:n:r:t:x:" opt;do
+	while getopts "b:e:hs:o:n:r:t:T:x:" opt;do
 		case ${opt} in
 		b)
 		    BLOCK_SIZE="${OPTARG}"
@@ -152,6 +180,9 @@ function main()
 		t)
 		    TEST_NAME="${OPTARG}"
 		    ;;
+		T)
+		    TEST_TIME="${OPTARG}"
+		    ;;
 		x)
 		    EXTRA_ARGS="${OPTARG}"
 		    ;;
@@ -161,14 +192,60 @@ function main()
 
 	init_env
 	check_cmds "${cmds[@]}"
-	create_fio_job
+	create_fio_run_job
+	create_fio_prep_job
 
-	# Launch container
-	output=$(docker run --rm --runtime="$RUNTIME" \
-		"$FIO_IMAGE" bash -c "$FIO_JOB")
+	# Check the runtime in order to determine which process will
+	# be measured
+	if [ "$RUNTIME" == "runc" ]; then
+		PROCESS="fio"
+	elif [ "$RUNTIME" == "cor" ] || [ "$RUNTIME" == "cc-runtime" ]; then
+		PROCESS=${QEMU_PATH}
+	else
+		die "Unknown runtime: $RUNTIME"
+	fi
+
+	# First we set up the container
+	CONTAINER_ID=$(docker run -tid --runtime="$RUNTIME" "$FIO_IMAGE" bash)
+
+	# Now we run the prep task
+	docker exec -ti ${CONTAINER_ID} bash -c "$FIO_PREP_JOB"
+
+	# Kick off background tasks to measure the CPU, PSS and RSS
+	cpu_temp=$(mktemp fio_job_cpu.XXX)
+	pss_temp=$(mktemp fio_job_pss.XXX)
+	rss_temp=$(mktemp fio_job_rss.XXX)
+
+	# We know the test will run for 30s (unless somebody changed it...)
+	# So spread the measures out over the test run
+	# But, fio will also terminate some tests when it has 'completed the file', rather
+	# than obey the time measure it seems (like randwrite) - so on 'fast' systems the
+	# runtime can be pretty short - thus, take the measurements a short way into the
+	# test.
+	(sleep 3; ps --no-headers -o %cpu -C $(basename ${PROCESS}) > ${cpu_temp})&
+	(sleep 4; sudo smem -H -P "^${PROCESS}" -c "pss" > ${pss_temp})&
+	(sleep 5; sudo smem -H -P "^${PROCESS}" -c "rss" > ${rss_temp})&
+
+	# Finally Launch container
+	output=$(docker exec ${CONTAINER_ID} bash -c "$FIO_RUN_JOB")
+
+	# Clean up our container
+	docker stop ${CONTAINER_ID}
+	docker rm ${CONTAINER_ID}
 
 	# Parse results
 	parse_fio_results "$output"
+
+	cpu_val=$(awk '{ total += $1 } END { print total }' < ${cpu_temp})
+	save_results "$TEST_NAME"_cpu "$TEST_ARGS" "$cpu_val" "%"
+	pss_val=$(awk '{ total += $1} END { print total }' < ${pss_temp})
+	save_results "$TEST_NAME"_pss "$TEST_ARGS" "$pss_val" "KB"
+	rss_val=$(awk '{ total += $1 } END { print total }' < ${rss_temp})
+	save_results "$TEST_NAME"_rss "$TEST_ARGS" "$rss_val" "KB"
+
+	rm ${cpu_temp}
+	rm ${pss_temp}
+	rm ${rss_temp}
 }
 
 main "$@"
