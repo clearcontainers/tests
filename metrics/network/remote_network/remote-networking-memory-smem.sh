@@ -30,6 +30,8 @@ QEMU_PATH=${QEMU_PATH:-$(get_qemu_path)}
 middle_time=10
 # Time to run the server using iperf3 (seconds)
 server_time=30
+# Arguments to run the client
+extra_args="-d"
 
 # This function describes how to use this script
 function help {
@@ -42,21 +44,23 @@ Usage: $0 "[options]"
 		- Interface name where swarm will run.
 		- User of the host B.
 		- IP address of the host B
+		This is an example of how to run this script:
+		./remote-networking-memory-smem.sh [options] -i <interface_name> -u <user> -a <ip_address>
 	Options:
-		-h      Shows help
-		-r      Run RSS memory
-		-i      Interface name to run Swarm (mandatory)
-		-u      User of host B (mandatory)
-		-a      IP address of host B (mandatory)
-
+		-a	IP address of host B (mandatory)
+		-h	Shows help
+		-i	Interface name to run Swarm (mandatory)
+		-r	Run RSS memory
+		-u	User of host B (mandatory)
 EOF
 )"
 }
 
-# This function will measure the bandwidth using iperf3
+# This function will measure RSS memory with smem tool
 function remote_network_rss_memory {
 	test_name="Remote Network RSS Memory"
 	units="Kb"
+	get_runtime
 	setup_swarm
 	client_replica_status
 	server_replica_status
@@ -65,15 +69,26 @@ function remote_network_rss_memory {
 	start_server
 
 	client_id=$($DOCKER_EXE ps -q)
-	client_command="mount -t ramfs -o size=20M ramfs /tmp && \
-			iperf3 -c $server_ip_address -t $server_time"
-	start_client "$client_id" "$client_command" > /dev/null
+	if [ "$runtime_client" == "runc" ]; then
+		client_command="iperf3 -c $server_ip_address -t $server_time"
+	elif [ "$runtime_client" == "cc-runtime" ]; then
+		client_command="$mount && iperf3 -c $server_ip_address -t $server_time"
+	else
+		die "Unknown client runtime: $runtime_client."
+	fi
+	start_client "$extra_args" "$client_id" "$client_command" > /dev/null
 
 	# Time when we are taking our RSS measurement
-	echo >&2 "WARNING: Sleeping for $middle_time seconds to sample the RSS memory"
+	echo >&2 "WARNING: Sleeping for $middle_time seconds to sample the RSS memory."
 	sleep ${middle_time}
 
-	process="$QEMU_PATH"
+	if [ "$runtime_client" == "runc" ]; then
+		process="iperf"
+	elif [ "$runtime_client" == "cc-runtime" ]; then
+		process="$QEMU_PATH"
+	else
+		die "Unknown client runtime: $runtime_client."
+	fi
 	memory_command="sudo smem --no-header -c rss"
 	result=$(${memory_command} -P ^${process})
 
@@ -85,35 +100,50 @@ function remote_network_rss_memory {
 }
 
 function main {
+	[[ $# -ne 7 ]]&& help && die "Illegal number of parameters."
+
 	local OPTIND
-	while getopts "hr:i:u:a" opt
+	while getopts ":a:hri:u:" opt
 	do
-		case "${opt}" in
+		case "$opt" in
+		a)
+			ssh_address="$OPTARG"
+			;;
 		h)
 			help
 			exit 0;
-		;;
-		r)
-			rss_memory_test="1"
-			remote_network_rss_memory
-		;;
+			;;
 		i)
-			interface_name="${OPTARG}"
-		;;
+			interface_name="$OPTARG"
+			;;
+		r)
+			test_rss="1"
+			;;
 		u)
-			ssh_user="${OPTARG}"
-		;;
-		a)
-			ssh_address="${OPTARG}"
-		;;
+			ssh_user="$OPTARG"
+			;;
+		\?)
+			echo "An invalid option has been entered: -$OPTARG";
+			help
+			exit 0;
+			;;
+		:)
+			echo "Missing argument for -$OPTARG";
+			help
+			exit 0;
+			;;
 		esac
-		shift
 	done
 	shift $((OPTIND-1))
 
-	[ -z "$ssh_address" ] && help && die "Mandatory IP address of host B not supplied."
-	[ -z "$ssh_user" ] && help && die "Mandatory user of host B not supplied."
-	[ -z "$interface_name" ] && help && die "Mandatory interface name to run Swarm not supplied."
+	[[ -z "$interface_name" ]] && help && die "Missing IP Address."
+	[[ -z "$ssh_address" ]] && help && die "Missing Swarm Interface."
+	[[ -z "$ssh_user" ]] && help && die "Missing User."
 
+	if [ "$test_rss" == "1" ]; then
+		remote_network_rss_memory
+	else
+		exit 0
+	fi
 }
 main "$@"

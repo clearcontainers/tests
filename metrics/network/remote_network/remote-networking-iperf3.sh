@@ -26,6 +26,8 @@ source "${SCRIPT_PATH}/remote-networking-test-common.sh"
 
 # Time to run the server using iperf3
 server_time=30
+# Arguments to run the client
+extra_args="-ti"
 
 # This function describes how to use this script
 function help {
@@ -39,23 +41,26 @@ Usage: $0 "[options]"
 		- Interface name where swarm will run.
 		- User of the host B.
 		- IP address of the host B
+		This is an example of how to run this script:
+		./remote-networking-iperf3.sh [options] -i <interface_name> -u <user> -a <ip_address>
 	Options:
-		-h	Shows help
-		-b	Run remote bandwidth
-		-j	Run remote jitter
-		-p	Run remote parallel bandwidth (-P4)
-		-l	Run remote latency
-		-t	Run all remote tests
-		-i	Interface name to run Swarm (mandatory)
-		-u	User of host B (mandatory)
 		-a	IP address of host B (mandatory)
-
+		-b	Run remote bandwidth
+		-h	Shows help
+		-i	Interface name to run Swarm (mandatory)
+		-j	Run remote jitter
+		-l	Run remote latency
+		-p	Run remote parallel bandwidth (-P4)
+		-t	Run all remote tests
+		-u	User of host B (mandatory)
 EOF
 )"
 }
 
 # This function will measure the bandwidth using iperf3
 function remote_network_bandwidth_iperf3 {
+	test_name="Remote network bandwidth"
+	get_runtime
 	setup_swarm
 	client_replica_status
 	server_replica_status
@@ -64,16 +69,21 @@ function remote_network_bandwidth_iperf3 {
 	start_server
 
 	client_id=$($DOCKER_EXE ps -q)
-	client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c $server_ip_address -t $server_time"
-	result=$(start_client "$client_id" "$client_command")
-	total_bandwidth=$(echo "$result" | tail -n 3 | head -1 | awk '{print $(NF-2), $(NF-1)}')
-	echo "Network bandwidth is : $total_bandwidth"
+	command="iperf3 -c $server_ip_address -t $server_time"
+	check_iperf3_client_command "$command"
+	result=$(start_client "$extra_args" "$client_id" "$client_command")
+	total_bandwidth=$(echo "$result" | tail -n 3 | head -1 | awk '{print $(NF-2)}')
+	units=$(echo "$result" | tail -n 3 | head -1 | awk '{print $(NF-1)}')
+	echo "Network bandwidth is : $total_bandwidth $units"
 
+	save_results "$test_name" "Remote Bandwidth" "$total_bandwidth" "$units"
 	clean_environment
 }
 
 # This function will measure the jitter using iperf3
 function remote_network_jitter_iperf3 {
+	test_name="Remote network jitter"
+	get_runtime
 	setup_swarm
 	client_replica_status
 	server_replica_status
@@ -82,16 +92,21 @@ function remote_network_jitter_iperf3 {
 	start_server
 
 	client_id=$($DOCKER_EXE ps -q)
-	client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c $server_ip_address -u -t $server_time"
-	result=$(start_client "$client_id" "$client_command")
-	total_jitter=$(echo "$result" | tail -n 4 | head -1 | awk '{print $(NF-3), $(NF-2)}')
-	echo "Network jitter is : $total_jitter"
+	command="iperf3 -c $server_ip_address -u -t $server_time"
+	check_iperf3_client_command "$command"
+	result=$(start_client "$extra_args" "$client_id" "$client_command")
+	total_jitter=$(echo "$result" | tail -n 4 | head -1 | awk '{print $(NF-4)}')
+	units=$(echo "$result" | tail -n 4 | head -1 | awk '{print $(NF-3)}')
+	echo "Network jitter is : $total_jitter $units"
 
+	save_results "$test_name" "Remote jitter" "$total_jitter" "$units"
 	clean_environment
 }
 
 # This function will measure parallel bandwidth using iperf3
 function remote_network_parallel_iperf3 {
+	test_name="Remote network parallel bandwidth"
+	get_runtime
 	setup_swarm
 	client_replica_status
 	server_replica_status
@@ -100,18 +115,24 @@ function remote_network_parallel_iperf3 {
 	start_server
 
 	client_id=$($DOCKER_EXE ps -q)
-	client_command="mount -t ramfs -o size=20M ramfs /tmp && iperf3 -c $server_ip_address -P4 -t $server_time"
-	result=$(start_client "$client_id" "$client_command")
-	total_parallel=$(echo "$result" | tail -n 4 | head -1 | awk '{print $(NF-3), $(NF-2)}')
-	echo "Parallel network is : $total_parallel"
+	command="iperf3 -c $server_ip_address -P4 -t $server_time"
+	check_iperf3_client_command "$command"
+	result=$(start_client "$extra_args" "$client_id" "$client_command")
+	total_parallel=$(echo "$result" | tail -n 4 | head -1 | awk '{print $(NF-3)}')
+	units=$(echo "$result" | tail -n 4 | head -1 | awk '{print $(NF-2)}')
+	echo "Parallel network is : $total_parallel $units"
 
+	save_results "$test_name" "Remote parallel" "$total_parallel" "$units"
 	clean_environment
 }
 
 # This function will measure latency across containers
 function remote_network_latency {
+	test_name="Remote network latency"
+	get_runtime
 	#Number of packages
 	number_of_packages=10
+	units="ms"
 	setup_swarm
 	client_replica_status
 	server_replica_status
@@ -119,62 +140,82 @@ function remote_network_latency {
 	server_ip_address=$(check_server_address)
 	client_id=$($DOCKER_EXE ps -q)
 	client_command="ping -c "$number_of_packages" "$server_ip_address""
-	result=$(start_client "$client_id" "$client_command")
+	result=$(start_client "$extra_args" "$client_id" "$client_command")
 	total_latency=$(echo $result | grep avg | awk '{print $(NF-1)}' | cut -d '/' -f 2)
-	echo "Network latency is : $total_latency ms"
+	echo "Network latency is : $total_latency $units"
 
+	save_results "$test_name" "Remote latency" "$total_latency" "$units"
 	clean_environment
 }
 
 function main {
+	[[ $# -ne 7 ]]&& help && die "Illegal number of parameters."
+
 	local OPTIND
-	while getopts "hbjplt:i:u:a" opt
+	while getopts ":a:bhjlpti:u:" opt
 	do
-		case "${opt}" in
+		case "$opt" in
+		a)
+			ssh_address="$OPTARG"
+			;;
+		b)
+			test_bandwidth="1"
+			;;
 		h)
 			help
 			exit 0;
-		;;
-		b)
-			bandwidth_test="1"
-			remote_network_bandwidth_iperf3
-		;;
-		j)
-			jitter_test="1"
-			remote_network_jitter_iperf3
-		;;
-		p)
-			parallel_test="1"
-			remote_network_parallel_iperf3
-		;;
-		l)
-			latency_test="1"
-			remote_network_latency
-		;;
-		t)
-			total_test="1"
-			remote_network_bandwidth_iperf3
-			remote_network_jitter_iperf3
-			remote_network_parallel_iperf3
-			remote_network_latency
-		;;
+                	;;
 		i)
-			interface_name="${OPTARG}"
-		;;
+			interface_name="$OPTARG"
+			;;
+		j)
+			test_jitter="1"
+			;;
+		l)
+			test_latency="1"
+			;;
+		p)
+			test_parallel="1"
+			;;
+		t)
+			test_total="1"
+			;;
 		u)
-			ssh_user="${OPTARG}"
-		;;
-		a)
-			ssh_address="${OPTARG}"
-                ;;
+			ssh_user="$OPTARG"
+			;;
+		\?)
+			echo "An invalid option has been entered: -$OPTARG";
+			help
+			exit 0;
+			;;
+		:)
+			echo "Missing argument for -$OPTARG";
+			help
+			exit 0;
+			;;
 		esac
-		shift
 	done
 	shift $((OPTIND-1))
 
-	[ -z "$ssh_address" ] && help && die "Mandatory IP address of host B not supplied"
-	[ -z "$ssh_user" ] && help && die "Mandatory user of host B not supplied"
-	[ -z "$interface_name" ] && help && die "Mandatory interface name to run Swarm not supplied"
+	[[ -z "$interface_name" ]] && help && die "Missing IP Address."
+	[[ -z "$ssh_address" ]] && help && die "Missing Swarm Interface."
+	[[ -z "$ssh_user" ]] && help && die "Missing User."
 
+	if [ "$test_bandwidth" == "1" ]; then
+		remote_network_bandwidth_iperf3
+	elif [ "$test_jitter" == "1" ]; then
+		remote_network_jitter_iperf3
+	elif [ "$test_parallel" == "1" ]; then
+		remote_network_parallel_iperf3
+	elif [ "$test_latency" == "1" ]; then
+		remote_network_latency
+	elif [ "$test_total" == "1" ]; then
+		remote_network_bandwidth_iperf3
+		remote_network_jitter_iperf3
+		remote_network_parallel_iperf3
+		remote_network_latency
+	else
+		exit 0
+	fi
 }
 main "$@"
