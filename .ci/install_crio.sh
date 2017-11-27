@@ -38,10 +38,10 @@ sudo install "${GOPATH}/bin/crictl" /usr/bin
 popd
 
 echo "Installing CRI-O"
-sudo -E PATH=$PATH sh -c "make clean"
-sudo -E PATH=$PATH sh -c "make install.tools"
-sudo -E PATH=$PATH sh -c "make"
-sudo -E PATH=$PATH sh -c "make test-binaries"
+make clean
+make install.tools
+make
+make test-binaries
 sudo -E PATH=$PATH sh -c "make install"
 sudo -E PATH=$PATH sh -c "make install.config"
 
