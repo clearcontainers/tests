@@ -3,6 +3,20 @@
 This section contains a collection of scripts designed to measure the performance
 and responsiveness of the different components which form Clear Containers.
 
+> **WARNING**
+>
+> Running the metrics tests might modify your existing setup or containers.
+>
+> During initialization, the metrics tests code tries to bring the system into a
+> known stable state before the tests are executed. This action involves removing
+> and killing off any running containers, any parts of the Clear Containers
+> runtime system that might have been left running from any previous executions,
+> and resetting some sub-parts of the container subystems (e.g. docker) through
+> `systemctl` et. al.
+>
+> We recommended you do not run the metrics tests on a "live" system
+> that has active containers you do not want to kill.
+
 ## Metrics tests - content
 
 The tests are organized in the following sections:
