@@ -17,6 +17,9 @@
 
 set -e
 
+_runtime_repo="github.com/clearcontainers/runtime"
+_versions_file="$GOPATH/src/${_runtime_repo}/versions.txt"
+
 function clone_and_build() {
 	github_project="$1"
 	make_target="$2"
@@ -46,4 +49,10 @@ function clone_build_and_install() {
 	echo "Install repository ${1}"
 	sudo -E PATH=$PATH CC_SYSTEM_BUILD="$CC_SYSTEM_BUILD" make -e install
 	popd
+}
+
+function get_cc_versions(){
+	go get -d -u -v "$_runtime_repo" || true
+	[ ! -f "$_versions_file" ] && { echo >&2 "ERROR: cannot find $_versions_file"; exit 1; }
+	source "$_versions_file"
 }

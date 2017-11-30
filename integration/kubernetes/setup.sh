@@ -16,8 +16,10 @@
 
 set -e
 
-SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
-source "${SCRIPT_PATH}/../../test-versions.txt"
+script_path=$(dirname "$(readlink -f "$0")")
+cidir="${script_path}/../../.ci"
+source "${cidir}/lib.sh"
+get_cc_versions
 
 echo "Install Kubernetes"
 sudo bash -c "cat <<EOF > /etc/apt/sources.list.d/kubernetes.list
@@ -29,7 +31,7 @@ sudo -E apt install -y docker.io kubelet="$kubernetes_version" kubeadm="$kuberne
 sudo -E apt-mark hold kubelet kubeadm kubectl
 
 echo "Install Clear Containers, including dependencies"
-pushd "${SCRIPT_PATH}/../../.ci"
+pushd "${cidir}"
 ./setup.sh
 popd
 

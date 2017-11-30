@@ -22,23 +22,27 @@ if [ "$#" -ne 3 ]; then
     exit 1
 fi
 
-clear_release="$1"
-kernel_version="$2"
+clear_kernel_release="$1"
+clear_container_kernel="$2"
+# Get the kernel version number only
+# E.g v4.9.60-80.container -> 4.9.60-80
+clear_container_kernel="${clear_container_kernel/v}"
+clear_container_kernel="${clear_container_kernel/.c*}"
 install_path="$3"
 clear_install_path="/usr/share/clear-containers"
-vmlinux_kernel=vmlinux-${kernel_version}.container
-vmlinuz_kernel=vmlinuz-${kernel_version}.container
+vmlinux_kernel=vmlinux-${clear_container_kernel}.container
+vmlinuz_kernel=vmlinuz-${clear_container_kernel}.container
 cc_vmlinux_kernel_link_name="vmlinux.container"
 cc_vmlinuz_kernel_link_name="vmlinuz.container"
 
-echo -e "Install clear containers kernel ${kernel_version}"
+echo -e "Install clear containers kernel ${clear_container_kernel}"
 
-if [ "${clear_release}" == "demos" ]; then
-	curl -LO "https://download.clearlinux.org/demos/clear-containers/linux-container-${kernel_version}.x86_64.rpm"
+if [ "${clear_kernel_release}" == "demos" ]; then
+	curl -LO "https://download.clearlinux.org/demos/clear-containers/linux-container-${clear_container_kernel}.x86_64.rpm"
 else
-	curl -LO "https://download.clearlinux.org/releases/${clear_release}/clear/x86_64/os/Packages/linux-container-${kernel_version}.x86_64.rpm"
+	curl -LO "https://download.clearlinux.org/releases/${clear_kernel_release}/clear/x86_64/os/Packages/linux-container-${clear_container_kernel}.x86_64.rpm"
 fi
-rpm2cpio linux-container-${kernel_version}.x86_64.rpm | cpio -ivdm
+rpm2cpio linux-container-${clear_container_kernel}.x86_64.rpm | cpio -ivdm
 sudo install -D --owner root --group root --mode 0700 .${clear_install_path}/${vmlinux_kernel} ${install_path}/${vmlinux_kernel}
 sudo install -D --owner root --group root --mode 0700 .${clear_install_path}/${vmlinuz_kernel} ${install_path}/${vmlinuz_kernel}
 
@@ -49,7 +53,7 @@ echo -e "Create symbolic link ${install_path}/${cc_vmlinuz_kernel_link_name}"
 sudo ln -fs ${install_path}/${vmlinuz_kernel} ${install_path}/${cc_vmlinuz_kernel_link_name}
 
 # cleanup
-rm -f linux-container-${kernel_version}.x86_64.rpm
+rm -f linux-container-${clear_container_kernel}.x86_64.rpm
 # be careful here, we don't want to rm something silly, note the leading .
 rm -r .${clear_install_path}
 rmdir ./usr/share

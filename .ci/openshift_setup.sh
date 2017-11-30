@@ -16,9 +16,10 @@
 
 set -e
 
-SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
+cidir=$(dirname "$0")
 source /etc/os-release
-source "$SCRIPT_PATH/../test-versions.txt"
+source "${cidir}/lib.sh"
+get_cc_versions
 
 if [ "$ID" != fedora ]; then
 	echo "Currently this script only works for Fedora. Skipped Openshift Setup"
@@ -46,9 +47,9 @@ popd
 
 echo "Install Openshift Origin"
 openshift_repo="github.com/openshift/origin"
-openshift_tarball="openshift-origin-server-${origin_version}-${origin_commit}-linux-64bit.tar.gz"
+openshift_tarball="openshift-origin-server-${openshift_origin_version}-${openshift_origin_commit}-linux-64bit.tar.gz"
 openshift_dir="${openshift_tarball/.tar.gz/}"
-openshift_url="https://${openshift_repo}/releases/download/${origin_version}/${openshift_tarball}"
+openshift_url="https://${openshift_repo}/releases/download/${openshift_origin_version}/${openshift_tarball}"
 
 curl -L -O "$openshift_url"
 tar -xf "$openshift_tarball"
