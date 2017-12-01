@@ -24,6 +24,9 @@ set -e
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 source "${SCRIPT_PATH}/remote-networking-test-common.sh"
 
+# Extra args for the client
+extra_args="-ti"
+
 # This function describes how to use this script
 function help {
 echo "$(cat << EOF
@@ -36,21 +39,23 @@ Usage: $0 "[options]"
 		- Interface name where swarm will run.
 		- User of the host B.
 		- IP address of the host B
+		This is an example of how to run this script:
+		./remote-networking-qperf.sh [options] -i <interface_name> -u <user> -a <ip_address>
 	Options:
-		-h	Shows help
-		-t	Run TCP latency
-		-d	Run UDP latency
-		-l	Run all latency tests
-		-i	Interface name to run Swarm (mandatory)
-		-u	User of host B (mandatory)
 		-a	IP address of host B (mandatory)
-
+		-d	Run UDP latency
+		-h	Shows help
+		-i	Interface name to run Swarm (mandatory)
+		-l	Run all latency tests
+		-t	Run TCP latency
+		-u	User of host B (mandatory)
 EOF
 )"
 }
 
 # This function will start an qperf server
 function start_qperf_server {
+	get_runtime
 	ssh "$ssh_user"@"$ssh_address" 'DOCKER_EXE=docker; \
 			server_id=$($DOCKER_EXE ps -q); \
 			server_command="qperf"; \
@@ -59,6 +64,8 @@ function start_qperf_server {
 
 # This function will measure the TCP latency using qperf
 function remote_TCP_latency_qperf {
+	test_name="TCP latency qperf"
+	get_runtime
 	setup_swarm
 	client_replica_status
 	server_replica_status
@@ -68,15 +75,19 @@ function remote_TCP_latency_qperf {
 
 	client_id=$($DOCKER_EXE ps -q)
 	client_command="qperf $server_ip_address tcp_lat conf"
-	result=$(start_client "$client_id" "$client_command")
-	total_latency=$(echo "$result" | grep latency | cut -f2 -d '=')
-	echo "TCP Latency is : $total_latency"
+	result=$(start_client "$extra_args" "$client_id" "$client_command")
+	total_latency=$(echo "$result" | grep latency | cut -f2 -d '=' | awk '{print $1}')
+	units=$(echo "$result" | grep latency | cut -f2 -d '=' | awk '{print $2}' | tr -d '\r')
+	echo "TCP Latency is : $total_latency $units"
 
+	save_results "$test_name" "TCP latency" "$total_latency" "$units"
 	clean_environment
 }
 
 # This function will measure the UDP latency using qperf
 function remote_UDP_latency_qperf {
+	test_name="UDP latency qperf"
+	get_runtime
 	setup_swarm
 	client_replica_status
 	server_replica_status
@@ -86,53 +97,72 @@ function remote_UDP_latency_qperf {
 
 	client_id=$($DOCKER_EXE ps -q)
 	client_command="qperf $server_ip_address udp_lat quit"
-	result=$(start_client "$client_id" "$client_command")
-	total_latency=$(echo "$result" | grep latency | cut -f2 -d '=')
-	echo "UDP Latency is : $total_latency"
+	result=$(start_client "$extra_args" "$client_id" "$client_command")
+	total_latency=$(echo "$result" | grep latency | cut -f2 -d '=' | awk '{print $1}')
+	units=$(echo "$result" | grep latency | cut -f2 -d '=' | awk '{print $2}' | tr -d '\r')
+	echo "UDP Latency is : $total_latency $units"
 
+	save_results "$test_name" "UDP latency" "$total_latency" "$units"
 	clean_environment
 }
 
 
 function main {
+	[[ $# -ne 7 ]]&& help && die "Illegal number of parameters."
+
 	local OPTIND
-	while getopts "htdl:i:u:a" opt
+	while getopts ":a:dhlti:u:" opt
 	do
-		case "${opt}" in
+		case "$opt" in
+		a)
+			ssh_address="$OPTARG"
+			;;
+		d)
+			test_udp="1"
+			;;
 		h)
 			help
 			exit 0;
-		;;
-		t)
-			tcp_latency_test="1"
-			remote_TCP_latency_qperf
-		;;
-		d)
-			udp_latency_test="1"
-			remote_UDP_latency_qperf
-		;;
-		l)
-			all_latency_tests="1"
-			remote_TCP_latency_qperf
-			remote_UDP_latency_qperf
-		;;
+			;;
 		i)
-			interface_name="${OPTARG}"
-		;;
+			interface_name="$OPTARG"
+			;;
+		l)
+			test_total="1"
+			;;
+		t)
+			test_tcp="1"
+			;;
 		u)
-			ssh_user="${OPTARG}"
-		;;
-		a)
-			ssh_address="${OPTARG}"
-		;;
+			ssh_user="$OPTARG"
+			;;
+		\?)
+			echo "An invalid option has been entered: -$OPTARG";
+			help
+			exit 0;
+			;;
+		:)
+			echo "Missing argument for -$OPTARG";
+			help
+			exit 0;
+			;;
 		esac
-		shift
 	done
 	shift $((OPTIND-1))
 
-	[ -z "$ssh_address" ] && help && die "Mandatory IP address of host B not supplied"
-	[ -z "$ssh_user" ] && help && die "Mandatory user of host B not supplied"
-	[ -z "$interface_name" ] && help && die "Mandatory interface name to run Swarm not supplied"
+	[[ -z "$interface_name" ]] && help && die "Missing IP Address."
+	[[ -z "$ssh_address" ]] && help && die "Missing Swarm Interface."
+	[[ -z "$ssh_user" ]] && help && die "Missing User."
 
+	if [ "$test_tcp" == "1" ]; then
+		remote_TCP_latency_qperf
+	elif [ "$test_udp" == "1" ]; then
+		remote_UDP_latency_qperf
+	elif [ "$test_total" == "1" ]; then
+		remote_TCP_latency_qperf
+		remote_UDP_latency_qperf
+	else
+		exit 0
+	fi
 }
 main "$@"
