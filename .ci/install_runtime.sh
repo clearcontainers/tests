@@ -35,6 +35,9 @@ export SYSCONFDIR=/etc
 # Artifacts (kernel + image) live below here
 export SHAREDIR=/usr/share
 
+# Tell the runtime to look for qemu-cc
+export QEMUCMD=qemu-cc-system-x86_64
+
 runtime_config_path="${SYSCONFDIR}/clear-containers/configuration.toml"
 
 PKGDEFAULTSDIR="${SHAREDIR}/defaults/clear-containers"

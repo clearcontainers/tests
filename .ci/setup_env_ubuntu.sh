@@ -36,8 +36,11 @@ sudo -E apt install -y moreutils
 echo "Install clear containers dependencies"
 chronic sudo -E apt install -y libtool automake autotools-dev autoconf bc alien libpixman-1-dev
 
-echo "Install qemu-lite binary"
-"${cidir}/install_qemu_lite.sh" "${qemu_clear_release}" "${qemu_lite_sha}" "$ID"
+echo "Install qemu-cc binary"
+sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/clearcontainers:/clear-containers-3-staging/xUbuntu_$(lsb_release -rs)/ /' >> /etc/apt/sources.list.d/clear-containers.list"
+wget -qO - http://download.opensuse.org/repositories/home:/clearcontainers:/clear-containers-3-staging/xUbuntu_$(lsb_release -rs)/Release.key | sudo apt-key add -
+sudo -E apt-get update
+sudo -E apt-get -y install qemu-cc
 
 echo "Install clear-containers image"
 "${cidir}/install_clear_image.sh" "$image_version" "${cc_kernel_path}"
