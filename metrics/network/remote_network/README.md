@@ -7,12 +7,15 @@ container that will act as a client. The network bandwidth will be measured acro
 - The `remote-networking-memory-smem.sh` script measures RSS memory with `smem` tool. Simultaneously,
 the script uses a remote setup to run a bandwidth network test.
 
+- The `remote-networking-cpu.sh` script measures the percentage of CPU consumption used while running
+the maximum network bandwidth with `iperf3`.
+
 ## Prerequisite
 
 An automatic login from host A (user A) to host B (user B) is needed. You must setup authentication 
 keys to do an ssh login without password.
-The `remote-networking-iperf3.sh` and `remote-networking-memory-smem.sh` scripts are only compatible with
-`docker 1.12.1`.
+The `remote-networking-iperf3.sh`, `remote-networking-memory-smem.sh`, and `remote-networking-cpu.sh`
+scripts are only compatible with `docker 1.12.1`.
 
 ## Running the `remote-networking-iperf3.sh` test
 
@@ -52,5 +55,19 @@ Use the following commands to run the `remote-networking-memory-smem.sh` test ma
 ```
 $ cd metrics/network/remote_network
 $ bash remote-networking-memory-smem.sh "[options]" -i "<interface_name>" -u "<user>" -a "<ip_address>"
+
+```
+## Running the `remote-networking-cpu.sh` test
+
+Run the `remote-networking-cpu.sh` script in host A. The script needs the following inputs to run:
+- Use `-i` to specify the name of the interface where the Swarm will run.
+- Use `-u` to specify the username of host B.
+- Use `-a` to specify the IP address of host B.
+
+Use the following commands to run the `remote-networking-cpu.sh` test manually:
+
+```
+$ cd metrics/network/remote_network
+$ bash remote-networking-cpu.sh -i "<interface_name>" -u "<user>" -a "<ip_address>"
 
 ```
