@@ -17,8 +17,8 @@
 set -e
 
 cidir=$(dirname "$0")
-
-source "${cidir}/../test-versions.txt"
+source "${cidir}/lib.sh"
+get_cc_versions
 
 echo "Get CRI-O sources"
 crio_repo="github.com/kubernetes-incubator/cri-o"

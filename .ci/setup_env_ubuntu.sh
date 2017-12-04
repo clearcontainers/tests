@@ -17,8 +17,10 @@
 set -e
 
 cidir=$(dirname "$0")
-source "$cidir/../test-versions.txt"
 source "/etc/os-release"
+source "${cidir}/lib.sh"
+get_cc_versions
+
 cc_kernel_path="/usr/share/clear-containers"
 
 if grep -q "N" /sys/module/kvm_intel/parameters/nested; then
@@ -37,10 +39,10 @@ echo "Install clear containers dependencies"
 chronic sudo -E apt install -y libtool automake autotools-dev autoconf bc alien libpixman-1-dev
 
 echo "Install qemu-lite binary"
-"${cidir}/install_qemu_lite.sh" "${qemu_clear_release}" "${qemu_lite_sha}" "$ID"
+"${cidir}/install_qemu_lite.sh" "${qemu_lite_clear_release}" "${qemu_lite_sha}" "$ID"
 
 echo "Install clear-containers image"
-"${cidir}/install_clear_image.sh" "$image_version" "${cc_kernel_path}"
+"${cidir}/install_clear_image.sh" "$clear_vm_image_version" "${cc_kernel_path}"
 
 echo "Install CRI-O dependencies for all Ubuntu versions"
 chronic sudo -E apt install -y libglib2.0-dev libseccomp-dev libapparmor-dev libgpgme11-dev
@@ -56,7 +58,7 @@ echo "Install Build Tools"
 sudo -E apt install -y build-essential python pkg-config zlib1g-dev
 
 echo "Install Clear Containers Kernel"
-"${cidir}/install_clear_kernel.sh" "${kernel_clear_release}" "${kernel_version}" "${cc_kernel_path}"
+"${cidir}/install_clear_kernel.sh" "${clear_kernel_release}" "${clear_container_kernel}" "${cc_kernel_path}"
 
 echo -e "Install CRI-O dependencies available for Ubuntu $VERSION_ID"
 sudo -E apt install -y libdevmapper-dev btrfs-tools util-linux
