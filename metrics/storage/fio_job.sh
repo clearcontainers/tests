@@ -206,10 +206,10 @@ function main()
 	fi
 
 	# First we set up the container
-	CONTAINER_ID=$(docker run -tid --runtime="$RUNTIME" "$FIO_IMAGE" bash)
+	CONTAINER_ID=$(docker run -tid --runtime="$RUNTIME" "$FIO_IMAGE" tail -f /dev/null)
 
 	# Now we run the prep task
-	docker exec -ti ${CONTAINER_ID} bash -c "$FIO_PREP_JOB"
+	docker exec ${CONTAINER_ID} bash -c "$FIO_PREP_JOB"
 
 	# Kick off background tasks to measure the CPU, PSS and RSS
 	cpu_temp=$(mktemp fio_job_cpu.XXX)
