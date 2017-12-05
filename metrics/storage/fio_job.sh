@@ -192,6 +192,7 @@ function main()
 
 	init_env
 	check_cmds "${cmds[@]}"
+	check_images "$FIO_IMAGE"
 	create_fio_run_job
 	create_fio_prep_job
 
