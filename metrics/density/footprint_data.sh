@@ -109,6 +109,7 @@ function dump_caches() {
 
 function init() {
 	check_cmds $REQUIRED_COMMANDS
+	check_images "$PAYLOAD"
 	# Use the common init func to get to a known state
 	init_env
 
