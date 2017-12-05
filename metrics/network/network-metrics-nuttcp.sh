@@ -45,7 +45,7 @@ function udp_bandwidth() {
 	# Initialize/clean environment
 	init_env
 
-	local server_command="sh"
+	local server_command="tail -f /dev/null"
 	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
 
 	local client_command="/root/nuttcp -T${transmit_timeout} -u -Ru -i1 -l${bl} ${server_address}"
