@@ -35,13 +35,6 @@ TEST_NAME="docker run time"
 TEST_ARGS="image=${IMAGE} command=${CMD} runtime=${RUNTIME} units=seconds"
 TEST_RESULT_FILE=$(echo "${RESULT_DIR}/${TEST_NAME}-${IMAGE}-${CMD}-${RUNTIME}" | sed 's| |-|g')
 
-# Ensure we have yanked down the necessary images before we begin - we do not
-# want to be adding that overhead into any of our measurement times
-function prewarm(){
-	echo Pre-warming by pulling $IMAGE
-	docker pull $IMAGE
-}
-
 function run_workload(){
 	# temporarily unset 'e' as we want to carry on to report if this fails.
 	# but set it in the subshell, as we'd like the docker command to fail and bail , rather than
@@ -69,7 +62,7 @@ function run_workload(){
 }
 
 init_env
-prewarm
+check_images "$IMAGE"
 for i in $(seq 1 "$TIMES"); do
 	run_workload
 done
