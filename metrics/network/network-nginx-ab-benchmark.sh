@@ -46,6 +46,7 @@ function nginx_ab_networking() {
 
 	# Initialize/clean environment
 	init_env
+	check_images "$image"
 
 	# Verify apache benchmark
 	cmds=("ab")

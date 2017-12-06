@@ -42,6 +42,7 @@ function bidirectional_bandwidth_server_client() {
 
 	# Initialize/clean environment
 	init_env
+	check_images "$image"
 
 	server_command="iperf -p ${port} -s"
 	local server_address=$(start_server "$image" "$server_command")

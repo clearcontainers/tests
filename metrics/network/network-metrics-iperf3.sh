@@ -297,6 +297,8 @@ echo "Currently this script is using ramfs for tmp (see https://github.com/01org
 
 init_env
 
+check_images "$image"
+
 iperf3_bandwidth
 
 iperf3_jitter
