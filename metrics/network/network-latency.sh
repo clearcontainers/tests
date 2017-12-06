@@ -40,7 +40,7 @@ function latency() {
 	# Initialize/clean environment
 	init_env
 
-	local server_command="sh"
+	local server_command="tail -f /dev/null"
 	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
 
 	# Verify server IP address
