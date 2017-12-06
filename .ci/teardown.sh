@@ -40,7 +40,7 @@ crio_log_prefix="crio_"
 if [ ${log_copy_dest} ]; then
 	# Create the log files
 	journalctl --no-pager -t cc-runtime > "${runtime_log_path}"
-	journalctl --no-pager -u cc-proxy > "${proxy_log_path}"
+	journalctl --no-pager -t cc-proxy > "${proxy_log_path}"
 	journalctl --no-pager -t cc-shim > "${shim_log_path}"
 	journalctl --no-pager -u crio > "${crio_log_path}"
 
