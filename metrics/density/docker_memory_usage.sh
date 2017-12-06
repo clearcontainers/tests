@@ -198,5 +198,6 @@ check_for_ksm
 init_env
 
 check_cmds "${SMEM_BIN}" bc
+check_images "$IMAGE"
 
 get_docker_memory_usage

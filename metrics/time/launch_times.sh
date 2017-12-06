@@ -62,13 +62,6 @@ ns_to_s() {
 	echo $(bc <<< "scale=3; $1 / 1000000000")
 }
 
-# Ensure we have yanked down the necessary images before we begin - we do not
-# want to be adding that overhead into any of our measurement times
-prewarm() {
-	echo "Pre-warming by pulling $IMAGE"
-	docker pull $IMAGE
-}
-
 run_workload() {
 	start_time=$($DATECMD)
 
@@ -154,7 +147,7 @@ init () {
 
 	# Start from a fairly clean environment
 	init_env
-	prewarm
+	check_images "$IMAGE"
 }
 
 help() {

@@ -73,6 +73,29 @@ function check_cmds()
 	done
 }
 
+# This function performs a docker pull on the image names
+# passed in (notionally as 'about to be used'), to ensure
+#  - that we have the most upto date images
+#  - that any pull/refresh time (for a first pull) does not
+#    happen during the test itself.
+#
+# The image list can be received standalone or as an array, e.g.
+#
+# images=(“img1” “img2”)
+# check_imgs "${images[@]}"
+function check_images()
+{
+	local img req_images=( "$@" )
+	for img in "${req_images[@]}"; do
+		echo "docker pull'ing: $img"
+		if ! docker pull "$img"; then
+			die "Failed to docker pull image $img"
+			exit 1;
+		fi
+		echo "docker pull'd: $img"
+	done
+}
+
 # A one time (per uber test cycle) init that tries to get the
 # system to a 'known state' as much as possible
 function onetime_init()

@@ -44,6 +44,7 @@ function udp_bandwidth() {
 
 	# Initialize/clean environment
 	init_env
+	check_images "$image"
 
 	local server_command="tail -f /dev/null"
 	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
