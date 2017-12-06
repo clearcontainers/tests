@@ -85,6 +85,9 @@ pushd "$CURRENTDIR/../metrics"
 	# ping latency
 	bash network/network-latency.sh
 
+	# qperf latency
+	bash network/network-latency-qperf.sh
+
 	# Bandwidth and jitter
 	bash network/network-metrics-iperf3.sh
 

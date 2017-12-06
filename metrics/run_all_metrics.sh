@@ -70,6 +70,7 @@ function run_latency_tests() {
 function run_network_tests() {
 	# Run the network metrics
 	bash ${SCRIPT_PATH}/network/network-latency.sh
+	bash ${SCRIPT_PATH}/network/network-latency-qperf.sh
 	bash ${SCRIPT_PATH}/network/network-metrics-cpu-consumption.sh
 	bash ${SCRIPT_PATH}/network/network-metrics-iperf3.sh
 	bash ${SCRIPT_PATH}/network/network-metrics-memory-pss-1g.sh
