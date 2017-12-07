@@ -59,6 +59,16 @@ function get_runtime {
 	fi
 }
 
+# This function checks the environment in host B
+function init_env_remote {
+	ssh "$ssh_user"@"$ssh_address" 'DOCKER_EXE=docker; \
+			containers_running=$($DOCKER_EXE ps -q); \
+			if [ ! -z "$containers_running" ]; \
+			then sudo $DOCKER_EXE stop $containers_running; \
+			sudo $DOCKER_EXE rm -f $(docker ps -qa); \
+			fi'
+}
+
 # This function will start swarm as well as it will label
 # the nodes and create the replicas
 function setup_swarm {
