@@ -61,6 +61,8 @@ EOF
 function remote_network_bandwidth_iperf3 {
 	test_name="Remote network bandwidth"
 	get_runtime
+	init_env
+	init_env_remote
 	setup_swarm
 	client_replica_status
 	server_replica_status
@@ -84,6 +86,8 @@ function remote_network_bandwidth_iperf3 {
 function remote_network_jitter_iperf3 {
 	test_name="Remote network jitter"
 	get_runtime
+	init_env
+	init_env_remote
 	setup_swarm
 	client_replica_status
 	server_replica_status
@@ -107,6 +111,8 @@ function remote_network_jitter_iperf3 {
 function remote_network_parallel_iperf3 {
 	test_name="Remote network parallel bandwidth"
 	get_runtime
+	init_env
+	init_env_remote
 	setup_swarm
 	client_replica_status
 	server_replica_status
@@ -133,6 +139,8 @@ function remote_network_latency {
 	#Number of packages
 	number_of_packages=10
 	units="ms"
+	init_env
+	init_env_remote
 	setup_swarm
 	client_replica_status
 	server_replica_status
@@ -149,8 +157,6 @@ function remote_network_latency {
 }
 
 function main {
-	[[ $# -ne 7 ]]&& help && die "Illegal number of parameters."
-
 	local OPTIND
 	while getopts ":a:bhjlpti:u:" opt
 	do
@@ -186,19 +192,19 @@ function main {
 		\?)
 			echo "An invalid option has been entered: -$OPTARG";
 			help
-			exit 0;
+			exit 1;
 			;;
 		:)
 			echo "Missing argument for -$OPTARG";
 			help
-			exit 0;
+			exit 1;
 			;;
 		esac
 	done
 	shift $((OPTIND-1))
 
-	[[ -z "$interface_name" ]] && help && die "Missing IP Address."
-	[[ -z "$ssh_address" ]] && help && die "Missing Swarm Interface."
+	[[ -z "$interface_name" ]] && help && die "Missing Swarm Interface."
+	[[ -z "$ssh_address" ]] && help && die "Missing IP Address."
 	[[ -z "$ssh_user" ]] && help && die "Missing User."
 
 	if [ "$test_bandwidth" == "1" ]; then
