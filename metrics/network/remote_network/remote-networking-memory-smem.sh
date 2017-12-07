@@ -61,6 +61,8 @@ function remote_network_rss_memory {
 	test_name="Remote Network RSS Memory"
 	units="Kb"
 	get_runtime
+	init_env
+	init_env_remote
 	setup_swarm
 	client_replica_status
 	server_replica_status
@@ -100,8 +102,6 @@ function remote_network_rss_memory {
 }
 
 function main {
-	[[ $# -ne 7 ]]&& help && die "Illegal number of parameters."
-
 	local OPTIND
 	while getopts ":a:hri:u:" opt
 	do
@@ -125,19 +125,19 @@ function main {
 		\?)
 			echo "An invalid option has been entered: -$OPTARG";
 			help
-			exit 0;
+			exit 1;
 			;;
 		:)
 			echo "Missing argument for -$OPTARG";
 			help
-			exit 0;
+			exit 1;
 			;;
 		esac
 	done
 	shift $((OPTIND-1))
 
-	[[ -z "$interface_name" ]] && help && die "Missing IP Address."
-	[[ -z "$ssh_address" ]] && help && die "Missing Swarm Interface."
+	[[ -z "$interface_name" ]] && help && die "Missing Swarm Interface."
+	[[ -z "$ssh_address" ]] && help && die "Missing IP Address."
 	[[ -z "$ssh_user" ]] && help && die "Missing User."
 
 	if [ "$test_rss" == "1" ]; then
