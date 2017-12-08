@@ -74,6 +74,7 @@ function init_env_remote {
 function setup_swarm {
 	init_env
 	init_env_remote
+	check_images "$network_image"
 	token=$($DOCKER_EXE swarm init --advertise-addr "$interface_name")
 	token_name=$(echo "$token" | grep "token" | head -1 | cut -d '\' -f1)
 	ip_name=$(echo "$token" | grep ":" | tail -1)
