@@ -59,8 +59,11 @@ client_extra_args="$extra_capability --rm"
 server_extra_args="$extra_capability"
 
 # Iperf server configuration
-mount_ramfs="mount -t ramfs -o size=20M ramfs /tmp"
-server_command="$mount_ramfs && iperf3 -s"
+# Set the TMPDIR to an existing tmpfs mount to avoid a 9p unlink error
+# Note, this requires an upto date iperf3 >= v3.2 or thereabouts, which
+# the gabyct/network image now has.
+init_cmds="export TMPDIR=/dev/shm"
+server_command="$init_cmds && iperf3 -s"
 
 
 # Test single direction TCP bandwith
@@ -74,7 +77,7 @@ function iperf3_bandwidth() {
 		die "server: ip address no found"
 	fi
 
-	local client_command="$mount_ramfs && iperf3 -c ${server_address} -t ${transmit_timeout}"
+	local client_command="$init_cmds && iperf3 -c ${server_address} -t ${transmit_timeout}"
 	result=$(start_client "$image" "$client_command" "$client_extra_args")
 
 	local result_line=$(echo "$result" | grep -m1 -E '\breceiver\b')
@@ -101,7 +104,7 @@ function iperf3_jitter() {
 		die "server: ip address no found"
 	fi
 
-	local client_command="$mount_ramfs && iperf3 -c ${server_address} -u -t ${transmit_timeout}"
+	local client_command="$init_cmds && iperf3 -c ${server_address} -u -t ${transmit_timeout}"
 	result=$(start_client "$image" "$client_command" "$client_extra_args")
 
 	local result_line=$(echo "$result" | grep -m1 -A1 -E '\bJitter\b' | tail -1)
@@ -128,7 +131,7 @@ function iperf3_bidirectional_bandwidth_client_server() {
 		die "server: ip address no found"
 	fi
 
-	local client_command="$mount_ramfs && iperf3 -c ${server_address} -d -t ${transmit_timeout}"
+	local client_command="$init_cmds && iperf3 -c ${server_address} -d -t ${transmit_timeout}"
 	result=$(start_client "$image" "$client_command" "$client_extra_args")
 
 	local client_result=$(echo "$result" | grep -m1 -E '\breceiver\b')
@@ -292,8 +295,6 @@ function iperf_multiqueue() {
 		parse_iperf_bwd "$tn" "$sum"
 	done
 }
-
-echo "Currently this script is using ramfs for tmp (see https://github.com/01org/cc-oci-runtime/issues/152)"
 
 init_env
 
