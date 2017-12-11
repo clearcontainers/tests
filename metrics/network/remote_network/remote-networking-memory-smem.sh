@@ -50,6 +50,7 @@ Usage: $0 "[options]"
 		-a	IP address of host B (mandatory)
 		-h	Shows help
 		-i	Interface name to run Swarm (mandatory)
+		-p	Run PSS memory
 		-r	Run RSS memory
 		-u	User of host B (mandatory)
 EOF
@@ -94,9 +95,47 @@ function remote_network_rss_memory {
 	clean_environment
 }
 
+# This function measures PSS memory with smem tool
+function remote_network_pss_memory {
+	test_name="Remote Network PSS Memory"
+	units="Kb"
+	get_runtime
+	setup_swarm
+	client_replica_status
+	server_replica_status
+
+	server_ip_address=$(check_server_address)
+	start_server
+
+	client_id=$($DOCKER_EXE ps -q)
+	command="iperf3 -c $server_ip_address -t $server_time"
+	check_iperf3_client_command "$command"
+	start_client "$extra_args" "$client_id" "$client_command" > /dev/null
+
+	# Time when we are taking our PSS measurement
+	echo >&2 "WARNING: Sleeping for $middle_time seconds to sample the PSS memory."
+	sleep ${middle_time}
+
+	if [ "$runtime_client" == "runc" ]; then
+		process="iperf"
+	elif [ "$runtime_client" == "cc-runtime" ]; then
+		process="$QEMU_PATH"
+	else
+		die "Unknown client runtime: $runtime_client."
+	fi
+	memory_command="sudo smem --no-header -c pss"
+	result=$(${memory_command} -P ^${process})
+
+	memory=$(echo "$result" | awk '{ total += $1 } END { print total/NR }')
+	echo "PSS Memory is : $memory $units"
+	save_results "$test_name" "PSS memory" "$memory" "$units"
+
+	clean_environment
+}
+
 function main {
 	local OPTIND
-	while getopts ":a:hri:u:" opt
+	while getopts ":a:hpri:u:" opt
 	do
 		case "$opt" in
 		a)
@@ -108,6 +147,9 @@ function main {
 			;;
 		i)
 			interface_name="$OPTARG"
+			;;
+		p)
+			test_pss="1"
 			;;
 		r)
 			test_rss="1"
@@ -135,8 +177,9 @@ function main {
 
 	if [ "$test_rss" == "1" ]; then
 		remote_network_rss_memory
-	else
-		exit 0
+	fi
+	if [ "$test_pss" == "1" ]; then
+		remote_network_pss_memory
 	fi
 }
 main "$@"
