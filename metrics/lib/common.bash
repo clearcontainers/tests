@@ -267,15 +267,17 @@ function kill_processes_before_start() {
 	result=$(check_active_process "$HYPERVISOR_PATH")
 	if [[ $result -ne 0 ]]; then
 		warning "Found unexpected ${HYPERVISOR_PATH} processes present"
-		pgrep -a -f "$HYPERVISOR_PATH"
-		sudo killall "$HYPERVISOR_PATH"
+		# Sometimes we race and the process has gone by the time we list
+		# it - so make a pgrep fail non-fatal
+		pgrep -a -f "$HYPERVISOR_PATH" || true
+		sudo killall "$HYPERVISOR_PATH" || true
 	fi
 
 	result=$(check_active_process "$CC_SHIM_PATH")
 	if [[ $result -ne 0 ]]; then
 		warning "Found unexpected ${CC_SHIM_PATH} processes present"
-		pgrep -a -f "$CC_SHIM_PATH"
-		sudo killall "$CC_SHIM_PATH"
+		pgrep -a -f "$CC_SHIM_PATH" || true
+		sudo killall "$CC_SHIM_PATH" || true
 	fi
 }
 
