@@ -62,8 +62,6 @@ function remote_network_cpu_consumption {
 	test_name="Remote Network CPU Consumption"
 	units="%"
 	get_runtime
-	init_env
-	init_env_remote
 	setup_swarm
 	client_replica_status
 	server_replica_status
