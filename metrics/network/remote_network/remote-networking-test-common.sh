@@ -36,8 +36,9 @@ second_service="testswarm2"
 port_first_service="8080:80"
 # Port where the second service will run
 port_second_service="8081:80"
-# Mount command for iperf3 (cc-runtime)
-mount="mount -t ramfs -o size=20M ramfs /tmp"
+# Set the TMPDIR to an existing tmpfs mount to avoid
+# a 9p unlink error
+init_cmds="export TMPDIR=/dev/shm"
 
 # This function will retrieve the runtime from
 # host A and host B
@@ -135,8 +136,8 @@ function start_server {
 	elif [ "$runtime_server" == "cc-runtime" ]; then
 		ssh "$ssh_user"@"$ssh_address" 'DOCKER_EXE=docker; \
 			server_id=$($DOCKER_EXE ps -q); \
-			mount="mount -t ramfs -o size=20M ramfs /tmp"; \
-			server_command="$mount && iperf3 -s"; \
+			init_cmds="export TMPDIR=/dev/shm"; \
+			server_command="$init_cmds && iperf3 -s"; \
 			$DOCKER_EXE exec -d "$server_id" sh -c "$server_command"'
 	else
 		die "Unknown server runtime: $runtime_server."
@@ -150,7 +151,7 @@ function check_iperf3_client_command {
 	if [ "$runtime_client" == "runc" ]; then
 		client_command="$command"
 	elif [ "$runtime_client" == "cc-runtime" ]; then
-		client_command="$mount && $command"
+		client_command="$init_cmds && $command"
 	else
 		die "Unknown client runtime: $runtime_client."
 	fi
