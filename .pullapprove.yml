@@ -53,6 +53,5 @@ groups:
           - "vendor/*"
           - "*/vendor/*"
     required: 1
-    users:
-      - iphutch
-      - rcaballeromx
+    teams:
+      - documentation
