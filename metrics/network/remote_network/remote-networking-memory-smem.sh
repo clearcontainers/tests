@@ -69,13 +69,8 @@ function remote_network_rss_memory {
 	start_server
 
 	client_id=$($DOCKER_EXE ps -q)
-	if [ "$runtime_client" == "runc" ]; then
-		client_command="iperf3 -c $server_ip_address -t $server_time"
-	elif [ "$runtime_client" == "cc-runtime" ]; then
-		client_command="$mount && iperf3 -c $server_ip_address -t $server_time"
-	else
-		die "Unknown client runtime: $runtime_client."
-	fi
+	command="iperf3 -c $server_ip_address -t $server_time"
+	check_iperf3_client_command "$command"
 	start_client "$extra_args" "$client_id" "$client_command" > /dev/null
 
 	# Time when we are taking our RSS measurement
