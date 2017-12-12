@@ -269,7 +269,7 @@ function get_host_cnt_bwd() {
 # where the container take the server role and the iperf client lives
 # in the host.
 function iperf_host_cnt_bwd() {
-	local test_name="newtwork bwd host contr"
+	local test_name="network bwd host contr"
 	local result="$(get_host_cnt_bwd)"
 	parse_iperf_bwd "$test_name" "$result"
 }
