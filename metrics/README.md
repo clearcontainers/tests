@@ -13,6 +13,7 @@ The tests are organized in the following sections:
 | network   | Measure a set of network essentials such as: bandwidth, jitter, latency, etc.
 | storage   | Measure storage bandwith using different configurations.
 | time      | Measure the latency of a container[s] executing a defined workload.
+| cpu       | Measure cpu performance inside the container
 
 ## Execute metrics scripts
 
@@ -24,6 +25,12 @@ NOTE: Some metrics tests require root access to run correctly.
 ## Options
 
 If no options are specified, `run_all_metrics.sh` will execute all tests by default.
+
+### Run the metrics tests from the cpu section only
+
+```
+-c, --cpu  Run cpu metrics tests
+```
 
 ### Run the metrics tests from the time section only
 

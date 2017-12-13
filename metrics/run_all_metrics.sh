@@ -43,6 +43,7 @@ Usage: $0 [-h] [--help] [-v] [--version]
         aspects of the containers. If no option is specified
         all tests will be executed.
    Options:
+        -c, --cpu          Run cpu metrics tests
         -h, --help         Shows help
         -l, --latency      Run latency/time metrics tests
         -m, --memory       Run memory metrics tests
@@ -101,12 +102,18 @@ function run_storage_tests() {
 	bash ${SCRIPT_PATH}/storage/fio_job.sh -b 16k -o write -t "storage IO linear write bs 16k"
 }
 
+# Only run cpu tests
+function run_cpu_tests() {
+	bash ${SCRIPT_PATH}/cpu/sysbench_cpu.sh
+}
+
 # Run all metrics tests
 function run_all_tests() {
 	run_latency_tests
 	run_network_tests
 	run_memory_tests
 	run_storage_tests
+	run_cpu_tests
 }
 
 # This script will run all metricts tests by default if no
@@ -120,6 +127,9 @@ function main() {
 
 	while (( $# )); do
 		case $1 in
+		-c|--cpu)
+			run_cpu_tests
+		;;
 		-h|--help)
 			help
 			exit 0;

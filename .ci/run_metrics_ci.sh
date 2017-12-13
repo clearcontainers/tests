@@ -103,6 +103,11 @@ pushd "$CURRENTDIR/../metrics"
 	bash storage/fio_job.sh -b 16k -o read -t "storage IO linear read bs 16k"
 	bash storage/fio_job.sh -b 16k -o write -t "storage IO linear write bs 16k"
 
+	#
+	# Run some cpu tests
+	#
+	bash cpu/sysbench_cpu.sh
+
 	# If we are running under a CI, the do some extra work
 	# We check we are under a CI before doing this, as that still leaves us
 	# the ability to run this script by hand outside a CI if we need
