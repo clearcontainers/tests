@@ -108,6 +108,11 @@ pushd "$CURRENTDIR/../metrics"
 	#
 	bash cpu/sysbench_cpu.sh
 
+	#
+	# Run some memory performance tests
+	#
+	bash memperf/sysbench_memory.sh
+
 	# If we are running under a CI, the do some extra work
 	# We check we are under a CI before doing this, as that still leaves us
 	# the ability to run this script by hand outside a CI if we need

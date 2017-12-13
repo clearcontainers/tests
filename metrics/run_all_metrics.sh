@@ -48,6 +48,7 @@ Usage: $0 [-h] [--help] [-v] [--version]
         -l, --latency      Run latency/time metrics tests
         -m, --memory       Run memory metrics tests
         -n, --network      Run network metrics tests
+        -p, --memperf      Run memory performance metrics
         -s, --storage      Run I/O storage metrics tests
 EOF
 )"
@@ -107,6 +108,11 @@ function run_cpu_tests() {
 	bash ${SCRIPT_PATH}/cpu/sysbench_cpu.sh
 }
 
+# Only run memory performance tests
+function run_memperf_tests() {
+	bash ${SCRIPT_PATH}/memperf/sysbench_memory.sh
+}
+
 # Run all metrics tests
 function run_all_tests() {
 	run_latency_tests
@@ -114,6 +120,7 @@ function run_all_tests() {
 	run_memory_tests
 	run_storage_tests
 	run_cpu_tests
+	run_memperf_tests
 }
 
 # This script will run all metricts tests by default if no
@@ -142,6 +149,9 @@ function main() {
 		;;
 		-n|--network)
 			run_network_tests
+		;;
+		-p|--memperf)
+			run_memperf_tests
 		;;
 		-s|--storage)
 			run_storage_tests
