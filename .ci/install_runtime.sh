@@ -60,26 +60,6 @@ sudo sed -i -e 's/^#\(\[runtime\]\|global_log_path =\)/\1/g' "${runtime_config_p
 echo "Enabling all debug options in file ${runtime_config_path}"
 sudo sed -i -e 's/^#\(enable_debug\).*=.*$/\1 = true/g' "${runtime_config_path}"
 
-echo "Add runtime as a new/default Docker runtime. Docker version \"$(docker --version)\" could change according to Semaphore CI updates."
-docker_options="-D --add-runtime cc-runtime=/usr/local/bin/cc-runtime --default-runtime=cc-runtime"
+echo "Add cc-runtime as a new/default Docker runtime."
 
-config_path="/etc/systemd/system/docker.service.d/"
-sudo mkdir -p ${config_path}
-
-# Check if the system has set http[s] proxy
-if [ ! -z "$http_proxy" ] && [ ! -z "$https_proxy" ] ;then
-	docker_http_proxy="HTTP_PROXY=$http_proxy"
-	docker_https_proxy="HTTPS_PROXY=$https_proxy"
-fi
-
-cat << EOF | sudo tee ${config_path}/clear-containers.conf
-[Service]
-Environment="$docker_http_proxy"
-Environment="$docker_https_proxy"
-ExecStart=
-ExecStart=/usr/bin/dockerd ${docker_options}
-EOF
-
-echo "Restart docker service"
-sudo systemctl daemon-reload
-sudo systemctl restart docker
+"${cidir}/../cmd/container-manager/manage_ctr_mgr.sh" docker configure -r cc-runtime -f

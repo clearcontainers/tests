@@ -58,9 +58,5 @@ echo "Install bison binary"
 chronic sudo -E dnf -y install bison
 
 if ! command -v docker > /dev/null; then
-	echo "Install Docker"
-	docker_url="https://download.docker.com/linux/fedora"
-	chronic sudo -E dnf config-manager --add-repo "${docker_url}/docker-ce.repo"
-	chronic sudo -E dnf makecache
-	chronic sudo -E dnf -y install docker-ce
+	"${cidir}/../cmd/container-manager/manage_ctr_mgr.sh" docker install
 fi

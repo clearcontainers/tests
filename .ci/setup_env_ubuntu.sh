@@ -72,11 +72,5 @@ fi
 sudo -E apt install -y libostree-dev
 
 if ! command -v docker > /dev/null; then
-	echo "Install Docker"
-	docker_url="https://download.docker.com/linux/ubuntu"
-	sudo -E apt install -y apt-transport-https ca-certificates
-	sudo -E add-apt-repository "deb [arch=amd64] ${docker_url} $(lsb_release -cs) stable"
-	curl -fsSL "${docker_url}/gpg" | sudo -E apt-key add -
-	sudo -E apt update
-	sudo -E apt install -y docker-ce
+	"${cidir}/../cmd/container-manager/manage_ctr_mgr.sh" docker install
 fi
