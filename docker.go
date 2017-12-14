@@ -36,6 +36,9 @@ const (
 
 	// DebianImage is the debian image
 	DebianImage = "debian"
+
+	// FedoraImage is the fedora image
+	FedoraImage = "fedora"
 )
 
 func runDockerCommandWithTimeout(timeout time.Duration, command string, args ...string) (string, string, int) {
