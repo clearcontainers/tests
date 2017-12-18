@@ -15,6 +15,7 @@
 package docker
 
 import (
+	"fmt"
 	"os"
 
 	. "github.com/clearcontainers/tests"
@@ -22,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("package manager apt-get", func() {
+var _ = Describe("package manager update test", func() {
 	var (
 		id         string
 		args       []string
@@ -32,12 +33,12 @@ var _ = Describe("package manager apt-get", func() {
 
 	BeforeEach(func() {
 		id = RandID(30)
+		args = []string{}
 		proxyVar = "http_proxy"
 		proxyValue = os.Getenv(proxyVar)
 		if proxyValue != "" {
 			args = append(args, "-e", proxyVar+"="+proxyValue)
 		}
-		args = append(args, "--rm", "--name", id, DebianImage, "apt-get", "update")
 	})
 
 	AfterEach(func() {
@@ -46,8 +47,28 @@ var _ = Describe("package manager apt-get", func() {
 
 	Context("check apt-get update", func() {
 		It("should not fail", func() {
+			args = append(args, "--rm", "--name", id, DebianImage, "apt-get", "-y", "update")
 			_, _, exitCode := DockerRun(args...)
 			Expect(exitCode).To(BeZero())
+		})
+	})
+
+	Context("check dnf update", func() {
+		It("should not fail", func() {
+			Skip("Issue: https://github.com/clearcontainers/runtime/issues/868")
+			args = append(args, "-td", "--name", id, FedoraImage, "sh")
+			_, _, exitCode := DockerRun(args...)
+			Expect(exitCode).To(BeZero())
+
+			if proxyValue != "" {
+				_, _, exitCode = DockerExec(id, "sed", "-i", fmt.Sprintf("$ a proxy=%s", proxyValue), "/etc/dnf/dnf.conf")
+				Expect(exitCode).To(BeZero())
+			}
+
+			_, _, exitCode = DockerExec(id, "dnf", "-y", "update")
+			Expect(exitCode).To(BeZero())
+
+			Expect(RemoveDockerContainer(id)).To(BeTrue())
 		})
 	})
 })
