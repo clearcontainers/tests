@@ -4,18 +4,24 @@
 `iperf3`using a remote setup. Host A will run a container that will act as a server while host B will run a
 container that will act as a client. The network bandwidth will be measured across the containers.
 
-- The `remote-networking-memory-smem.sh` script measures RSS memory with `smem` tool. Simultaneously,
+- The `remote-networking-memory-smem.sh` script measures RSS and PSS memory with the `smem` tool. Simultaneously,
 the script uses a remote setup to run a bandwidth network test.
 
 - The `remote-networking-cpu.sh` script measures the percentage of CPU consumption used while running
 the maximum network bandwidth with `iperf3`.
 
+- The `remote-networking-qperf.sh` script measures TCP and UDP latency with the `qperf` tool.
+
 ## Prerequisite
 
 An automatic login from host A (user A) to host B (user B) is needed. You must setup authentication 
 keys to do an ssh login without password.
-The `remote-networking-iperf3.sh`, `remote-networking-memory-smem.sh`, and `remote-networking-cpu.sh`
-scripts are only compatible with `docker 1.12.1`.
+The following scripts are only compatible with `docker 1.12.1`:
+
+- `remote-networking-cpu.sh`
+- `remote-networking-iperf3.sh`
+- `remote-networking-memory-smem.sh`
+- `remote-networking-qperf.sh`
 
 ## Running the `remote-networking-iperf3.sh` test
 
@@ -71,3 +77,7 @@ $ cd metrics/network/remote_network
 $ bash remote-networking-cpu.sh -i "<interface_name>" -u "<user>" -a "<ip_address>"
 
 ```
+## Running the `remote-networking-qperf.sh` test
+
+Run the `remote-networking-qperf.sh` script in host A. The script requires a number of options to
+be specified. Run `remote-networking-qperf.sh` -h for details.
