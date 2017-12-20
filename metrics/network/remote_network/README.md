@@ -12,6 +12,9 @@ the maximum network bandwidth with `iperf3`.
 
 - The `remote-networking-qperf.sh` script measures TCP and UDP latency with the `qperf` tool.
 
+- The `direct-remote-networking-iperf3.sh` script measures bandwidth using a remote setup without using Swarm.
+Host A runs an `iperf3` server container while host B runs `iperf3` client container.
+
 ## Prerequisite
 
 An automatic login from host A (user A) to host B (user B) is needed. You must setup authentication 
@@ -81,3 +84,11 @@ $ bash remote-networking-cpu.sh -i "<interface_name>" -u "<user>" -a "<ip_addres
 
 Run the `remote-networking-qperf.sh` script in host A. The script requires a number of options to
 be specified. Run `remote-networking-qperf.sh` -h for details.
+
+```
+## Running the `direct-remote-networking-iperf3.sh` test
+
+Run the `direct-remote-networking-iperf3.sh` script in host A. The script requires you to specify a number of options. Run
+`direct-remote-networking-iperf3.sh` -h for details.
+
+```

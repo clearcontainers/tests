@@ -170,3 +170,31 @@ function clean_environment {
 	$DOCKER_EXE swarm leave --force
 	ssh "$ssh_user"@"$ssh_address" "$DOCKER_EXE swarm leave --force"
 }
+
+# The following functions are used in the `direct-remote-networking-iperf3.sh`
+# script where instead of using Swarm, the iperf3 containers run directly in
+# the hosts
+
+# This function starts an iperf3 server container
+function direct_start_server {
+	get_runtime
+	init_env_remote
+	ssh "$ssh_user"@"$ssh_address" 'DOCKER_EXE=docker; \
+		network_image=gabyct/network; \
+		port=5201:5201; \
+		$DOCKER_EXE run -td -p $port $network_image sh -c "export TMPDIR=/dev/shm && iperf3 -s"'
+}
+
+# This function starts an iperf3 client container
+function direct_start_client {
+	get_runtime
+	init_env
+	client_command="$1"
+	$DOCKER_EXE run $args $client_extra_args $network_image sh -c "$init_cmds && $client_command"
+}
+
+# This function removes the iperf3 server container
+function clean_direct_environment {
+	ssh "$ssh_user"@"$ssh_address" 'DOCKER_EXE=docker; \
+		$DOCKER_EXE rm -f $($DOCKER_EXE ps -qa)'
+}
