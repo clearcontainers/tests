@@ -15,10 +15,17 @@
 package docker
 
 import (
+	"fmt"
+
 	. "github.com/clearcontainers/tests"
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
+
+func withUser(user, regexp string) TableEntry {
+	return Entry(fmt.Sprintf("with --user='%s'", user), user, regexp)
+}
 
 var _ = Describe("docker exec", func() {
 	var (
@@ -79,4 +86,26 @@ var _ = Describe("docker exec", func() {
 			Expect(stderr).ToNot(BeEmpty())
 		})
 	})
+
+	DescribeTable("check exec honours '--user'",
+		func(user, regexp string) {
+			args = []string{"-t", "--user", user, id, "id"}
+			stdout, stderr, exitCode = DockerExec(args...)
+			Expect(exitCode).To(Equal(0))
+			Expect(stderr).To(BeEmpty())
+			Expect(stdout).To(MatchRegexp(regexp))
+		},
+
+		// users and groups
+		withUser("daemon", `uid=\d+\(daemon\) gid=\d+\(daemon\)`),
+		withUser("daemon:", `uid=\d+\(daemon\) gid=\d+\(daemon\)`),
+		withUser("daemon:bin", `uid=\d+\(daemon\) gid=\d+\(bin\)`),
+		withUser(":adm", `uid=\d+\(root\) gid=\d+\(adm\)`),
+
+		// uids and gids
+		withUser("999", "uid=999 gid=0"),
+		withUser("999:", "uid=999 gid=0"),
+		withUser("999:888", "uid=999 gid=888"),
+		withUser(":999", `uid=0\(root\) gid=999`),
+	)
 })
