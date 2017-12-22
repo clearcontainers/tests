@@ -369,3 +369,8 @@ func DockerPause(args ...string) (string, string, int) {
 func DockerUnpause(args ...string) (string, string, int) {
 	return runDockerCommand("unpause", args...)
 }
+
+// DockerTop displays the running processes of a container
+func DockerTop(args ...string) (string, string, int) {
+	return runDockerCommand("top", args...)
+}
