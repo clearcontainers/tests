@@ -15,46 +15,41 @@
 # limitations under the License.
 
 set -e
+function usage() {
+    cat << EOT
+Usage: $0 <version>
+Install the containers clear kernel image <version> from clearcontainers/linux.
 
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 CLEAR_RELEASE KERNEL_VERSION PATH"
-    echo "       Install the clear kernel image KERNEL_VERSION from clear CLEAR_RELEASE in PATH."
-    exit 1
-fi
+version: Use latest to pull latest kernel or a version from https://github.com/clearcontainers/linux/releases
+EOT
 
-clear_kernel_release="$1"
-clear_container_kernel="$2"
-# Get the kernel version number only
-# E.g v4.9.60-80.container -> 4.9.60-80
-clear_container_kernel="${clear_container_kernel/v}"
-clear_container_kernel="${clear_container_kernel/.c*}"
-install_path="$3"
-clear_install_path="/usr/share/clear-containers"
-vmlinux_kernel=vmlinux-${clear_container_kernel}.container
-vmlinuz_kernel=vmlinuz-${clear_container_kernel}.container
-cc_vmlinux_kernel_link_name="vmlinux.container"
-cc_vmlinuz_kernel_link_name="vmlinuz.container"
+exit 1
+}
 
-echo -e "Install clear containers kernel ${clear_container_kernel}"
+function download_kernel() {
+	local version=$1
+	local release_info_url="https://api.github.com/repos/clearcontainers/linux/releases/latest"
+	[ -n "${version}" ] || die "version not provided"
+	if [ "${version}" == "latest" ]; then
+		release_json="$(curl -s ${release_info_url})"
+	parse_py='
+import json,sys
+release=json.load(sys.stdin)
+print release["tag_name"]
+'
+		version=$(echo "${release_json}" | python -c "$parse_py")
+	fi
+	echo "version to install ${version}"
+	local binaries_dir="${version}-binaries"
+	local binaries_tarball="${binaries_dir}.tar.gz"
+	curl -OL "https://github.com/clearcontainers/linux/releases/download/${version}/${binaries_tarball}"
+	tar xf "${binaries_tarball}"
+	pushd "${binaries_dir}"
+	sudo make install
+	popd
+}
 
-if [ "${clear_kernel_release}" == "demos" ]; then
-	curl -LO "https://download.clearlinux.org/demos/clear-containers/linux-container-${clear_container_kernel}.x86_64.rpm"
-else
-	curl -LO "https://download.clearlinux.org/releases/${clear_kernel_release}/clear/x86_64/os/Packages/linux-container-${clear_container_kernel}.x86_64.rpm"
-fi
-rpm2cpio linux-container-${clear_container_kernel}.x86_64.rpm | cpio -ivdm
-sudo install -D --owner root --group root --mode 0700 .${clear_install_path}/${vmlinux_kernel} ${install_path}/${vmlinux_kernel}
-sudo install -D --owner root --group root --mode 0700 .${clear_install_path}/${vmlinuz_kernel} ${install_path}/${vmlinuz_kernel}
+cc_kernel_version="$1"
 
-echo -e "Create symbolic link ${install_path}/${cc_vmlinux_kernel_link_name}"
-sudo ln -fs ${install_path}/${vmlinux_kernel} ${install_path}/${cc_vmlinux_kernel_link_name}
-
-echo -e "Create symbolic link ${install_path}/${cc_vmlinuz_kernel_link_name}"
-sudo ln -fs ${install_path}/${vmlinuz_kernel} ${install_path}/${cc_vmlinuz_kernel_link_name}
-
-# cleanup
-rm -f linux-container-${clear_container_kernel}.x86_64.rpm
-# be careful here, we don't want to rm something silly, note the leading .
-rm -r .${clear_install_path}
-rmdir ./usr/share
-rmdir ./usr
+[ -z "${cc_kernel_version}" ] && usage
+download_kernel "${cc_kernel_version}"

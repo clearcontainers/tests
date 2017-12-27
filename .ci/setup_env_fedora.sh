@@ -20,8 +20,7 @@ cidir=$(dirname "$0")
 source /etc/os-release
 source "${cidir}/lib.sh"
 get_cc_versions
-
-cc_kernel_path="/usr/share/clear-containers"
+cc_image_path="/usr/share/clear-containers"
 
 if grep -q "N" /sys/module/kvm_intel/parameters/nested; then
 	echo "enable Nested Virtualization"
@@ -43,10 +42,10 @@ echo "Install qemu-lite binary"
 "${cidir}/install_qemu_lite.sh" "${qemu_lite_clear_release}" "${qemu_lite_sha}" "$ID"
 
 echo "Install clear-containers image"
-"${cidir}/install_clear_image.sh" "$clear_vm_image_version" "${cc_kernel_path}"
+"${cidir}/install_clear_image.sh" "$clear_vm_image_version" "${cc_image_path}"
 
 echo "Install Clear Containers Kernel"
-"${cidir}/install_clear_kernel.sh" "${clear_kernel_release}" "${clear_container_kernel}" "${cc_kernel_path}"
+"${cidir}/install_clear_kernel.sh" "latest"
 
 echo "Install CRI-O dependencies"
 chronic sudo -E dnf -y install btrfs-progs-devel device-mapper-devel 	  \
