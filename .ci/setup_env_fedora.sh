@@ -45,7 +45,7 @@ echo "Install clear-containers image"
 "${cidir}/install_clear_image.sh" "$clear_vm_image_version" "${cc_image_path}"
 
 echo "Install Clear Containers Kernel"
-"${cidir}/install_clear_kernel.sh" "latest"
+"${cidir}/install_clearcontainers_kernel.sh" "latest"
 
 echo "Install CRI-O dependencies"
 chronic sudo -E dnf -y install btrfs-progs-devel device-mapper-devel 	  \

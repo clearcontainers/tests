@@ -58,7 +58,7 @@ echo "Install Build Tools"
 sudo -E apt install -y build-essential python pkg-config zlib1g-dev
 
 echo "Install Clear Containers Kernel"
-"${cidir}/install_clear_kernel.sh" "latest"
+"${cidir}/install_clearcontainers_kernel.sh" "latest"
 
 echo -e "Install CRI-O dependencies available for Ubuntu $VERSION_ID"
 sudo -E apt install -y libdevmapper-dev btrfs-tools util-linux

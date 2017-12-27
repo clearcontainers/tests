@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,24 +15,30 @@
 # limitations under the License.
 
 set -e
+
+repo_owner="clearcontainers"
+repo_name="linux"
+cc_linux_releases_url="https://github.com/${repo_owner}/${repo_name}/releases"
+
 function usage() {
-    cat << EOT
+	cat << EOT
 Usage: $0 <version>
 Install the containers clear kernel image <version> from clearcontainers/linux.
 
-version: Use latest to pull latest kernel or a version from https://github.com/clearcontainers/linux/releases
+version: Use 'latest' to pull latest kernel or a version from ${cc_linux_releases_url}
 EOT
 
-exit 1
+	exit 1
 }
 
 function download_kernel() {
 	local version=$1
-	local release_info_url="https://api.github.com/repos/clearcontainers/linux/releases/latest"
+	local github_base="https://api.github.com/repos"
+	local latest_release_info_url="${github_base}/${repo_owner}/${repo_name}/releases/latest"
 	[ -n "${version}" ] || die "version not provided"
 	if [ "${version}" == "latest" ]; then
-		release_json="$(curl -s ${release_info_url})"
-	parse_py='
+		release_json="$(curl -s ${latest_release_info_url})"
+		parse_py='
 import json,sys
 release=json.load(sys.stdin)
 print release["tag_name"]
@@ -42,7 +48,10 @@ print release["tag_name"]
 	echo "version to install ${version}"
 	local binaries_dir="${version}-binaries"
 	local binaries_tarball="${binaries_dir}.tar.gz"
-	curl -OL "https://github.com/clearcontainers/linux/releases/download/${version}/${binaries_tarball}"
+	local shasum_file="SHA512SUMS"
+	curl -OL "${cc_linux_releases_url}/download/${version}/${binaries_tarball}"
+	curl -OL "${cc_linux_releases_url}/download/${version}/${shasum_file}"
+	sha512sum -c ${shasum_file}
 	tar xf "${binaries_tarball}"
 	pushd "${binaries_dir}"
 	sudo make install
