@@ -158,11 +158,11 @@ func processMetrics(context *cli.Context) (err error) {
 		}
 
 		row := []string{thisCsv.TestName,
-			strconv.FormatFloat(thisCsv.Mean, 'f', -1, 64),
-			strconv.FormatFloat(thisCsv.MaxVal, 'f', -1, 64),
-			strconv.FormatFloat(thisCsv.MinVal, 'f', -1, 64),
-			strconv.FormatFloat(thisCsv.SD, 'f', -1, 64),
-			strconv.FormatFloat(thisCsv.CoV, 'f', -1, 64),
+			strconv.FormatFloat(thisCsv.Mean, 'f', 3, 64),
+			strconv.FormatFloat(thisCsv.MaxVal, 'f', 3, 64),
+			strconv.FormatFloat(thisCsv.MinVal, 'f', 3, 64),
+			strconv.FormatFloat(thisCsv.SD, 'f', 3, 64),
+			strconv.FormatFloat(thisCsv.CoV, 'f', 3, 64),
 			strconv.Itoa(thisCsv.Iterations)}
 
 		table.Append(row)
