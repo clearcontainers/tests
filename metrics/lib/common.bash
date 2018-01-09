@@ -281,6 +281,18 @@ function kill_processes_before_start() {
 	fi
 }
 
+# This function checks if active processes were
+# left behind by cc-runtime.
+function check_processes() {
+	process=$1
+	pgrep -f "$process"
+	if [ $? -eq 0 ]; then
+		echo "Found unexpected ${process} present"
+		ps -ef | grep $process
+		return 1
+	fi
+}
+
 # Generate a random name - generally used when creating containers, but can
 # be used for any other appropriate purpose
 function random_name() {
