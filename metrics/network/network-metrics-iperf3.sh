@@ -230,6 +230,34 @@ function parse_iperf_bwd() {
 
 }
 
+# This function parses the output of iperf UDP execution, and
+# saves the receiver successful datagram value in the results.
+# It expects to get a 'clean' JSON formatted input, as that
+# seems to be the 'stable interface' for iperf3 - the UDP output
+# in plain text otherwise can vary between client and host versions
+# which makes parsing it a pain (aka. broken).
+function parse_iperf_pps() {
+	local test_name="$1"
+	local result="$2"
+
+	if [ -z "$result" ]; then
+		die "no result output"
+	fi
+
+	# Extract results
+	local lost=$(echo "$result" | jq '.end.sum.lost_packets')
+	local total=$(echo "$result" | jq '.end.sum.packets')
+	local notlost=$((total-lost))
+	local pps=$((notlost/transmit_timeout))
+
+	# Save results in CSV files
+	save_results "${test_name}" "" "$pps" "PPS"
+
+	# Show results
+	echo "$test_name"
+	echo "Receiver PPS : sent $total, lost $lost, received $notlost, PPS $pps"
+}
+
 # This function launches a container that will take the role of
 # server, this is order to attend requests from a client.
 # In this case the client is an instance of iperf running in the host.
@@ -265,6 +293,80 @@ function get_host_cnt_bwd() {
 	echo "$output"
 }
 
+# Run a UDP PPS test between two containers.
+# Use the smallest packets we can and run with unlimited bandwidth
+# mode to try and get as many packets through as possible.
+# Return the results in JSON format for portability.
+function get_cnt_cnt_pps() {
+	local cli_args="$1"
+
+	# Check we have the json query tool to parse the results
+	local cmds=("jq")
+	check_cmds "${cmds[@]}" 1>&2
+
+	# Initialize/clean environment
+	#  We need to do the stdout re-direct as we don't want any verbage in the
+	#  answer we return, as then it is not a valid JSON result...
+	init_env 1>&2
+
+	# Make port forwarding
+	local server_extra_args="$server_extra_args -p $fwd_port"
+	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
+
+	# Verify server IP address
+        if [ -z "$server_address" ];then
+                clean_env
+                die "server: ip address no found"
+        fi
+
+	# Verify the iperf server is up
+	check_iperf_server 1>&2
+
+	# and start the client container
+	local client_command="$init_cmds && iperf3 -J -u -c ${server_address} -l 64 -b 0 ${cli_args} -t ${transmit_timeout}"
+	local output=$(start_client "$image" "$client_command" "$client_extra_args")
+
+	clean_env 1>&2
+
+	echo "$output"
+}
+
+# Run a UDP PPS test between the host and a container, with the client on the host.
+# Use the smallest packets we can and run with unlimited bandwidth
+# mode to try and get as many packets through as possible.
+# Return the results in JSON format for portability.
+function get_host_cnt_pps() {
+	local cli_args="$1"
+
+	# Checks iperf3 tool installed in host
+	# We also need the json query tool, as we use JSON format results from iperf3
+	local cmds=("iperf3" "jq")
+	check_cmds "${cmds[@]}" 1>&2
+
+	# Initialize/clean environment
+	init_env 1>&2
+
+	# Make port forwarding
+	local server_extra_args="$server_extra_args -p $fwd_port"
+	local server_address=$(start_server "$image" "$server_command" "$server_extra_args")
+
+	# Verify server IP address
+        if [ -z "$server_address" ];then
+                clean_env
+                die "server: ip address no found"
+        fi
+
+	# Verify the iperf server is up
+	check_iperf_server 1>&2
+
+	# and start the client container
+	local output=$(iperf3 -J -u -c $server_address -l 64 -b 0 -t $transmit_timeout "$cli_args")
+
+	clean_env 1>&2
+
+	echo "$output"
+}
+
 # This test measures the bandwidth between a container and the host.
 # where the container take the server role and the iperf client lives
 # in the host.
@@ -296,6 +398,34 @@ function iperf_multiqueue() {
 	done
 }
 
+# This test measures the packet-per-second (PPS) between two containers.
+# It uses the smallest (64byte) UDP packet streamed with unlimited bandwidth
+# to obtain the result.
+function iperf3_cnt_cnt_pps() {
+	local test_name="network pps cnt cnt"
+	local result="$(get_cnt_cnt_pps)"
+	parse_iperf_pps "$test_name" "$result"
+}
+
+# This test measures the packet-per-second (PPS) between the host and a container.
+# It uses the smallest (64byte) UDP packet streamed with unlimited bandwidth
+# to obtain the result.
+function iperf3_host_cnt_pps() {
+	local test_name="network pps host cnt"
+	local result="$(get_host_cnt_pps)"
+	parse_iperf_pps "$test_name" "$result"
+}
+
+# This test measures the packet-per-second (PPS) between the host and a container.
+# It runs iperf3 in 'Reverse' mode.
+# It uses the smallest (64byte) UDP packet streamed with unlimited bandwidth
+# to obtain the result.
+function iperf3_host_cnt_pps_rev() {
+	local test_name="network pps host cnt rev"
+	local result="$(get_host_cnt_pps "-R")"
+	parse_iperf_pps "$test_name" "$result"
+}
+
 init_env
 
 check_images "$image"
@@ -311,3 +441,9 @@ iperf_host_cnt_bwd_rev
 iperf_multiqueue
 
 iperf3_bidirectional_bandwidth_client_server
+
+iperf3_cnt_cnt_pps
+
+iperf3_host_cnt_pps
+
+iperf3_host_cnt_pps_rev
