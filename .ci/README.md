@@ -29,8 +29,18 @@ and binaries are updated in a GitHub release. For more details about the
 update sequence, see [Kernel Update
 Sequence](https://github.com/clearcontainers/packaging/tree/master/kernel#update-sequence).
 
-The script `install_clearcontainers_kernel.sh` is used to install the
+The script `./install_asset.sh kernel latest` is used to install the
 latest kernel binaries.
+
+
+## Clear Containers Image for CI ##
+
+The CI environment is configured to download the guest OS image from the
+[osbuilder image
+releases](https://github.com/clearcontainers/osbuilder/releases). 
+
+The script `./install_asset.sh image latest` is used to install the latest
+guest image.
 
 ** Note: The script downloads the latest kernel each time the CI is
 configured, for Clear Containers users it is highly recommended to install
