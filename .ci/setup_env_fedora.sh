@@ -34,6 +34,9 @@ sudo -E dnf -y install moreutils
 chronic sudo -E dnf -y install dnf-plugins-core
 chronic sudo -E dnf makecache
 
+echo "Install test dependencies"
+chronic sudo -E dnf -y install python
+
 echo "Install clear containers dependencies"
 chronic sudo -E dnf -y groupinstall "Development tools"
 chronic sudo -E dnf -y install libtool automake autoconf bc pixman numactl-libs

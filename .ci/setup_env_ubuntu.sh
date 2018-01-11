@@ -35,6 +35,9 @@ sudo -E apt update
 echo "Install chronic"
 sudo -E apt install -y moreutils
 
+echo "Install test dependencies"
+chronic sudo -E apt install -y python
+
 echo "Install clear containers dependencies"
 chronic sudo -E apt install -y libtool automake autotools-dev autoconf bc alien libpixman-1-dev
 
