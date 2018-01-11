@@ -44,12 +44,6 @@ chronic sudo -E dnf -y install libtool automake autoconf bc pixman numactl-libs
 echo "Install qemu-lite binary"
 "${cidir}/install_qemu_lite.sh" "${qemu_lite_clear_release}" "${qemu_lite_sha}" "$ID"
 
-echo "Install clear-containers image"
-"${cidir}/install_clear_image.sh" "$clear_vm_image_version" "${cc_image_path}"
-
-echo "Install Clear Containers Kernel"
-"${cidir}/install_clearcontainers_kernel.sh" "latest"
-
 echo "Install CRI-O dependencies"
 chronic sudo -E dnf -y install btrfs-progs-devel device-mapper-devel 	  \
 	glib2-devel glibc-devel glibc-static gpgme-devel libassuan-devel  \
