@@ -17,7 +17,9 @@ package docker
 import (
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
+	"strings"
 
 	. "github.com/clearcontainers/tests"
 	. "github.com/onsi/ginkgo"
@@ -203,4 +205,83 @@ var _ = Describe("run", func() {
 			Expect(exitCode).To(BeZero())
 		})
 	})
+})
+
+func withCPUPeriodAndQuota(quota, period int, fail bool) TableEntry {
+	var msg string
+
+	if fail {
+		msg = "should fail"
+	} else {
+		msg = fmt.Sprintf("should have %d CPUs", (quota+period-1)/period)
+	}
+
+	return Entry(msg, quota, period, fail)
+}
+
+func withCPUConstraint(cpus float64, fail bool) TableEntry {
+	var msg string
+	c := int(math.Ceil(cpus))
+
+	if fail {
+		msg = "should fail"
+	} else {
+		msg = fmt.Sprintf("should have %d CPUs", c)
+	}
+
+	return Entry(msg, c, fail)
+}
+
+var _ = Describe("run", func() {
+	var (
+		args  []string
+		id    string
+		vCPUs int
+	)
+
+	BeforeEach(func() {
+		id = RandID(30)
+		args = []string{"--rm", "--name", id}
+	})
+
+	AfterEach(func() {
+		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
+	})
+
+	DescribeTable("container with CPU period and quota",
+		func(quota, period int, fail bool) {
+			args = append(args, "--cpu-quota", fmt.Sprintf("%d", quota),
+				"--cpu-period", fmt.Sprintf("%d", period), Image, "nproc")
+			vCPUs = (quota + period - 1) / period
+			stdout, _, exitCode := DockerRun(args...)
+			if fail {
+				Expect(exitCode).ToNot(BeZero())
+				return
+			}
+			Expect(exitCode).To(BeZero())
+			Expect(strings.Trim(stdout, "\n\t ")).To(Equal(fmt.Sprintf("%d", vCPUs)))
+		},
+		withCPUPeriodAndQuota(30000, 20000, false),
+		withCPUPeriodAndQuota(30000, 10000, false),
+		withCPUPeriodAndQuota(10000, 10000, false),
+		withCPUPeriodAndQuota(10000, 100, true),
+	)
+
+	DescribeTable("container with CPU constraint",
+		func(cpus int, fail bool) {
+			args = append(args, "--cpus", fmt.Sprintf("%d", cpus), Image, "nproc")
+			stdout, _, exitCode := DockerRun(args...)
+			if fail {
+				Expect(exitCode).ToNot(BeZero())
+				return
+			}
+			Expect(exitCode).To(BeZero())
+			Expect(strings.Trim(stdout, "\n\t ")).To(Equal(fmt.Sprintf("%d", cpus)))
+		},
+		withCPUConstraint(1, false),
+		withCPUConstraint(1.5, false),
+		withCPUConstraint(2, false),
+		withCPUConstraint(2.5, false),
+		withCPUConstraint(-5, true),
+	)
 })
