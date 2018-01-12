@@ -67,7 +67,7 @@ run_workload() {
 
 	# Run the image and command and capture the results into an array...
 	declare workload_result
-	readarray -n 0 workload_result < <(docker run --rm -ti --runtime=${RUNTIME} ${NETWORK_OPTION} ${IMAGE} sh -c "$DATECMD; dmesg")
+	readarray -n 0 workload_result < <(docker run --rm -ti --runtime=${RUNTIME} ${NETWORK_OPTION} ${IMAGE} sh -c "$DATECMD $DMESGCMD")
 
 	end_time=$($DATECMD)
 
@@ -143,6 +143,12 @@ init () {
 
 	if [ "$RUNTIME" == "cor" ] || [ "$RUNTIME" == "cc-runtime" ]; then
 		CALCULATE_KERNEL=1
+		DMESGCMD="; dmesg"
+	else
+		# For non-VM runtimes, we don't use the output of dmesg, and
+		# we have seen it cause some test instabilities, so do not invoke
+		# it if not needed.
+		DMESGCMD=""
 	fi
 
 	# Start from a fairly clean environment
