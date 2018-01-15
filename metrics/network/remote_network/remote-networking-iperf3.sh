@@ -46,6 +46,7 @@ Usage: $0 "[options]"
 	Options:
 		-a	IP address of host B (mandatory)
 		-b	Run remote bandwidth
+		-c	Run remote packet loss
 		-h	Shows help
 		-i	Interface name to run Swarm (mandatory)
 		-j	Run remote jitter
@@ -148,9 +149,33 @@ function remote_network_latency {
 	clean_environment
 }
 
+# This function will measure an acceptable packet loss
+# for a 64 pkt performance for a 10M bandwidth using iperf3 tool
+function remote_network_packet_loss_iperf3 {
+	test_name="Remote network packet loss bandwidth"
+	get_runtime
+	setup_swarm
+	client_replica_status
+	server_replica_status
+
+	server_ip_address=$(check_server_address)
+	start_server
+
+	client_id=$($DOCKER_EXE ps -q)
+	command="iperf3 -c $server_ip_address -l 22 -b 10M -u"
+	check_iperf3_client_command "$command"
+	result=$(start_client "$extra_args" "$client_id" "$client_command")
+	total_packet_loss=$(echo "$result" | grep "receiver" | awk '{print $12}' | cut -d '(' -f 2 | cut -d '%' -f1)
+	units="%"
+	echo "Remote packet loss network is : $total_packet_loss $units"
+
+	save_results "$test_name" "Remote packet loss" "$total_packet_loss" "$units"
+	clean_environment
+}
+
 function main {
 	local OPTIND
-	while getopts ":a:bhjlpti:u:" opt
+	while getopts ":a:bchjlpti:u:" opt
 	do
 		case "$opt" in
 		a)
@@ -158,6 +183,9 @@ function main {
 			;;
 		b)
 			test_bandwidth="1"
+			;;
+		c)
+			test_packet_loss="1"
 			;;
 		h)
 			help
@@ -207,11 +235,14 @@ function main {
 		remote_network_parallel_iperf3
 	elif [ "$test_latency" == "1" ]; then
 		remote_network_latency
+	elif [ "$test_packet_loss" == "1" ]; then
+		remote_network_packet_loss_iperf3
 	elif [ "$test_total" == "1" ]; then
 		remote_network_bandwidth_iperf3
 		remote_network_jitter_iperf3
 		remote_network_parallel_iperf3
 		remote_network_latency
+		remote_network_packet_loss_iperf3
 	else
 		exit 0
 	fi
