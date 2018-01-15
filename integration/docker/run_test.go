@@ -285,3 +285,38 @@ var _ = Describe("run", func() {
 		withCPUConstraint(-5, true),
 	)
 })
+
+var _ = Describe("run", func() {
+	var (
+		args     []string
+		id       string
+		stdout   string
+		exitCode int
+	)
+
+	BeforeEach(func() {
+		id = randomDockerName()
+	})
+
+	AfterEach(func() {
+		Expect(ExistDockerContainer(id)).NotTo(BeTrue())
+	})
+
+	Context("stdout using run", func() {
+		It("should not display the output", func() {
+			args = []string{"--rm", "--name", id, Image, "sh", "-c", "ls /etc/resolv.conf 1>/dev/null"}
+			stdout, _, exitCode = DockerRun(args...)
+			Expect(exitCode).To(Equal(0))
+			Expect(stdout).NotTo(ContainSubstring("/etc/resolv.conf"))
+		})
+	})
+
+	Context("stderr using run", func() {
+		It("should not display the output", func() {
+			args = []string{"--rm", "--name", id, Image, "sh", "-c", "ls /etc/foo 2>/dev/null"}
+			stdout, _, exitCode = DockerRun(args...)
+			Expect(exitCode).To(Equal(1))
+			Expect(stdout).NotTo(ContainSubstring("ls: /etc/foo: No such file or directory"))
+		})
+	})
+})
