@@ -8,6 +8,7 @@ tests as a basic reference to measure the following network essentials:
 - Jitter
 - Throughput
 - CPU % and memory consumption
+- Packet Per Second throughput
 
 ## Performance tools
 
@@ -29,10 +30,12 @@ for the maximum amount of throughput.
 - `network-latency.sh`: measures the latency using ping. The ping utility measures
 how long it takes one packet to get from one point to another.
 
-- `network-metrics-iperf3.sh`: measures bandwidth, jitter and bidirectional bandwidth
-using iperf3 on single threaded connections. The bandwidth test shows the speed
-of the data transfer. On the other hand, the jitter test measures the variation
-in the delay of received packets.
+- `network-metrics-iperf3.sh`: measures bandwidth, jitter, bidirectional bandwidth,
+and packet-per-second throughput using iperf3 on single threaded connections.
+The bandwidth test shows the speed of the data transfer. On the other hand,
+the jitter test measures the variation in the delay of received packets.
+The packet-per-second tests show the maximum number of (smallest sized) packets
+we can get through the transports.
 
 - `network-metrics-nuttcp`: measures the UDP bandwidth using nuttcp. This tool
 shows the speed of the data transfer for the UDP protocol.
