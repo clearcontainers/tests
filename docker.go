@@ -15,6 +15,7 @@
 package tests
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 	"strings"
@@ -42,17 +43,25 @@ const (
 )
 
 func runDockerCommandWithTimeout(timeout time.Duration, command string, args ...string) (string, string, int) {
+	return runDockerCommandWithTimeoutAndPipe(nil, timeout, command, args...)
+}
+
+func runDockerCommandWithTimeoutAndPipe(stdin *bytes.Buffer, timeout time.Duration, command string, args ...string) (string, string, int) {
 	a := []string{command}
 	a = append(a, args...)
 
 	cmd := NewCommand(Docker, a...)
 	cmd.Timeout = timeout
 
-	return cmd.Run()
+	return cmd.RunWithPipe(stdin)
 }
 
 func runDockerCommand(command string, args ...string) (string, string, int) {
 	return runDockerCommandWithTimeout(time.Duration(Timeout), command, args...)
+}
+
+func runDockerCommandWithPipe(stdin *bytes.Buffer, command string, args ...string) (string, string, int) {
+	return runDockerCommandWithTimeoutAndPipe(stdin, time.Duration(Timeout), command, args...)
 }
 
 // LogsDockerContainer returns the container logs
@@ -260,6 +269,18 @@ func DockerRun(args ...string) (string, string, int) {
 	}
 
 	return runDockerCommand("run", args...)
+}
+
+// DockerRunWithPipe runs a container with stdin
+func DockerRunWithPipe(stdin *bytes.Buffer, args ...string) (string, string, int) {
+	if Runtime != "" {
+		args = append(args, []string{"", ""}...)
+		copy(args[2:], args[:])
+		args[0] = "--runtime"
+		args[1] = Runtime
+	}
+
+	return runDockerCommandWithPipe(stdin, "run", args...)
 }
 
 // DockerKill kills a container
