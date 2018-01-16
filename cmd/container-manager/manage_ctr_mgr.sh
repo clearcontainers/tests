@@ -155,6 +155,9 @@ install_docker(){
 		die "Unrecognized tag. Tag supported is: swarm"
 	fi
 	sudo systemctl restart docker
+	sudo gpasswd -a ${USER} docker
+	sudo chmod g+rw /var/run/docker.sock
+	newgrp docker
 }
 
 # This function removes the installed docker package.
