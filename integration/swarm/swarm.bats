@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+
 # *-*- Mode: sh; sh-basic-offset: 8; indent-tabs-mode: nil -*-*
 #
 # Copyright (c) 2017 Intel Corporation
@@ -18,8 +19,8 @@
 # Swarm testing : This will start swarm as well as it will create and
 # run swarm replicas using Nginx
 
-# Environment variables
-DOCKER_EXE="docker"
+source ${BATS_TEST_DIRNAME}/../../metrics/lib/common.bash
+
 # Image for swarm testing
 nginx_image="gabyct/nginx"
 # Name of service to test swarm
@@ -38,7 +39,15 @@ timeout=10
 number_of_retries=5
 
 setup() {
-	$DOCKER_EXE swarm init
+	interfaces=$(basename -a /sys/class/net/*)
+	swarm_interface_arg=""
+	for i in ${interfaces[@]}; do
+		if [ "$(cat /sys/class/net/${i}/operstate)" == "up" ]; then
+			swarm_interface_arg="--advertise-addr ${i}"
+			break;
+		fi
+	done
+	$DOCKER_EXE swarm init ${swarm_interface_arg}
 	nginx_command="hostname > /usr/share/nginx/html/hostname; nginx -g \"daemon off;\""
 	$DOCKER_EXE service create \
 		--name "${SERVICE_NAME}" --replicas $number_of_replicas \
@@ -109,4 +118,6 @@ setup() {
 teardown() {
 	$DOCKER_EXE service remove "${SERVICE_NAME}"
 	$DOCKER_EXE swarm leave --force
+	check_processes ${HYPERVISOR_PATH}
+	check_processes ${CC_SHIM_PATH}
 }
