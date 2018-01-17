@@ -340,6 +340,11 @@ func DockerExport(args ...string) (string, string, int) {
 	return runDockerCommand("export", args...)
 }
 
+// DockerImport imports the contents from a tarball to create a filesystem image
+func DockerImport(args ...string) (string, string, int) {
+	return runDockerCommand("import", args...)
+}
+
 // DockerInfo displays system-wide information
 func DockerInfo() (string, string, int) {
 	return runDockerCommand("info")
