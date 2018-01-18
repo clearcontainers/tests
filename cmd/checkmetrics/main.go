@@ -133,7 +133,6 @@ func processMetricsBaseline(context *cli.Context) (err error) {
 	return
 }
 
-
 // processMetrics generates a report using the metrics results
 // available in CSV files provided as input without use a basefile
 // as reference. This report shows basic statitistics just in
@@ -153,7 +152,7 @@ func processMetrics(context *cli.Context) (err error) {
 		var thisCsv csvRecord
 		filepath := path.Join(mtrdir, csvf.Name())
 		err = thisCsv.load(filepath)
-		if  err != nil {
+		if err != nil {
 			return err
 		}
 
@@ -173,10 +172,9 @@ func processMetrics(context *cli.Context) (err error) {
 	return err
 }
 
-
 // System default path for baseline file
 // the value will be set by Makefile
-var sysBaseFile string = ""
+var sysBaseFile string
 
 // checkmetrics main entry point.
 // Do the command line processing, load the TOML file, and do the processing
@@ -208,7 +206,6 @@ func main() {
 			Usage: "directory containing CSV metrics",
 		},
 	}
-
 
 	app.Before = func(context *cli.Context) error {
 		var err error
