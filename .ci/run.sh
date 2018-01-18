@@ -32,7 +32,10 @@ function cleanup {
 
 trap cleanup EXIT
 
-if [ "$ID" == "ubuntu" ] && [ "$VERSION_ID" == "17.04" ]; then
+MAJOR=$(echo "$VERSION_ID"|cut -d\. -f1)
+
+# Only use devicemapper for Ubuntu 17.* and newer.
+if [ "$ID" == "ubuntu" ] && [ "$MAJOR" -ge 17 ]; then
 	export CRIO_STORAGE_DRIVER_OPTS="--storage-driver=devicemapper"
 fi
 
