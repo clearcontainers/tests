@@ -35,6 +35,7 @@ func (mc *metricsCheck) reportTitleSlice() []string {
 		"Mean",
 		// This is the check boundary, not the largest value in Results
 		"Ceiling",
+		"Gap",
 		"Iters",
 		"SD",
 		"CoV"}
@@ -48,6 +49,7 @@ func (mc *metricsCheck) genSummaryLine(
 	minval string,
 	mean string,
 	maxval string,
+	gap string,
 	iterations string,
 	sd string,
 	cov string) (summary []string) {
@@ -63,6 +65,7 @@ func (mc *metricsCheck) genSummaryLine(
 		minval,
 		mean,
 		maxval,
+		gap,
 		iterations,
 		sd,
 		cov)
@@ -81,7 +84,7 @@ func (mc *metricsCheck) genErrorLine(
 	error3 string) (summary []string) {
 
 	summary = mc.genSummaryLine(passed, error1, error2, error3,
-		"", "", "", "")
+		"", "", "", "", "")
 	return
 }
 
@@ -131,6 +134,7 @@ func (mc *metricsCheck) check(m metrics, c csvRecord) (summary []string, err err
 		strconv.FormatFloat(c.Mean, 'f', 3, 64),
 		// Note this is the check boundary, not the largest Result seen
 		strconv.FormatFloat(m.MaxVal, 'f', 3, 64),
+		strconv.FormatFloat(m.Gap, 'f', 1, 64)+" %",
 		strconv.Itoa(c.Iterations),
 		strconv.FormatFloat(c.SD, 'f', 3, 64),
 		strconv.FormatFloat(c.CoV, 'f', 2, 64)+" %")...)
