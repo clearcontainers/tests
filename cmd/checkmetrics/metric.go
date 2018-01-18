@@ -23,4 +23,5 @@ type metrics struct {
 	Description string  `toml:"description"`
 	MinVal      float64 `toml:"minval"`
 	MaxVal      float64 `toml:"maxval"`
+	Gap         float64 // What is the % gap between the Min and Max vals
 }

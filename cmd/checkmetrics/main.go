@@ -200,7 +200,7 @@ func main() {
 			Usage: "set the log file path",
 		},
 		cli.BoolFlag{
-			Name: "nobaseline",
+			Name:  "nobaseline",
 			Usage: "enable parsing metrics without basefile",
 		},
 		cli.StringFlag{
