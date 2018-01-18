@@ -19,6 +19,15 @@ set -e
 repo_owner="clearcontainers"
 repo_name="linux"
 cc_linux_releases_url="https://github.com/${repo_owner}/${repo_name}/releases"
+#fake repository dir to query kernel version from remote
+fake_repo_dir=$(mktemp -t -d cc-kernel.XXXX)
+
+function cleanup {
+	rm  -rf "${fake_repo_dir}"
+}
+
+trap cleanup EXIT
+
 
 function usage() {
 	cat << EOT
@@ -31,19 +40,32 @@ EOT
 	exit 1
 }
 
+#Get latest version by checking remote tags
+#We dont ask to github api directly because force a user to provide a GITHUB token
+function get_latest_version {
+	pushd ${fake_repo_dir} >> /dev/null
+	git init -q
+	git remote add origin  https://github.com/clearcontainers/linux.git
+
+	cc_release=$(git ls-remote --tags 2>/dev/null \
+		        | grep -oP '\-\d+\.container'  \
+			        | grep -oP '\d+' \
+				        | sort -n | \
+					        tail -1 )
+
+	tag=$(git ls-remote --tags 2>/dev/null \
+		        | grep -oP "v\d+\.\d+\.\d+\-${cc_release}.container" \
+			        | tail -1)
+
+	popd >> /dev/null
+	echo "${tag}"
+}
+
 function download_kernel() {
 	local version=$1
-	local github_base="https://api.github.com/repos"
-	local latest_release_info_url="${github_base}/${repo_owner}/${repo_name}/releases/latest"
 	[ -n "${version}" ] || die "version not provided"
 	if [ "${version}" == "latest" ]; then
-		release_json="$(curl -s ${latest_release_info_url})"
-		parse_py='
-import json,sys
-release=json.load(sys.stdin)
-print release["tag_name"]
-'
-		version=$(echo "${release_json}" | python -c "$parse_py")
+		version=$(get_latest_version)
 	fi
 	echo "version to install ${version}"
 	local binaries_dir="${version}-binaries"
