@@ -626,6 +626,30 @@ func getCommitAndBranchWithContext(c *cli.Context) (commit, branch string, err e
 	return getCommitAndBranch(c.Args(), c.StringSlice("ignore-source-branch"))
 }
 
+func checkCommitsAction(c *cli.Context) error {
+	if c.Bool("debug") {
+		verbose = true
+	}
+
+	if verbose {
+		fmt.Printf("Running %v version %s\n", c.App.Name, c.App.Version)
+	}
+
+	commit, branch, err := getCommitAndBranchWithContext(c)
+	if err != nil {
+		return err
+	}
+
+	config := NewCommitConfig(c.Bool("need-fixes"),
+		c.Bool("need-sign-offs"),
+		c.String("fixes-prefix"),
+		c.String("sign-off-prefix"),
+		int(c.Uint("body-length")),
+		int(c.Uint("subject-length")))
+
+	return preChecks(config, commit, branch)
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "checkcommits"
@@ -696,29 +720,7 @@ func main() {
 		},
 	}
 
-	app.Action = func(c *cli.Context) error {
-		if c.Bool("debug") {
-			verbose = true
-		}
-
-		if verbose {
-			fmt.Printf("Running %v version %s\n", c.App.Name, c.App.Version)
-		}
-
-		commit, branch, err := getCommitAndBranchWithContext(c)
-		if err != nil {
-			return err
-		}
-
-		config := NewCommitConfig(c.Bool("need-fixes"),
-			c.Bool("need-sign-offs"),
-			c.String("fixes-prefix"),
-			c.String("sign-off-prefix"),
-			int(c.Uint("body-length")),
-			int(c.Uint("subject-length")))
-
-		return preChecks(config, commit, branch)
-	}
+	app.Action = checkCommitsAction
 
 	err := app.Run(os.Args)
 	if err != nil {
