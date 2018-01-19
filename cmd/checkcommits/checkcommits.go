@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Intel Corporation
+// Copyright (c) 2017-2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import (
 // CommitConfig encapsulates the user configuration options, but is also
 // used to pass some state between functions (FoundFixes).
 type CommitConfig struct {
-	// set when a fixes #XXX" commit is found
+	// set when a "Fixes #XXX" commit is found
 	FoundFixes bool
 
 	// All commits must have a sign-off
