@@ -46,6 +46,9 @@ type CommitConfig struct {
 	SobString   string
 	FixesString string
 
+	// Ignore NeedFixes if the subsystem matches this value.
+	IgnoreFixesSubsystem string
+
 	FixesPattern *regexp.Regexp
 	SobPattern   *regexp.Regexp
 }
@@ -122,8 +125,8 @@ func checkCommitSubject(config *CommitConfig, commit *Commit) error {
 		return fmt.Errorf("Commit %v: Failed to find subsystem in subject: %q", commit, subject)
 	}
 
-	// match 1 is the entire matching string
-	// match 2 is the subsystem name (without the colon)
+	// matches[0]: the entire matching string
+	// matches[1] the subsystem name (without the colon)
 	subsystem = matches[1]
 
 	length := len(subject)
@@ -411,6 +414,23 @@ func checkCommitsDetails(config *CommitConfig, commits []Commit) (err error) {
 		results = append(results, commit)
 	}
 
+	ignoreFixesSubsystem := false
+
+	if config.IgnoreFixesSubsystem != "" {
+		for _, commit := range results {
+			if strings.HasPrefix(commit.subsystem, config.IgnoreFixesSubsystem) {
+				ignoreFixesSubsystem = true
+			}
+		}
+	}
+
+	if ignoreFixesSubsystem {
+		// Fixes isn't required for the entire commit range
+		// due to the specified subsystem being found in one of the
+		// commits.
+		config.NeedFixes = false
+	}
+
 	if config.NeedFixes && !config.FoundFixes {
 		return fmt.Errorf("No %q found", config.FixesString)
 	}
@@ -535,7 +555,7 @@ func runCommand(args []string) (stdout []string, err error) {
 }
 
 // NewCommitConfig creates a new CommitConfig object.
-func NewCommitConfig(needFixes, needSignOffs bool, fixesPrefix, signoffPrefix string, bodyLength, subjectLength int) *CommitConfig {
+func NewCommitConfig(needFixes, needSignOffs bool, fixesPrefix, signoffPrefix, ignoreFixesForSubsystem string, bodyLength, subjectLength int) *CommitConfig {
 	config := &CommitConfig{
 		NeedSOBS:             needSignOffs,
 		NeedFixes:            needFixes,
@@ -543,6 +563,7 @@ func NewCommitConfig(needFixes, needSignOffs bool, fixesPrefix, signoffPrefix st
 		MaxSubjectLineLength: subjectLength,
 		SobString:            defaultSobString,
 		FixesString:          defaultFixesString,
+		IgnoreFixesSubsystem: ignoreFixesForSubsystem,
 	}
 
 	if config.MaxBodyLineLength == 0 {
@@ -687,6 +708,7 @@ func checkCommitsAction(c *cli.Context) error {
 		c.Bool("need-sign-offs"),
 		c.String("fixes-prefix"),
 		c.String("sign-off-prefix"),
+		c.String("ignore-fixes-for-subsystem"),
 		int(c.Uint("body-length")),
 		int(c.Uint("subject-length")))
 
@@ -733,6 +755,11 @@ func main() {
 			Usage:       "Display debug messages (implies verbose)",
 			EnvVar:      "CHECKCOMMITS_DEBUG",
 			Destination: &debug,
+		},
+
+		cli.StringFlag{
+			Name:  "ignore-fixes-for-subsystem",
+			Usage: fmt.Sprintf("Don't requires a Fixes comment if the subsystem matches the specified string"),
 		},
 
 		cli.StringFlag{

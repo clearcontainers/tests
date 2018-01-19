@@ -112,6 +112,7 @@ func createCommitConfig() (config *CommitConfig) {
 	return NewCommitConfig(true, true,
 		testFixesString,
 		"Signed-off-by",
+		"",
 		defaultMaxBodyLineLength,
 		defaultMaxSubjectLineLength)
 }
@@ -258,10 +259,13 @@ func TestCheckCommits(t *testing.T) {
 func TestCheckCommitsDetails(t *testing.T) {
 	assert := assert.New(t)
 
-	makeConfig := func() *CommitConfig {
+	ignoreSubsystem := "release"
+
+	makeConfigWithIgnoreSubsys := func(ignoreFixesSubsystem string) *CommitConfig {
 		return NewCommitConfig(true, true,
 			testFixesString,
 			"Signed-off-by",
+			ignoreFixesSubsystem,
 			defaultMaxBodyLineLength,
 			defaultMaxSubjectLineLength)
 	}
@@ -292,10 +296,17 @@ func TestCheckCommitsDetails(t *testing.T) {
 
 	data := []testData{
 		// A "normal" commit
-		{makeConfig(), makeCommits("foo", "Fixes #123"), false},
+		{makeConfigWithIgnoreSubsys(""), makeCommits("foo", "Fixes #123"), false},
+
+		// Releases don't require a Fixes comment
+		{makeConfigWithIgnoreSubsys(ignoreSubsystem), makeCommits(ignoreSubsystem, "foo"), false},
+
+		// Valid since there is no instance of ignoreSubsystem and the
+		// commits are "well-formed".
+		{makeConfigWithIgnoreSubsys(ignoreSubsystem), makeCommits("foo", "Fixes #123"), false},
 
 		// Fails as no "Fixes #XXX"
-		{makeConfig(), makeCommits("foo", "foo"), true},
+		{makeConfigWithIgnoreSubsys(""), makeCommits(ignoreSubsystem, "foo"), true},
 	}
 
 	for _, d := range data {
@@ -315,7 +326,7 @@ func TestCheckCommit(t *testing.T) {
 	err := checkCommit(nil, nil)
 	assert.Error(err, "expected error when no config specified")
 
-	config := NewCommitConfig(true, true, "", "", 0, 0)
+	config := NewCommitConfig(true, true, "", "", "", 0, 0)
 	err = checkCommit(config, nil)
 	assert.Error(err, "expected error when no commit specified")
 
