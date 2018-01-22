@@ -70,6 +70,8 @@ const (
 
 	defaultCommit = "HEAD"
 	defaultBranch = "master"
+
+	versionSuffix = "for clear-containers"
 )
 
 var (
@@ -731,6 +733,14 @@ func main() {
 	app.UsageText += fmt.Sprintf("     if running in a supported CI environment (Travis or Semaphore).\n\n")
 	app.UsageText += fmt.Sprintf("   - If not running under a recognised CI environment, commit will default\n")
 	app.UsageText += fmt.Sprintf("     to %q and branch to %q.", defaultCommit, defaultBranch)
+
+	cli.VersionPrinter = func(c *cli.Context) {
+		// #nosec
+		fmt.Fprintf(os.Stdout, "%s version %s %s\n",
+			c.App.Name,
+			c.App.Version,
+			versionSuffix)
+	}
 
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
