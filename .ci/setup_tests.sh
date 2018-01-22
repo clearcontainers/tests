@@ -25,3 +25,5 @@ checkcommits \
 	--body-length 72 \
 	--subject-length 75 \
 	--verbose
+
+.ci/go-static-checks.sh
