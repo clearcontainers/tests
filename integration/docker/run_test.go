@@ -15,6 +15,7 @@
 package docker
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -290,6 +291,7 @@ var _ = Describe("run", func() {
 	var (
 		args     []string
 		id       string
+		stderr   string
 		stdout   string
 		exitCode int
 	)
@@ -317,6 +319,17 @@ var _ = Describe("run", func() {
 			stdout, _, exitCode = DockerRun(args...)
 			Expect(exitCode).To(Equal(1))
 			Expect(stdout).NotTo(ContainSubstring("ls: /etc/foo: No such file or directory"))
+		})
+	})
+
+	Context("stdin using run", func() {
+		It("should not display the stdin", func() {
+			Skip("Issue https://github.com/clearcontainers/runtime/issues/932")
+			stdin := bytes.NewBufferString("hello")
+			args = []string{"-i", "--rm", "--name", id, Image}
+			_, stderr, exitCode = DockerRunWithPipe(stdin, args...)
+			Expect(exitCode).NotTo(Equal(0))
+			Expect(stderr).To(ContainSubstring("sh: hello: not found"))
 		})
 	})
 })
