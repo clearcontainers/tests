@@ -1,6 +1,6 @@
 # Clear Containers remote networking test
 
-- The`remote-networking-iperf3.sh` script measures bandwidth, jitter, latency or parallel bandwidth using
+- The`remote-networking-iperf3.sh` script measures bandwidth, jitter, latency, packet loss, or parallel bandwidth using
 `iperf3`using a remote setup. Host A will run a container that will act as a server while host B will run a
 container that will act as a client. The network bandwidth will be measured across the containers.
 
@@ -14,6 +14,9 @@ the maximum network bandwidth with `iperf3`.
 
 - The `direct-remote-networking-iperf3.sh` script measures bandwidth using a remote setup without using Swarm.
 Host A runs an `iperf3` server container while host B runs `iperf3` client container.
+
+`remote-networking-iperf3.sh`, `remote-networking-memory-smem.sh`, `remote-networking-cpu.sh`, and
+`remote-networking-qperf.sh` use Swarm to run the client and the server containers.
 
 ## Prerequisite
 
