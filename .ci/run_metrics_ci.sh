@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2017-2018 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,15 +32,12 @@ RESULTS_DIR="results"
 # Set up the initial state
 onetime_init
 
-# Verify/install report tools. These tools will
-# parse/send the results from metrics scripts execution.
+# Always build and install the latest versions of the tools we need
 for cmd in "${REPORT_CMDS[@]}"; do
-	if ! command -v "$cmd" > /dev/null 2>&1; then
-		pushd "$CURRENTDIR/../cmd/$cmd"
-		make
-		sudo make install
-		popd
-	fi
+	pushd "$CURRENTDIR/../cmd/$cmd"
+	make
+	sudo make install
+	popd
 done
 
 # Execute metrics scripts, save the results and report them
