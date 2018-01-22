@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Intel Corporation
+// Copyright (c) 2017-2018 Intel Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import (
 // CommitConfig encapsulates the user configuration options, but is also
 // used to pass some state between functions (FoundFixes).
 type CommitConfig struct {
-	// set when a fixes #XXX" commit is found
+	// set when a "Fixes #XXX" commit is found
 	FoundFixes bool
 
 	// All commits must have a sign-off
@@ -46,8 +46,19 @@ type CommitConfig struct {
 	SobString   string
 	FixesString string
 
+	// Ignore NeedFixes if the subsystem matches this value.
+	IgnoreFixesSubsystem string
+
 	FixesPattern *regexp.Regexp
 	SobPattern   *regexp.Regexp
+}
+
+// Commit represents a git(1) commit
+type Commit struct {
+	hash      string
+	subject   string
+	subsystem string
+	body      []string
 }
 
 const (
@@ -85,14 +96,16 @@ func init() {
 	}
 }
 
-func checkCommitSubject(config *CommitConfig, commit, subject string) error {
+func checkCommitSubject(config *CommitConfig, commit *Commit) error {
 	if config == nil {
 		return errNoConfig
 	}
 
-	if commit == "" {
-		return fmt.Errorf("Commit not specified")
+	if commit == nil {
+		return errNoCommit
 	}
+
+	subject := commit.subject
 
 	if subject == "" {
 		return fmt.Errorf("Commit %v: empty subject", commit)
@@ -102,18 +115,27 @@ func checkCommitSubject(config *CommitConfig, commit, subject string) error {
 		return fmt.Errorf("Commit %v: pure whitespace subject", commit)
 	}
 
-	subsystemPattern := regexp.MustCompile(`^[^ ][^ ]*.*:`)
+	subsystemPattern := regexp.MustCompile(`^[[:blank:]]*([^:[:blank:]]*)[[:blank:]]*:`)
+
 	matches := subsystemPattern.FindStringSubmatch(subject)
-	if matches == nil {
-		return fmt.Errorf("Commit %v: Failed to find subsystem in subject: %q",
-			commit, subject)
+
+	var subsystem string
+
+	if matches == nil || len(matches) != 2 {
+		return fmt.Errorf("Commit %v: Failed to find subsystem in subject: %q", commit, subject)
 	}
+
+	// matches[0]: the entire matching string
+	// matches[1] the subsystem name (without the colon)
+	subsystem = matches[1]
 
 	length := len(subject)
 	if length > config.MaxSubjectLineLength {
 		return fmt.Errorf("commit %v: subject too long (max %v, got %v): %q",
 			commit, config.MaxSubjectLineLength, length, subject)
 	}
+
+	commit.subsystem = subsystem
 
 	if config.NeedFixes && config.FixesPattern != nil {
 		matches = config.FixesPattern.FindStringSubmatch(subject)
@@ -126,12 +148,16 @@ func checkCommitSubject(config *CommitConfig, commit, subject string) error {
 	return nil
 }
 
-func checkCommitBodyLine(config *CommitConfig, commit string, line string,
+func checkCommitBodyLine(config *CommitConfig, commit *Commit, line string,
 	lineNum int, nonWhitespaceOnlyLine *int,
 	sobLine *int) error {
 
 	if config == nil {
 		return errNoConfig
+	}
+
+	if commit == nil {
+		return errNoCommit
 	}
 
 	if line == "" {
@@ -194,15 +220,16 @@ func checkCommitBodyLine(config *CommitConfig, commit string, line string,
 	return nil
 }
 
-func checkCommitBody(config *CommitConfig, commit string, body []string) error {
+func checkCommitBody(config *CommitConfig, commit *Commit) error {
 	if config == nil {
 		return errNoConfig
 	}
 
-	if commit == "" {
-		return fmt.Errorf("Commit not specified")
+	if commit == nil {
+		return errNoCommit
 	}
 
+	body := commit.body
 	if body == nil {
 		return fmt.Errorf("Commit %v: empty body", commit)
 	}
@@ -297,56 +324,77 @@ func getCommitBody(commit string) ([]string, error) {
 	return runGitLog(commit, "%b")
 }
 
-func checkCommitFull(config *CommitConfig, commit, subject string, body []string) error {
-	if config == nil {
-		return errNoConfig
-	}
-
-	if commit == "" {
-		return errNoCommit
-	}
-
-	if subject == "" {
-		return fmt.Errorf("Commit %v: empty subject", commit)
-	}
-
-	if body == nil {
-		return fmt.Errorf("Commit %v: empty body", commit)
-	}
-
-	err := checkCommitSubject(config, commit, subject)
+func checkCommit(config *CommitConfig, commit *Commit) error {
+	err := checkCommitSubject(config, commit)
 	if err != nil {
 		return err
 	}
 
-	err = checkCommitBody(config, commit, body)
-	return err
-}
-
-func checkCommit(config *CommitConfig, commit string) error {
-	if config == nil {
-		return errNoConfig
-	}
-
-	if commit == "" {
-		return errNoCommit
-	}
-
-	subject, err := getCommitSubject(commit)
-	if err != nil {
-		return err
-	}
-
-	body, err := getCommitBody(commit)
-	if err != nil {
-		return err
-	}
-
-	return checkCommitFull(config, commit, subject, body)
+	return checkCommitBody(config, commit)
 }
 
 // checkCommits performs checks on specified list of commits
-func checkCommits(config *CommitConfig, commits []string) error {
+func checkCommits(config *CommitConfig, commitHashes []string) error {
+	if config == nil {
+		return errNoConfig
+	}
+
+	if commitHashes == nil {
+		return errNoCommit
+	}
+
+	if len(commitHashes) == 0 {
+		// Handle Travis builds on master
+		return nil
+	}
+
+	commits, err := getCommits(commitHashes)
+	if err != nil {
+		return err
+	}
+
+	return checkCommitsDetails(config, commits)
+}
+
+func getCommits(commitHashes []string) ([]Commit, error) {
+	if commitHashes == nil {
+		return []Commit{}, errNoCommit
+	}
+
+	var commits []Commit
+
+	for _, hash := range commitHashes {
+		subject, err := getCommitSubject(hash)
+		if err != nil {
+			return []Commit{}, err
+		}
+
+		if subject == "" {
+			return []Commit{}, fmt.Errorf("Commit %v: empty subject", hash)
+		}
+
+		body, err := getCommitBody(hash)
+		if err != nil {
+			return []Commit{}, err
+		}
+
+		if body == nil {
+			return []Commit{}, fmt.Errorf("Commit %v: empty body", hash)
+		}
+
+		commit := Commit{
+			hash:    hash,
+			subject: subject,
+			body:    body,
+		}
+
+		commits = append(commits, commit)
+	}
+
+	return commits, nil
+}
+
+func checkCommitsDetails(config *CommitConfig, commits []Commit) (err error) {
 	if config == nil {
 		return errNoConfig
 	}
@@ -355,19 +403,32 @@ func checkCommits(config *CommitConfig, commits []string) error {
 		return errNoCommit
 	}
 
-	if len(commits) == 0 {
-		// Handle Travis builds on master
-		return nil
-	}
+	var results []Commit
 
 	for _, commit := range commits {
-		if verbose {
-			fmt.Printf("Checking commit %s\n", commit)
-		}
-		err := checkCommit(config, commit)
+		err = checkCommit(config, &commit)
 		if err != nil {
 			return err
 		}
+
+		results = append(results, commit)
+	}
+
+	ignoreFixesSubsystem := false
+
+	if config.IgnoreFixesSubsystem != "" {
+		for _, commit := range results {
+			if strings.HasPrefix(commit.subsystem, config.IgnoreFixesSubsystem) {
+				ignoreFixesSubsystem = true
+			}
+		}
+	}
+
+	if ignoreFixesSubsystem {
+		// Fixes isn't required for the entire commit range
+		// due to the specified subsystem being found in one of the
+		// commits.
+		config.NeedFixes = false
 	}
 
 	if config.NeedFixes && !config.FoundFixes {
@@ -445,10 +506,12 @@ func preChecks(config *CommitConfig, commit, branch string) error {
 
 	if verbose {
 		l := len(commits)
+
 		extra := ""
 		if l != 1 {
 			extra = "s"
 		}
+
 		fmt.Printf("Found %d commit%s between commit %v and branch %v\n",
 			l, extra, commit, branch)
 	}
@@ -492,7 +555,7 @@ func runCommand(args []string) (stdout []string, err error) {
 }
 
 // NewCommitConfig creates a new CommitConfig object.
-func NewCommitConfig(needFixes, needSignOffs bool, fixesPrefix, signoffPrefix string, bodyLength, subjectLength int) *CommitConfig {
+func NewCommitConfig(needFixes, needSignOffs bool, fixesPrefix, signoffPrefix, ignoreFixesForSubsystem string, bodyLength, subjectLength int) *CommitConfig {
 	config := &CommitConfig{
 		NeedSOBS:             needSignOffs,
 		NeedFixes:            needFixes,
@@ -500,6 +563,7 @@ func NewCommitConfig(needFixes, needSignOffs bool, fixesPrefix, signoffPrefix st
 		MaxSubjectLineLength: subjectLength,
 		SobString:            defaultSobString,
 		FixesString:          defaultFixesString,
+		IgnoreFixesSubsystem: ignoreFixesForSubsystem,
 	}
 
 	if config.MaxBodyLineLength == 0 {
@@ -626,6 +690,31 @@ func getCommitAndBranchWithContext(c *cli.Context) (commit, branch string, err e
 	return getCommitAndBranch(c.Args(), c.StringSlice("ignore-source-branch"))
 }
 
+func checkCommitsAction(c *cli.Context) error {
+	if c.Bool("debug") {
+		verbose = true
+	}
+
+	if verbose {
+		fmt.Printf("Running %v version %s\n", c.App.Name, c.App.Version)
+	}
+
+	commit, branch, err := getCommitAndBranchWithContext(c)
+	if err != nil {
+		return err
+	}
+
+	config := NewCommitConfig(c.Bool("need-fixes"),
+		c.Bool("need-sign-offs"),
+		c.String("fixes-prefix"),
+		c.String("sign-off-prefix"),
+		c.String("ignore-fixes-for-subsystem"),
+		int(c.Uint("body-length")),
+		int(c.Uint("subject-length")))
+
+	return preChecks(config, commit, branch)
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "checkcommits"
@@ -669,6 +758,11 @@ func main() {
 		},
 
 		cli.StringFlag{
+			Name:  "ignore-fixes-for-subsystem",
+			Usage: fmt.Sprintf("Don't requires a Fixes comment if the subsystem matches the specified string"),
+		},
+
+		cli.StringFlag{
 			Name:  "fixes-prefix",
 			Usage: fmt.Sprintf("Fixes `prefix` used as an alternative to %q", defaultFixesString),
 		},
@@ -696,29 +790,7 @@ func main() {
 		},
 	}
 
-	app.Action = func(c *cli.Context) error {
-		if c.Bool("debug") {
-			verbose = true
-		}
-
-		if verbose {
-			fmt.Printf("Running %v version %s\n", c.App.Name, c.App.Version)
-		}
-
-		commit, branch, err := getCommitAndBranchWithContext(c)
-		if err != nil {
-			return err
-		}
-
-		config := NewCommitConfig(c.Bool("need-fixes"),
-			c.Bool("need-sign-offs"),
-			c.String("fixes-prefix"),
-			c.String("sign-off-prefix"),
-			int(c.Uint("body-length")),
-			int(c.Uint("subject-length")))
-
-		return preChecks(config, commit, branch)
-	}
+	app.Action = checkCommitsAction
 
 	err := app.Run(os.Args)
 	if err != nil {
