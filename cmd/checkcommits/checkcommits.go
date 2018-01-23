@@ -98,13 +98,21 @@ func init() {
 	}
 }
 
-func checkCommitSubject(config *CommitConfig, commit *Commit) error {
+func commonChecks(config *CommitConfig, commit *Commit) error {
 	if config == nil {
 		return errNoConfig
 	}
 
 	if commit == nil {
 		return errNoCommit
+	}
+
+	return nil
+}
+
+func checkCommitSubject(config *CommitConfig, commit *Commit) error {
+	if err := commonChecks(config, commit); err != nil {
+		return err
 	}
 
 	subject := commit.subject
@@ -154,12 +162,8 @@ func checkCommitBodyLine(config *CommitConfig, commit *Commit, line string,
 	lineNum int, nonWhitespaceOnlyLine *int,
 	sobLine *int) error {
 
-	if config == nil {
-		return errNoConfig
-	}
-
-	if commit == nil {
-		return errNoCommit
+	if err := commonChecks(config, commit); err != nil {
+		return err
 	}
 
 	if line == "" {
@@ -223,12 +227,8 @@ func checkCommitBodyLine(config *CommitConfig, commit *Commit, line string,
 }
 
 func checkCommitBody(config *CommitConfig, commit *Commit) error {
-	if config == nil {
-		return errNoConfig
-	}
-
-	if commit == nil {
-		return errNoCommit
+	if err := commonChecks(config, commit); err != nil {
+		return err
 	}
 
 	body := commit.body
