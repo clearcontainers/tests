@@ -79,6 +79,15 @@ then
         .ci/setup_tests.sh
 fi
 
+# Hack to make fetchbranches tool work under Jenkins.
+# This needs to be removed once https://github.com/clearcontainers/tests/issues/872
+# gets properly fixed.
+if [ ${ghprbPullId} ]; then
+	export PULL_REQUEST_NUMBER="${ghprbPullId}"
+	export SEMAPHORE=true
+	export SEMAPHORE_REPO_SLUG="${cc_repo/github.com\//}"
+fi
+
 # Make sure runc is default runtime.
 # This is needed in case a new image creation.
 # See https://github.com/clearcontainers/osbuilder/issues/8
