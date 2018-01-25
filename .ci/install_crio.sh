@@ -71,6 +71,9 @@ crio_config_file="/etc/crio/crio.conf"
 echo "Set runc as default runtime in CRI-O for trusted workloads"
 sudo sed -i 's/^runtime =.*/runtime = "\/usr\/local\/bin\/crio-runc"/' "$crio_config_file"
 
+echo "Add docker.io registry to pull images"
+sudo sed -i 's/^registries = \[/registries = \[ "docker.io"/' /etc/crio/crio.conf
+
 echo "Set Clear containers as default runtime in CRI-O for untrusted workloads"
 sudo sed -i 's/default_workload_trust = "trusted"/default_workload_trust = "untrusted"/' "$crio_config_file"
 sudo sed -i 's/runtime_untrusted_workload = ""/runtime_untrusted_workload = "\/usr\/local\/bin\/cc-runtime"/' "$crio_config_file"
