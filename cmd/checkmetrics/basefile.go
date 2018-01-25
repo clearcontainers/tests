@@ -53,10 +53,6 @@ func newBasefile(file string) (*baseFile, error) {
 	// place it in the results table later on.
 	for n, m := range basefile.Metric {
 		basefile.Metric[n].Gap = ((m.MaxVal / m.MinVal) * 100.0) - 100
-		fmt.Printf(" Max %f, Min %f, Gap %f\n",
-			m.MaxVal,
-			m.MinVal,
-			m.Gap)
 	}
 
 	return &basefile, nil
