@@ -77,10 +77,10 @@ MIN_MEMORY_FREE="${MIN_MEMORY_FREE:-2*1024*1024*1024}"
 
 # Proxy and shim paths come from common.bash
 # You can over-ride them in your env
-#CC_PROXY_PATHPROXY
-#CC_SHIM_PATH
+#PROXY_PATH
+#SHIM_PATH
 # Use the magic in common.bash to find the correct QEMU path
-CC_QEMU_PATH="${CC_QEMU_PATH:-get_qemu_path}"
+QEMU_PATH="${QEMU_PATH:-get_qemu_path}"
 
 # We monitor dockerd as we know it can grow as we run containers
 DOCKERD_PATH="${DOCKERD_PATH:-/usr/bin/dockerd}"
@@ -133,6 +133,8 @@ function cleanup() {
 
 # helper function to get USS of prcess in arg1
 function get_proc_uss() {
+	[[ -z "$1" ]] && echo 0 && return
+
 	item=$(sudo smem -t -P "^$1" | tail -1 | awk '{print $4}')
 	((item*=1024))
 	echo $item
@@ -140,6 +142,8 @@ function get_proc_uss() {
 
 # helper function to get PSS of prcess in arg1
 function get_proc_pss() {
+	[[ -z "$1" ]] && echo 0 && return
+
 	item=$(sudo smem -t -P "^$1" | tail -1 | awk '{print $5}')
 	((item*=1024))
 	echo $item
@@ -152,9 +156,9 @@ function grab_cc_uss() {
 		return
 	fi
 
-	proxy=$(get_proc_uss $CC_PROXY_PATH)
-	shim=$(get_proc_uss $CC_SHIM_PATH)
-	qemu=$(get_proc_uss $CC_QEMU_PATH)
+	proxy=$(get_proc_uss $PROXY_PATH)
+	shim=$(get_proc_uss $SHIM_PATH)
+	qemu=$(get_proc_uss $QEMU_PATH)
 
 	total=$((proxy + shim + qemu))
 	echo -n ", $total" >> $DATAFILE
@@ -167,9 +171,9 @@ function grab_cc_pss() {
 		return
 	fi
 
-	proxy=$(get_proc_pss $CC_PROXY_PATH)
-	shim=$(get_proc_pss $CC_SHIM_PATH)
-	qemu=$(get_proc_pss $CC_QEMU_PATH)
+	proxy=$(get_proc_pss $PROXY_PATH)
+	shim=$(get_proc_pss $SHIM_PATH)
+	qemu=$(get_proc_pss $QEMU_PATH)
 
 	total=$((proxy + shim + qemu))
 	echo -n ", $total" >> $DATAFILE
@@ -374,7 +378,7 @@ function show_vars()
 	echo -e "\t\tThe maximum amount of memory to be consumed before terminating"
 	echo -e "\tMIN_MEMORY_FREE (${MIN_MEMORY_FREE})"
 	echo -e "\t\tThe minimum amount of memory allowed to be free before terminating"
-	echo -e "\tCC_QEMU_PATH (${CC_QEMU_PATH})"
+	echo -e "\tQEMU_PATH (${QEMU_PATH})"
 	echo -e "\t\tThe path to the Clear Containers QEMU binary (for 'smem' measurements)"
 	echo -e "\tDOCKERD_PATH (${DOCKERD_PATH})"
 	echo -e "\t\tThe path to the Docker 'dockerd' binary (for 'smem' measurements)"
