@@ -21,8 +21,18 @@ LIB_DIR="${SCRIPT_PATH}/../lib"
 # Set variables to reasonable defaults if unset or empty
 DOCKER_EXE="${DOCKER_EXE:-docker}"
 RUNTIME="${RUNTIME:-cc-runtime}"
-CC_SHIM_PATH="${CC_SHIM_PATH:-/usr/libexec/clear-containers/cc-shim}"
-CC_PROXY_PATH="${CC_PROXY_PATH:-/usr/libexec/clear-containers/cc-proxy}"
+
+case "$RUNTIME" in
+	cc-runtime)
+		SHIM_PATH="${SHIM_PATH:-/usr/libexec/clear-containers/cc-shim}"
+		PROXY_PATH="${PROXY_PATH:-/usr/libexec/clear-containers/cc-proxy}"
+		;;
+
+	kata-runtime)
+		SHIM_PATH="${SHIM_PATH:-/usr/libexec/kata-containers/kata-shim}"
+		PROXY_PATH="${PROXY_PATH:-/usr/libexec/kata-containers/kata-proxy}"
+		;;
+esac
 
 # If we fail for any reason, exit through here and we should log that to the correct
 # place and return the correct code to halt the run
@@ -249,6 +259,9 @@ function runtime_docker(){
 
 function check_active_process() {
 	process=$1
+
+	[[ -z "$1" ]] && echo 0 && return
+
 	if pgrep -f "$process" > /dev/null; then
 		echo "1"
 	else
@@ -266,18 +279,18 @@ function kill_processes_before_start() {
 	HYPERVISOR_PATH="$(get_qemu_path)"
 	result=$(check_active_process "$HYPERVISOR_PATH")
 	if [[ $result -ne 0 ]]; then
-		warning "Found unexpected ${HYPERVISOR_PATH} processes present"
+		warning "Found unexpected hypervisor [${HYPERVISOR_PATH}] processes present"
 		# Sometimes we race and the process has gone by the time we list
 		# it - so make a pgrep fail non-fatal
 		pgrep -a -f "$HYPERVISOR_PATH" || true
 		sudo killall -9 "${HYPERVISOR_PATH##*/}" || true
 	fi
 
-	result=$(check_active_process "$CC_SHIM_PATH")
+	result=$(check_active_process "$SHIM_PATH")
 	if [[ $result -ne 0 ]]; then
-		warning "Found unexpected ${CC_SHIM_PATH} processes present"
-		pgrep -a -f "$CC_SHIM_PATH" || true
-		sudo killall -9 "${CC_SHIM_PATH##*/}" || true
+		warning "Found unexpected shim [${SHIM_PATH}] processes present"
+		pgrep -a -f "$SHIM_PATH" || true
+		sudo killall -9 "${SHIM_PATH##*/}" || true
 	fi
 }
 
