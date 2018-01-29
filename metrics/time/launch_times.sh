@@ -141,7 +141,7 @@ init () {
 	echo "Executing test: ${TEST_NAME} ${TEST_ARGS}"
 	check_cmds "${REQUIRED_CMDS[@]}"
 
-	if [ "$RUNTIME" == "cor" ] || [ "$RUNTIME" == "cc-runtime" ]; then
+	if [ "$RUNTIME" == "cor" ] || [ "$RUNTIME" == "cc-runtime" ] || [ "$RUNTIME" == "kata-runtime" ] ; then
 		CALCULATE_KERNEL=1
 		DMESGCMD="; dmesg"
 	else
