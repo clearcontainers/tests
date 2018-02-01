@@ -73,9 +73,17 @@ then
         .ci/setup_tests.sh
 fi
 
-# Set up the distro environment. Get, build and install all the latest
-# components
-.ci/setup.sh
+# Call the repo-specific setup script.
+#
+# It is assumed this script will:
+#
+# - Call "${tests_repo}/.ci/setup.sh"
+#
+#   This will setup the distro environment (get, build and install all the
+#   latest components).
+#
+# - Call checkcommits.
+bash "${GOPATH}/src/${cc_repo}/.ci/setup.sh"
 
 # The metrics CI does not need to do the QA checks - it only runs once
 # it knows the QA CI has passed already.
