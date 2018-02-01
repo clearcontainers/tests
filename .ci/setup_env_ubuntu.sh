@@ -21,8 +21,6 @@ source "/etc/os-release"
 source "${cidir}/lib.sh"
 get_cc_versions
 
-cc_image_path="/usr/share/clear-containers"
-
 if grep -q "N" /sys/module/kvm_intel/parameters/nested; then
 	echo "enable Nested Virtualization"
 	sudo modprobe -r kvm_intel
@@ -35,14 +33,14 @@ sudo -E apt update
 echo "Install chronic"
 sudo -E apt install -y moreutils
 
+echo "Install test dependencies"
+chronic sudo -E apt install -y python
+
 echo "Install clear containers dependencies"
 chronic sudo -E apt install -y libtool automake autotools-dev autoconf bc alien libpixman-1-dev
 
 echo "Install qemu-lite binary"
 "${cidir}/install_qemu_lite.sh" "${qemu_lite_clear_release}" "${qemu_lite_sha}" "$ID"
-
-echo "Install clear-containers image"
-"${cidir}/install_clear_image.sh" "$clear_vm_image_version" "${cc_image_path}"
 
 echo "Install CRI-O dependencies for all Ubuntu versions"
 chronic sudo -E apt install -y libglib2.0-dev libseccomp-dev libapparmor-dev libgpgme11-dev
@@ -53,12 +51,9 @@ chronic sudo -E apt install -y bison
 echo "Install libudev-dev"
 chronic sudo -E apt-get install -y libudev-dev
 
-
 echo "Install Build Tools"
 sudo -E apt install -y build-essential python pkg-config zlib1g-dev
 
-echo "Install Clear Containers Kernel"
-"${cidir}/install_clearcontainers_kernel.sh" "latest"
 
 echo -e "Install CRI-O dependencies available for Ubuntu $VERSION_ID"
 sudo -E apt install -y libdevmapper-dev btrfs-tools util-linux

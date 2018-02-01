@@ -34,18 +34,15 @@ sudo -E dnf -y install moreutils
 chronic sudo -E dnf -y install dnf-plugins-core
 chronic sudo -E dnf makecache
 
+echo "Install test dependencies"
+chronic sudo -E dnf -y install python
+
 echo "Install clear containers dependencies"
 chronic sudo -E dnf -y groupinstall "Development tools"
 chronic sudo -E dnf -y install libtool automake autoconf bc pixman numactl-libs
 
 echo "Install qemu-lite binary"
 "${cidir}/install_qemu_lite.sh" "${qemu_lite_clear_release}" "${qemu_lite_sha}" "$ID"
-
-echo "Install clear-containers image"
-"${cidir}/install_clear_image.sh" "$clear_vm_image_version" "${cc_image_path}"
-
-echo "Install Clear Containers Kernel"
-"${cidir}/install_clearcontainers_kernel.sh" "latest"
 
 echo "Install CRI-O dependencies"
 chronic sudo -E dnf -y install btrfs-progs-devel device-mapper-devel 	  \
