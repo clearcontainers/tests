@@ -51,7 +51,12 @@ fi
 # Get the repository and move to the correct commit
 go get ${cc_repo} || true
 pushd ${GOPATH}/src/${cc_repo}
-if [ ${ghprbPullId} ] && [ ${ghprbTargetBranch} ]
+
+pr_number=
+
+[ "${ghprbPullId}" ] && [ "${ghprbTargetBranch}" ] && pr_number="${ghprbPullId}"
+
+if [ -n "$pr_number" ]
 then
 	# For PRs we rebase the PR commits onto the defined target branch
 	git fetch origin "pull/${ghprbPullId}/head" && git checkout master && git reset --hard FETCH_HEAD && git rebase origin/${ghprbTargetBranch}
