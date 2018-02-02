@@ -51,10 +51,21 @@ fi
 # Get the repository and move to the correct commit
 go get ${cc_repo} || true
 pushd ${GOPATH}/src/${cc_repo}
-if [ ${ghprbPullId} ] && [ ${ghprbTargetBranch} ]
+
+pr_number=
+
+[ "${ghprbPullId}" ] && [ "${ghprbTargetBranch}" ] && pr_number="${ghprbPullId}"
+
+if [ -n "$pr_number" ]
 then
-	# For PRs we rebase the PR commits onto the defined target branch
-	git fetch origin "pull/${ghprbPullId}/head" && git checkout master && git reset --hard FETCH_HEAD && git rebase origin/${ghprbTargetBranch}
+	pr_branch="PR_${pr_number}"
+
+	# Create a separate branch for the PR. This is required to allow
+	# checkcommits to be able to determine how the PR differs from
+	# "master".
+	git fetch origin "pull/${pr_number}/head:${pr_branch}"
+	git checkout "${pr_branch}"
+	git rebase "origin/${ghprbTargetBranch}"
 else
 	# Othewise we test the master branch
 	git fetch origin && git checkout master && git reset --hard origin/master
@@ -68,9 +79,27 @@ then
         .ci/setup_tests.sh
 fi
 
-# Set up the distro environment. Get, build and install all the latest
-# components
-.ci/setup.sh
+# Call the repo-specific setup script.
+#
+# It is assumed this script will:
+#
+# - Call "${tests_repo}/.ci/setup.sh"
+#
+#   This will setup the distro environment (get, build and install all the
+#   latest components).
+#
+# - Call checkcommits.
+bash "${GOPATH}/src/${cc_repo}/.ci/setup.sh"
+
+if [ -n "$pr_number" ]
+then
+	# Now that checkcommits has run, move the PR commits into the master
+	# branch before running the tests. Having the commits in "master" is
+	# required to ensure coveralls works.
+	git checkout master
+	git reset --hard "$pr_branch"
+	git branch -D "$pr_branch"
+fi
 
 # The metrics CI does not need to do the QA checks - it only runs once
 # it knows the QA CI has passed already.
