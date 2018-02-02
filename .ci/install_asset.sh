@@ -20,8 +20,15 @@ repo_owner="clearcontainers"
 latest=false
 readonly runtime_versions_url="https://raw.githubusercontent.com/${repo_owner}/runtime/master/versions.txt"
 readonly versions_txt="$GOPATH/src/github.com/${repo_owner}/runtime/versions.txt"
+readonly tmp_dir=$(mktemp -t -d install-assets.XXXX)
 #fake repository dir to query kernel and image  version from remote
 fake_repo_dir=$(mktemp -t -d assets.XXXX)
+
+function cleanup {
+	rm -rf "${tmp_dir}"
+}
+
+trap cleanup EXIT
 
 function usage() {
 	cat << EOT
@@ -191,5 +198,6 @@ function download_asset {
 	popd
 }
 
-
+pushd ${tmp_dir}
 download_asset "$asset" "${version}"
+popd
