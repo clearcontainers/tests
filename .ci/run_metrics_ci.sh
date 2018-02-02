@@ -24,7 +24,16 @@ source "${CURRENTDIR}/../metrics/lib/common.bash"
 
 REPORT_CMDS=("checkmetrics" "emailreport")
 
-KSM_ENABLE_FILE="/sys/kernel/mm/ksm/run"
+KSM_BASE="/sys/kernel/mm/ksm"
+KSM_ENABLE_FILE="${KSM_BASE}/run"
+KSM_PAGES_FILE="${KSM_BASE}/pages_to_scan"
+KSM_SLEEP_FILE="${KSM_BASE}/sleep_millisecs"
+
+# The settings we use for an 'aggresive' KSM setup
+# Scan 1000 pages every 50ms - 20,000 pages/s
+KSM_AGGRESIVE_PAGES=1000
+KSM_AGGRESIVE_SLEEP=50
+
 GITHUB_URL="https://github.com"
 RESULTS_BACKUP_PATH="/var/local/localCI/backup"
 RESULTS_DIR="results"
@@ -40,6 +49,38 @@ for cmd in "${REPORT_CMDS[@]}"; do
 	popd
 done
 
+# Save the current KSM settings so we can restore them later
+save_ksm_settings(){
+	echo "saving KSM settings"
+	ksm_stored_run=$(cat ${KSM_ENABLE_FILE})
+	ksm_stored_pages=$(cat ${KSM_ENABLE_FILE})
+	ksm_stored_sleep=$(cat ${KSM_ENABLE_FILE})
+}
+
+set_ksm_aggressive(){
+	echo "setting KSM to aggressive mode"
+	# Flip the run off/on to ensure a restart/rescan
+	sudo bash -c "echo 0 > ${KSM_ENABLE_FILE}"
+	sudo bash -c "echo ${KSM_AGGRESIVE_PAGES} > ${KSM_PAGES_FILE}"
+	sudo bash -c "echo ${KSM_AGGRESIVE_SLEEP} > ${KSM_SLEEP_FILE}"
+	sudo bash -c "echo 1 > ${KSM_ENABLE_FILE}"
+}
+
+restore_ksm_settings(){
+	echo "restoring KSM settings"
+	# First turn off the run to ensure if we are then re-enabling
+	# that any changes take effect
+	sudo bash -c "echo 0 > ${KSM_ENABLE_FILE}"
+	sudo bash -c "echo ${ksm_stored_pages} > ${KSM_PAGES_FILE}"
+	sudo bash -c "echo ${ksm_stored_sleep} > ${KSM_SLEEP_FILE}"
+	sudo bash -c "echo ${ksm_stored_run} > ${KSM_ENABLE_FILE}"
+}
+
+disable_ksm(){
+	echo "disabling KSM"
+	sudo bash -c "echo 0 > ${KSM_ENABLE_FILE}"
+}
+
 # Execute metrics scripts, save the results and report them
 # by email.
 pushd "$CURRENTDIR/../metrics"
@@ -49,6 +90,10 @@ pushd "$CURRENTDIR/../metrics"
 	# and then turn it off for the rest of the tests, as KSM may introduce
 	# some extra noise in the results by stealing CPU time for instance
 	if [[ -f ${KSM_ENABLE_FILE} ]]; then
+		save_ksm_settings
+		trap restore_ksm_settings EXIT QUIT KILL
+		set_ksm_aggressive
+
 		# Ensure KSM is enabled
 		sudo bash -c "echo 1 > ${KSM_ENABLE_FILE}"
 
@@ -59,10 +104,11 @@ pushd "$CURRENTDIR/../metrics"
 		# Run the memory footprint test. With default Ubuntu 16.04
 		# settings, and 20 containers, it takes ~200s to 'settle' to
 		# a steady memory footprint
-		bash density/docker_memory_usage.sh 20 300
+		bash density/docker_memory_usage.sh 20 300 auto
 
 		# And now ensure KSM is turned off for the rest of the tests
 		sudo bash -c "echo 0 > ${KSM_ENABLE_FILE}"
+		disable_ksm
 	fi
 
 	# Run the time tests

@@ -37,6 +37,7 @@ IMAGE='busybox'
 CMD='sh'
 NUM_CONTAINERS="$1"
 WAIT_TIME="$2"
+AUTO_MODE="$3"
 TEST_NAME="memory footprint"
 TEST_ARGS="workload=${IMAGE} units=kb"
 SMEM_BIN="smem"
@@ -45,11 +46,13 @@ KSM_ENABLE_FILE="/sys/kernel/mm/ksm/run"
 # Show help about this script
 function help(){
 cat << EOF
-Usage: $0 <count> <wait_time>
+Usage: $0 <count> <wait_time> [auto]
    Description:
         <count>      : Number of Clear Containers to run.
         <wait_time>  : Time in seconds to wait before taking
                        metrics.
+        [auto]       : Optional 'auto KSM settle' mode
+                       waits for ksm pages_shared to settle down
 EOF
 }
 
@@ -120,6 +123,58 @@ function get_pss_memory(){
 	echo "$avg"
 }
 
+# Wait for KSM to settle down, or timeout waiting
+# The basic algorithm is to look at the pages_shared value
+# at the end of every 'full scan', and if the value
+# has changed very little, then we are done (because we presume
+# a full scan has managed to do few new merges)
+#
+# arg1 - timeout in seconds
+wait_ksm_settle(){
+	local t pcnt
+	local oldscan=-1 newscan
+	local oldpages=-1 newpages
+
+	oldscan=$(cat /sys/kernel/mm/ksm/full_scans)
+
+	# Go around the loop until either we see a small % change
+	# between two full_scans, or we timeout
+	for ((t=0; t<$1; t++)); do
+
+		newscan=$(cat /sys/kernel/mm/ksm/full_scans)
+		if (( newscan != oldscan )); then
+			echo -e "\nnew full_scan ($oldscan to $newscan)"
+
+			newpages=$(cat /sys/kernel/mm/ksm/pages_shared)
+			# Do we have a previous scan to compare with
+			echo "check pages $oldpages to $newpages"
+			if (( oldpages != -1 )); then
+				# avoid divide by zero problems
+				if (( $oldpages > 0 )); then
+					pcnt=$(( 100 - ((newpages * 100) / oldpages) ))
+					# abs()
+					pcnt=$(( $pcnt * -1 ))
+
+					echo "$oldpages to $newpages is ${pcnt}%"
+
+					if (( $pcnt <= 5 )); then
+						echo "KSM stabilised at ${t}s"
+						return
+					fi
+				else
+					echo "$oldpages KSM pages... waiting"
+				fi
+			fi
+			oldscan=$newscan
+			oldpages=$newpages
+		else
+			echo -n "."
+		fi
+		sleep 1
+	done
+	echo "Timed out after ${1}s waiting for KSM to settle"
+}
+
 # It calculates the memory footprint
 # of a CC.
 function get_docker_memory_usage(){
@@ -136,9 +191,19 @@ function get_docker_memory_usage(){
 		${DOCKER_EXE} run --runtime "$RUNTIME" --name ${containers[-1]} -tid $IMAGE $CMD
 	done
 
-	# If KSM is enabled, then you normally want to sleep long enough to
-	# let it do its work and for the numbers to 'settle'.
-	sleep "$WAIT_TIME"
+	if [ "$AUTO_MODE" == "auto" ]; then
+		if (( ksm_on != 1 )); then
+			die "KSM not enabled, cannot use auto mode"
+		fi
+
+		echo "Entering KSM settle auto detect mode..."
+		wait_ksm_settle $WAIT_TIME
+	else
+		# If KSM is enabled, then you normally want to sleep long enough to
+		# let it do its work and for the numbers to 'settle'.
+		echo "napping $WAIT_TIME s"
+		sleep "$WAIT_TIME"
+	fi
 
 	# Check the runtime in order in order to determine which process will
 	# be measured about PSS
@@ -186,7 +251,7 @@ function get_docker_memory_usage(){
 }
 
 # Verify enough arguments
-if [[ $# != 2 ]];then
+if [ $# != 2 ] && [ $# != 3 ];then
 	echo >&2 "error: Not enough arguments [$@]"
 	help
 	exit 1
