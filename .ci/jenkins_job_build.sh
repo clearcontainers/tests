@@ -48,10 +48,11 @@ then
 	go get github.com/mattn/goveralls
 fi
 
-# Get the repository and move to the correct commit
-go get ${cc_repo} || true
+# Get or update the repository, but do not build.
+go get -d -u ${cc_repo} || true
 pushd ${GOPATH}/src/${cc_repo}
 
+# And move to the correct commit
 pr_number=
 
 [ "${ghprbPullId}" ] && [ "${ghprbTargetBranch}" ] && pr_number="${ghprbPullId}"
