@@ -56,6 +56,9 @@ pr_number=
 
 [ "${ghprbPullId}" ] && [ "${ghprbTargetBranch}" ] && pr_number="${ghprbPullId}"
 
+# Make sure repo is clean
+git clean -dfx
+
 if [ -n "$pr_number" ]
 then
 	pr_branch="PR_${pr_number}"
@@ -63,7 +66,7 @@ then
 	# Create a separate branch for the PR. This is required to allow
 	# checkcommits to be able to determine how the PR differs from
 	# "master".
-	git fetch origin "pull/${pr_number}/head:${pr_branch}"
+	git fetch --force origin "pull/${pr_number}/head:${pr_branch}"
 	git checkout "${pr_branch}"
 	git rebase "origin/${ghprbTargetBranch}"
 else
