@@ -27,6 +27,9 @@ pushd "${GOPATH}/src/${crio_repo}"
 git fetch
 git checkout "${crio_version}"
 
+# Add link of go-md2man to $GOPATH/bin
+ln -s $(command -v go-md2man) $GOPATH/bin/
+
 echo "Get CRI Tools"
 critools_repo="github.com/kubernetes-incubator/cri-tools"
 go get "$critools_repo" || true

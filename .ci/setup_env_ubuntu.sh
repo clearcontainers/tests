@@ -43,7 +43,7 @@ echo "Install qemu-lite binary"
 "${cidir}/install_qemu_lite.sh" "${qemu_lite_clear_release}" "${qemu_lite_sha}" "$ID"
 
 echo "Install CRI-O dependencies for all Ubuntu versions"
-chronic sudo -E apt install -y libglib2.0-dev libseccomp-dev libapparmor-dev libgpgme11-dev
+chronic sudo -E apt install -y libglib2.0-dev libseccomp-dev libapparmor-dev libgpgme11-dev go-md2man
 
 echo "Install bison binary"
 chronic sudo -E apt install -y bison
