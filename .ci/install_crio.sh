@@ -28,7 +28,12 @@ git fetch
 git checkout "${crio_version}"
 
 # Add link of go-md2man to $GOPATH/bin
-ln -s $(command -v go-md2man) $GOPATH/bin/
+GOBIN="$GOPATH/bin"
+if [ ! -d "$GOBIN" ]
+then
+	mkdir -p "$GOBIN"
+fi
+ln -s $(command -v go-md2man) "$GOBIN"
 
 echo "Get CRI Tools"
 critools_repo="github.com/kubernetes-incubator/cri-tools"
