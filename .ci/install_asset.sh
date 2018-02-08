@@ -22,9 +22,9 @@ readonly runtime_versions_url="https://raw.githubusercontent.com/${repo_owner}/r
 readonly versions_txt="$GOPATH/src/github.com/${repo_owner}/runtime/versions.txt"
 readonly tmp_dir=$(mktemp -t -d install-assets.XXXX)
 #fake repository dir to query kernel and image  version from remote
-fake_repo_dir=$(mktemp -t -d assets.XXXX)
+fake_repo_dir="${tmp_dir}/fake_repo"
 
-function cleanup {
+cleanup() {
 	rm -rf "${tmp_dir}"
 }
 
@@ -58,13 +58,6 @@ version="$2"
 [ -z "${asset}" ] && usage
 [ -z "${version}" ] && usage
 
-function cleanup {
-	rm  -rf "${fake_repo_dir}"
-}
-
-trap cleanup EXIT
-
-
 
 die(){
 	msg="$*"
@@ -89,6 +82,7 @@ function get_latest_version {
 	repo="${1}"
 	[ -n "${repo}" ] || die "repo not provided"
 
+	mkdir -p ${fake_repo_dir}
 	pushd ${fake_repo_dir} >> /dev/null
 	git init -q
 	git remote add origin  "https://github.com/${repo_owner}/${repo}.git"
