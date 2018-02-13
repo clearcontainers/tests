@@ -82,7 +82,7 @@ fi
 # Make sure runc is default runtime.
 # This is needed in case a new image creation.
 # See https://github.com/clearcontainers/osbuilder/issues/8
-"${GOPATH}/${tests_repo}/cmd/container-manager/manage_ctr_mgr.sh" docker configure -r runc  -f || true
+"${GOPATH}/src/${tests_repo}/cmd/container-manager/manage_ctr_mgr.sh" docker configure -r runc -f
 
 # Call the repo-specific setup script.
 #
