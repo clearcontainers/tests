@@ -132,7 +132,7 @@ pushd "$CURRENTDIR/../metrics"
 	bash network/network-latency-qperf.sh
 
 	# Bandwidth and jitter
-	bash network/network-metrics-iperf3.sh
+	bash network/network-metrics-iperf3.sh -B -i 8
 
 	# UDP bandwidths and packet loss
 	bash network/network-metrics-nuttcp.sh
