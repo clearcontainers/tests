@@ -125,18 +125,8 @@ pushd "$CURRENTDIR/../metrics"
 	# ops/second
 	bash network/network-nginx-ab-benchmark.sh
 
-	# ping latency
-	bash network/network-latency.sh
-
-	# qperf latency
-	bash network/network-latency-qperf.sh
-
-	# Bandwidth and jitter
+	# iperf3 bandwidth between host and container
 	bash network/network-metrics-iperf3.sh -B -i 8
-
-	# UDP bandwidths and packet loss
-	bash network/network-metrics-nuttcp.sh
-
 
 	#
 	# Run some IO tests
