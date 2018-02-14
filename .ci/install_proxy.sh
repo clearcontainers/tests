@@ -22,3 +22,18 @@ cidir=$(dirname "$0")
 source "${cidir}/lib.sh"
 
 clone_build_and_install "github.com/clearcontainers/proxy"
+
+systemd_extra_flags="-log debug"
+
+# If we are running under the metrics CI system then we do not want the proxy
+# to be dynmaically changing the KSM settings under us - we need control of them
+# ourselves
+if [[ $METRICS_CI ]]; then
+	systemd_extra_flags="${systemd_extra_flags} -ksm initial"
+fi
+
+proxy_systemd_file=$(sudo systemctl show cc-proxy | fgrep FragmentPath | awk 'BEGIN{FS="="}{print $2}')
+sudo sed -i "s/\(^ExecStart.*$\)/\1 ${systemd_extra_flags}/" "${proxy_systemd_file}"
+sudo systemctl daemon-reload
+echo "Start proxy service"
+sudo systemctl restart cc-proxy
