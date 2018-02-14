@@ -38,17 +38,18 @@ if [ -n "$PULL_REQUEST_NUMBER" ] || [ -n "$LOCALCI_PR_NUMBER" ]; then
 	bash -f "${cidir}/run_fetch_branches_tool.sh"
 fi
 
-echo "Install Clear containers image"
-"${cidir}/install_asset.sh" "image" "latest"
-
-echo "Install Clear Containers Kernel"
-"${cidir}/install_asset.sh" "kernel" "latest"
 
 echo "Install shim"
 bash -f ${cidir}/install_shim.sh
 
 echo "Install proxy"
 bash -f ${cidir}/install_proxy.sh
+
+echo "Install Clear containers image"
+"${cidir}/install_asset.sh" "image" "latest"
+
+echo "Install Clear Containers Kernel"
+"${cidir}/install_asset.sh" "kernel" "latest"
 
 echo "Install runtime"
 bash -f ${cidir}/install_runtime.sh
