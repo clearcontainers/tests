@@ -15,16 +15,16 @@
 # limitations under the License.
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
-sudo -E kubeadm reset
+sudo -E kubeadm reset --cri-socket=/var/run/crio/crio.sock
 sudo systemctl stop kubelet
 sudo systemctl stop docker
-for ctr in $(sudo crioctl ctr list | grep ^ID | cut -c5-); do
-	sudo crioctl ctr stop --id "$ctr"
-	sudo crioctl ctr remove --id "$ctr"
+for ctr in $(sudo crictl ps --quiet); do
+	sudo crictl stop "$ctr"
+	sudo crictl rm "$ctr"
 done
-for pod in $(sudo crioctl pod list | grep ^ID | cut -c5-); do
-	sudo crioctl pod stop --id "$pod"
-	sudo crioctl pod remove --id "$pod"
+for pod in $(sudo crictl sandboxes --quiet); do
+	sudo crictl stops "$pod"
+	sudo crictl rms "$pod"
 done
 
 sudo systemctl stop crio

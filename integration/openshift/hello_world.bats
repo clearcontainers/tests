@@ -27,7 +27,7 @@ setup() {
 	waitForProcess "$wait_time" "$sleep_time" "$cmd"
 	pod_name="hello-openshift"
 	image="openshift/${pod_name}"
-	sudo -E /usr/local/bin/crioctl image pull "$image"
+	sudo -E crictl pull "$image"
 	cc_runtime_bin=$(command -v cc-runtime)
 }
 

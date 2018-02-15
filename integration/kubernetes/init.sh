@@ -18,7 +18,7 @@ set -e
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 source "${SCRIPT_PATH}/lib.sh"
 
-sudo -E kubeadm init --pod-network-cidr 10.244.0.0/16
+sudo -E kubeadm init --pod-network-cidr 10.244.0.0/16 --cri-socket=/var/run/crio/crio.sock
 export KUBECONFIG=/etc/kubernetes/admin.conf
 
 sudo -E kubectl get nodes

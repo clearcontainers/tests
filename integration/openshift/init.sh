@@ -35,15 +35,13 @@ kubeletArguments:
   node-labels:
   - region=infra
   image-service-endpoint:
-  - "/var/run/crio.sock"
+  - "unix:///var/run/crio/crio.sock"
   container-runtime-endpoint:
-  - "/var/run/crio.sock"
+  - "unix:///var/run/crio/crio.sock"
   container-runtime:
   - "remote"
   runtime-request-timeout:
   - "15m"
-  enable-cri:
-  - "true"
   cgroup-driver:
   - "cgroupfs"
 EOF

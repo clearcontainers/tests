@@ -37,5 +37,5 @@ popd
 
 echo "Modify kubelet systemd configuration to use CRI-O"
 k8s_systemd_file="/etc/systemd/system/kubelet.service.d/10-kubeadm.conf"
-sudo sed -i '/KUBELET_AUTHZ_ARGS/a Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote --container-runtime-endpoint=/var/run/crio.sock --runtime-request-timeout=30m"' "$k8s_systemd_file"
+sudo sed -i '/KUBELET_AUTHZ_ARGS=/a Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote --container-runtime-endpoint=unix:///var/run/crio/crio.sock --runtime-request-timeout=30m"' "$k8s_systemd_file"
 sudo systemctl daemon-reload

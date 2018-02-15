@@ -20,12 +20,15 @@ load "${BATS_TEST_DIRNAME}/lib.sh"
 setup() {
 	nginx_image="nginx"
 	busybox_image="busybox"
-	service_name="${nginx_image}-service"
+	service_name="nginx-service"
 	export KUBECONFIG=/etc/kubernetes/admin.conf
 	master=$(hostname)
 	sudo -E kubectl taint nodes "$master" node-role.kubernetes.io/master:NoSchedule-
-	sudo -E crioctl image pull "$busybox_image"
-	sudo -E crioctl image pull "$nginx_image"
+	# Pull the images before launching workload. This is mainly because we use
+	# a timeout and in slow networks it may result in not been able to pull the image
+	# successfully.
+	sudo -E crictl pull "$busybox_image"
+	sudo -E crictl pull "$nginx_image"
 }
 
 @test "Verify nginx connectivity between pods" {
