@@ -77,6 +77,8 @@ fi
 if [ "${cc_repo}" == "${tests_repo}" ]
 then
         .ci/setup_tests.sh
+else
+	go get "${tests_repo}"
 fi
 
 # Hack to make fetchbranches tool work under Jenkins.
