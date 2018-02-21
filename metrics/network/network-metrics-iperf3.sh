@@ -46,6 +46,8 @@ fwd_port="${port}:${port}"
 image="gabyct/network"
 # Measurement time (seconds)
 transmit_timeout=5
+# How many times to run each test
+iterations=1
 # Arguments to run the client/server
 # "privileged" argument enables access to all devices on
 # the host and it allows to avoid conflicts with AppArmor
@@ -426,24 +428,128 @@ function iperf3_host_cnt_pps_rev() {
 	parse_iperf_pps "$test_name" "$result"
 }
 
-init_env
+function help {
+echo "$(cat << EOF
+Usage: $0 "[options]"
+	Description:
+		This script implements a number of network metrics
+		using iperf3.
 
-check_images "$image"
+	Options:
+		-a	Run all tests
+		-b	Run all bandwidth tests
+		-B	Run bandwidth KPI tests
+		-h	Shows help
+		-i n    Number of test iterations to perform
+		-j	Run jitter tests
+		-l	Run parallel connectin tests
+		-p	Run all PPS tests
+		-P	Run PPS KPI tests
+		-t n    Set single test duration in seconds
+EOF
+)"
+}
 
-iperf3_bandwidth
+function main {
+	local OPTIND
+	while getopts ":abBhi:jlpPt:" opt
+	do
+		case "$opt" in
+		a)	# all tests
+			test_bandwidth="1"
+			test_bandwidth_kpi="1"
+			test_jitter="1"
+			test_parallel="1"
+			test_pps="1"
+			test_pps_kpi="1"
+			;;
+		b)	# all non-KPI bandwidth tests
+			test_bandwidth="1"
+			test_bandwidth_kpi="1"
+			;;
+		B)	# all KPI bandwidth tests
+			test_bandwidth_kpi="1"
+			;;
+		h)
+			help
+			exit 0;
+			;;
+		i)	# test repeat iteration count
+			iterations="$OPTARG"
+			;;
+		j)	# Jitter tests
+			test_jitter="1"
+			;;
+		l)	# Parallel tests
+			test_parallel="1"
+			;;
+		p)	# all non-KPI PacketPerSecond tests
+			test_pps="1"
+			test_pps_kpi="1"
+			;;
+		P)	# all KPI PacketPerSecond tests
+			test_pps_kpi="1"
+			;;
+		t)	# Set test timeout, in seconds (how long will each iter run)
+			transmit_timeout="$OPTARG"
+			;;
+		\?)
+			echo "An invalid option has been entered: -$OPTARG";
+			help
+			exit 1;
+			;;
+		:)
+			echo "Missing argument for -$OPTARG";
+			help
+			exit 1;
+			;;
+		esac
+	done
+	shift $((OPTIND-1))
 
-iperf3_jitter
+	[[ -z "$test_bandwidth" ]] && \
+	[[ -z "$test_bandwidth_kpi" ]] && \
+	[[ -z "$test_jitter" ]] && \
+	[[ -z "$test_parallel" ]] && \
+	[[ -z "$test_pps" ]] && \
+	[[ -z "$test_pps_kpi" ]] && \
+		help && die "Must choose at least one test"
 
-iperf_host_cnt_bwd
+	init_env
+	check_images "$image"
 
-iperf_host_cnt_bwd_rev
+	local iter
+	for ((iter=1; iter<=$iterations;iter++)); do
+		echo "Iteration $iter"
 
-iperf_multiqueue
+		if [ "$test_bandwidth" == "1" ]; then
+			iperf3_bandwidth
+			iperf_host_cnt_bwd_rev
+			iperf_multiqueue
+			iperf3_bidirectional_bandwidth_client_server
+		fi
 
-iperf3_bidirectional_bandwidth_client_server
+		if [ "$test_bandwidth_kpi" == "1" ]; then
+			iperf_host_cnt_bwd
+		fi
 
-iperf3_cnt_cnt_pps
+		if [ "$test_jitter" == "1" ]; then
+			iperf3_jitter
+		fi
 
-iperf3_host_cnt_pps
+		if [ "$test_parallel" == "1" ]; then
+			remote_network_parallel_iperf3
+		fi
 
-iperf3_host_cnt_pps_rev
+		if [ "$test_pps" == "1" ]; then
+			iperf3_cnt_cnt_pps
+			iperf3_host_cnt_pps_rev
+		fi
+
+		if [ "$test_pps_kpi" == "1" ]; then
+			iperf3_host_cnt_pps
+		fi
+	done
+}
+
+main "$@"

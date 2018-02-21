@@ -35,7 +35,9 @@ and packet-per-second throughput using iperf3 on single threaded connections.
 The bandwidth test shows the speed of the data transfer. On the other hand,
 the jitter test measures the variation in the delay of received packets.
 The packet-per-second tests show the maximum number of (smallest sized) packets
-we can get through the transports.
+allowed through the transports.  
+Command-line options choose what tests to run, for how long, and
+how many iterations to execute.
 
 - `network-metrics-nuttcp`: measures the UDP bandwidth using nuttcp. This tool
 shows the speed of the data transfer for the UDP protocol.
