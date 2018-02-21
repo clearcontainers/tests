@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,4 +21,17 @@ cidir=$(dirname "$0")
 
 source "${cidir}/lib.sh"
 
-clone_build_and_install "github.com/clearcontainers/proxy"
+clone_build_and_install "github.com/kata-containers/ksm-throttler"
+
+# If we are running under the metrics CI system then we do not want the proxy
+# to be dynmaically changing the KSM settings under us - we need control of them
+# ourselves
+if [[ ! $METRICS_CI ]]; then
+	systemctl enable vc-throttler.service
+	systemctl start vc-throttler.service
+fi
+
+# Stop and disable cc-proxy service in case the service files
+# are installed.
+systemctl stop cc-proxy || true
+systemctl disable cc-proxy || true
