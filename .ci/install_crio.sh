@@ -86,5 +86,3 @@ sudo cp "${crio_service_file}" "${service_path}"
 
 echo "Reload systemd services"
 sudo systemctl daemon-reload
-echo "Start crio service"
-sudo systemctl restart crio

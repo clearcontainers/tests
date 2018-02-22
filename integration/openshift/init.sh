@@ -19,6 +19,9 @@ set -e
 SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 source "${SCRIPT_PATH}/openshiftrc"
 
+echo "Start crio service"
+sudo systemctl start crio
+
 echo "Disable SELinux"
 echo "There is an issue when runnig CRI-O workloads with SELinux enabled
 For more information, please take a look at:
