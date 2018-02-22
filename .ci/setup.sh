@@ -45,6 +45,9 @@ bash -f ${cidir}/install_shim.sh
 echo "Install proxy"
 bash -f ${cidir}/install_proxy.sh
 
+echo "Install ksm throttler"
+bash -f ${cidir}/install_ksm_throttler.sh
+
 echo "Install Clear containers image"
 "${cidir}/install_asset.sh" "image" "latest"
 
