@@ -32,7 +32,7 @@ setup() {
 }
 
 @test "Verify nginx connectivity between pods" {
-	wait_time=20
+	wait_time=30
 	sleep_time=5
 	cmd="sudo -E kubectl get pods | grep $service_name | grep Running"
 	sudo -E kubectl run "$service_name" --image="$nginx_image" --replicas=2
@@ -41,13 +41,15 @@ setup() {
 	# Wait for nginx service to come up
 	waitForProcess "$wait_time" "$sleep_time" "$cmd"
 	busybox_pod="test-nginx"
-	sudo -E kubectl run $busybox_pod -i --image="$busybox_image" \
+	sudo -E kubectl run $busybox_pod --restart=Never --image="$busybox_image" \
 		-- wget --timeout=5 "$service_name"
-	pod_name=$(sudo -E kubectl get pods | awk '/'$busybox_pod'/ {print $1}')
-	sudo -E kubectl logs "$pod_name" | grep "index.html"
+	cmd="sudo -E kubectl get pods -a | grep $busybox_pod | grep Completed"
+	waitForProcess "$wait_time" "$sleep_time" "$cmd"
+	sudo -E kubectl logs "$busybox_pod" | grep "index.html"
 }
 
 teardown() {
 	sudo -E kubectl delete deployment "$service_name"
 	sudo -E kubectl delete service "$service_name"
+	sudo -E kubectl delete pod "$busybox_pod"
 }
