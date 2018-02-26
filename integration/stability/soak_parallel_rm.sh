@@ -74,21 +74,11 @@ function check_all_running() {
 
 	# Only check for CC components if we are using a CC runtime
 	if (( $check_cc_components )); then
-		# check we have the right number of proxy's
+		# Check we have one proxy per container
 		how_many_proxys=$(ps --no-header -C ${PROXY_NAME} | wc -l)
-		if (( ${how_many_running} >= 1 )); then
-			# If we have any containers, then we expect to have a single proxy
-			if (( ${how_many_proxys} != 1 )); then
-				echo "Wrong number of proxys running (${how_many_running} containers, ${how_many_proxys} proxys) - stopping"
-				((goterror++))
-			fi
-		else
-			# No containers running, but if we have run before then the proxy may still be running
-			# It is not clear if the proxy quits if there are no containers left
-			if (( ${how_many_proxys} > 1 )); then
-				echo "Wrong number of proxys running (${how_many_running} containers, ${how_many_proxys} proxys) - stopping"
-				((goterror++))
-			fi
+		if (( ${how_many_running} != ${how_many_proxys} )); then
+			echo "Wrong number of proxys running (${how_many_running} containers, ${how_many_proxys} proxys) - stopping"
+			((goterror++))
 		fi
 
 		# check we have the right number of shims
