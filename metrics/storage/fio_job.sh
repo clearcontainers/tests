@@ -217,6 +217,10 @@ function main()
 	pss_temp=$(mktemp fio_job_pss.XXX)
 	rss_temp=$(mktemp fio_job_rss.XXX)
 
+	# Obtain volume name
+	volume_inspect=$(docker inspect -f '{{ json .Mounts }}' ${CONTAINER_ID})
+	volume_name=$(echo $volume_inspect | grep Name | cut -f3 -d ':' | cut -f2 -d '"')
+
 	# We know the test will run for 30s (unless somebody changed it...)
 	# So spread the measures out over the test run
 	# But, fio will also terminate some tests when it has 'completed the file', rather
@@ -247,6 +251,8 @@ function main()
 	rm ${cpu_temp}
 	rm ${pss_temp}
 	rm ${rss_temp}
+
+	docker volume rm ${volume_name}
 }
 
 main "$@"
