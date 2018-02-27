@@ -120,7 +120,7 @@ function build_asset {
 		image)
 			packaging="github.com/${repo_owner}/packaging"
 			go get -d -u  ${packaging} || true
-			sudo -E "$GOPATH/src/${packaging}/release-tools/release_image_github.sh" -o "${PWD}" -a ${cc_agent_version} -c ${clear_vm_image_version} release
+			"$GOPATH/src/${packaging}/release-tools/release_image_github.sh" -o "${PWD}" -a ${cc_agent_version} -c ${clear_vm_image_version} release
 			;;
 		*)
 			die "Dont know how to build $asset"
