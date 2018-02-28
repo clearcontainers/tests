@@ -16,24 +16,25 @@
 
 set -e
 
-script_path=$(dirname "$(readlink -f "$0")")
-cidir="${script_path}/../../.ci"
+echo "Install Kubernetes components"
+
+cidir=$(dirname "$0")
+source /etc/os-release
 source "${cidir}/lib.sh"
 get_cc_versions
 
-echo "Install Kubernetes"
+if [ "$ID" != "ubuntu" ]; then
+        echo "Currently this script only works for Ubuntu. Skipped Kubernetes Setup"
+        exit
+fi
+
 sudo bash -c "cat <<EOF > /etc/apt/sources.list.d/kubernetes.list
 deb http://apt.kubernetes.io/ kubernetes-xenial-unstable main
 EOF"
 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 sudo -E apt update
-sudo -E apt install -y docker.io kubelet="$kubernetes_version" kubeadm="$kubernetes_version" kubectl="$kubernetes_version"
+sudo -E apt install -y kubelet="$kubernetes_version" kubeadm="$kubernetes_version" kubectl="$kubernetes_version"
 sudo -E apt-mark hold kubelet kubeadm kubectl
-
-echo "Install Clear Containers, including dependencies"
-pushd "${cidir}"
-./setup.sh
-popd
 
 echo "Modify kubelet systemd configuration to use CRI-O"
 k8s_systemd_file="/etc/systemd/system/kubelet.service.d/10-kubeadm.conf"

@@ -60,6 +60,8 @@ bash -f ${cidir}/install_cni_plugins.sh
 echo "Install CRI-O"
 bash -f ${cidir}/install_crio.sh
 
+bash -f "${cidir}/install_kubernetes.sh"
+
 bash -f "${cidir}/openshift_setup.sh"
 
 echo "Drop caches"

@@ -41,6 +41,10 @@ metrics:
 integration: ginkgo
 	./ginkgo -v -focus "${FOCUS}" ./integration/docker/ -- -runtime=${RUNTIME} -timeout ${TIMEOUT}
 
+kubernetes:
+	bash -f .ci/install_bats.sh
+	bash -f integration/kubernetes/run_kubernetes_tests.sh
+
 openshift:
 	bash .ci/install_bats.sh
 	cd integration/openshift && \
@@ -53,7 +57,7 @@ swarm:
 conformance:
 	bats conformance/posixfs/fstest.bats
 
-check: functional crio integration conformance
+check: functional crio integration conformance kubernetes
 
 all: functional checkcommits integration
 
@@ -63,4 +67,4 @@ checkcommits:
 clean:
 	cd cmd/checkcommits && make clean
 
-.PHONY: functional check ginkgo crio metrics integration conformance
+.PHONY: functional check ginkgo crio metrics integration conformance kubernetes
