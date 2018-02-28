@@ -22,7 +22,7 @@
 # - catch any hang ups
 
 # How many times will we run the test loop...
-ITERATIONS=5
+ITERATIONS="${ITERATIONS:-5}"
 
 # the system 'free available' level where we stop running the tests, as otherwise
 #  the system can crawl to a halt, and/or start refusing to launch new VMs anyway
@@ -196,7 +196,7 @@ function init() {
 
 function spin() {
 	for ((i=1; i<= ITERATIONS; i++)); do {
-		echo "Start loop $i"
+		echo "Start iteration $i of $ITERATIONS"
 		#spin them up
 		go
 		#check we are in a sane state
