@@ -16,33 +16,28 @@
 
 set -e
 
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <CLEAR_RELEASE> <QEMU_LITE_VERSION> <DISTRO>"
-    echo "       Install the QEMU_LITE_VERSION from clear CLEAR_RELEASE."
-    exit 1
-fi
+QEMU_REPO="qemu"
 
-clear_release="$1"
-qemu_lite_version="$2"
-distro="$3"
-qemu_lite_bin="qemu-lite-bin-${qemu_lite_version}.x86_64.rpm"
-qemu_lite_data="qemu-lite-data-${qemu_lite_version}.x86_64.rpm"
+git clone https://github.com/qemu/qemu
 
-echo -e "Install qemu-lite ${qemu_lite_version}"
+pushd $QEMU_REPO
+git checkout stable-2.10
 
-# download packages
-curl -LO "https://download.clearlinux.org/releases/${clear_release}/clear/x86_64/os/Packages/${qemu_lite_bin}"
-curl -LO "https://download.clearlinux.org/releases/${clear_release}/clear/x86_64/os/Packages/${qemu_lite_data}"
+curl https://raw.githubusercontent.com/clearcontainers/packaging/master/qemu-lite/configure.patch | patch -p1
 
-# install packages
-if [ "$distro" == "fedora" ]; then
-    sudo rpm -ihv "./${qemu_lite_bin}" --nodeps
-    sudo rpm -ihv "./${qemu_lite_data}" --nodeps
-elif [ "$distro" == "ubuntu" ];  then
-    sudo alien -i "./${qemu_lite_bin}"
-    sudo alien -i "./${qemu_lite_data}"
-fi
+./configure --disable-static --disable-bluez --disable-brlapi --disable-bzip2 --disable-curl \
+--disable-curses --disable-debug-tcg --disable-fdt --disable-glusterfs --disable-gtk \
+--disable-libiscsi --disable-libnfs --disable-libssh2 --disable-libusb --disable-linux-aio \
+--disable-lzo --disable-opengl --disable-qom-cast-debug --disable-rbd --disable-rdma --disable-sdl \
+--disable-seccomp --disable-slirp --disable-snappy --disable-spice --disable-strip \
+--disable-tcg-interpreter --disable-tcmalloc --disable-tools --disable-tpm --disable-usb-redir \
+--disable-uuid --disable-vnc --disable-vnc-jpeg --disable-vnc-png --disable-vnc-sasl --disable-vte \
+--disable-xen --enable-attr --enable-cap-ng --enable-kvm --enable-virtfs \
+--target-list=x86_64-softmmu --extra-cflags="-fno-semantic-interposition -O3 -falign-functions=32" \
+--datadir=/usr/share/qemu-lite --libdir=/usr/lib64/qemu-lite --libexecdir=/usr/libexec/qemu-lite \
+--enable-vhost-net --disable-docs
 
-# cleanup
-rm -f "./${qemu_lite_bin}"
-rm -f "./${qemu_lite_data}"
+make
+
+sudo -E make install
+popd

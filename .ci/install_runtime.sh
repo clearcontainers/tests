@@ -60,6 +60,11 @@ sudo sed -i -e 's/^#\(\[runtime\]\|global_log_path =\)/\1/g' "${runtime_config_p
 echo "Enabling all debug options in file ${runtime_config_path}"
 sudo sed -i -e 's/^#\(enable_debug\).*=.*$/\1 = true/g' "${runtime_config_path}"
 
+echo "Change Qemu Path"
+OLD_QEMU_PATH=/usr/bin/qemu-lite-system-x86_64
+QEMU_PATH=$(which qemu-system-x86_64)
+sudo sed -i "s|$OLD_QEMU_PATH|$QEMU_PATH|" "${runtime_config_path}"
+
 echo "Add cc-runtime as a new/default Docker runtime."
 
 "${cidir}/../cmd/container-manager/manage_ctr_mgr.sh" docker configure -r cc-runtime -f

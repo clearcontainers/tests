@@ -41,9 +41,6 @@ echo "Install clear containers dependencies"
 chronic sudo -E dnf -y groupinstall "Development tools"
 chronic sudo -E dnf -y install libtool automake autoconf bc pixman numactl-libs
 
-echo "Install qemu-lite binary"
-"${cidir}/install_qemu_lite.sh" "${qemu_lite_clear_release}" "${qemu_lite_sha}" "$ID"
-
 echo "Install CRI-O dependencies"
 chronic sudo -E dnf -y install btrfs-progs-devel device-mapper-devel 	  \
 	glib2-devel glibc-devel glibc-static gpgme-devel libassuan-devel  \
@@ -56,3 +53,7 @@ chronic sudo -E dnf -y install bison
 if ! command -v docker > /dev/null; then
 	"${cidir}/../cmd/container-manager/manage_ctr_mgr.sh" docker install
 fi
+
+echo "Install qemu-lite binary"
+sudo -E dnf -y install libcap-devel libattr-devel libcap-ng-devel zlib-devel pixman-devel
+"${cidir}/install_qemu_lite.sh"

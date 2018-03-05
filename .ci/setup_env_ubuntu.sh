@@ -39,9 +39,6 @@ chronic sudo -E apt install -y python
 echo "Install clear containers dependencies"
 chronic sudo -E apt install -y libtool automake autotools-dev autoconf bc alien libpixman-1-dev
 
-echo "Install qemu-lite binary"
-"${cidir}/install_qemu_lite.sh" "${qemu_lite_clear_release}" "${qemu_lite_sha}" "$ID"
-
 echo "Install CRI-O dependencies for all Ubuntu versions"
 chronic sudo -E apt install -y libglib2.0-dev libseccomp-dev libapparmor-dev libgpgme11-dev go-md2man
 
@@ -69,3 +66,7 @@ sudo -E apt install -y libostree-dev
 if ! command -v docker > /dev/null; then
 	"${cidir}/../cmd/container-manager/manage_ctr_mgr.sh" docker install
 fi
+
+echo "Install qemu-lite binary"
+sudo -E apt install -y libcap-dev libattr1-dev libcap-ng-dev
+"${cidir}/install_qemu_lite.sh"
