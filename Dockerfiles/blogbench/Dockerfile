@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Set up an Ubuntu image with 'blogbench' from the Phoronix testsuite installed
+# Set up an Ubuntu image with 'blogbench' installed
 
 FROM ubuntu
 
