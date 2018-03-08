@@ -18,14 +18,9 @@ RUNTIME ?= cc-runtime
 # The time limit in seconds for each test
 TIMEOUT ?= 150
 
-CRIO_REPO_PATH="${GOPATH}/src/github.com/kubernetes-incubator/cri-o"
-CRIO_INTEG_PATH="integration/cri-o"
 crio:
 	bash .ci/install_bats.sh
-	cp $(PWD)/${CRIO_INTEG_PATH}/crio.bats ${CRIO_REPO_PATH}/test/
-	cd ${CRIO_INTEG_PATH} && ./init.sh
-	cd ${CRIO_REPO_PATH} && \
-	RUNTIME=${RUNTIME} STORAGE_OPTS="${CRIO_STORAGE_DRIVER_OPTS}" ./test/test_runner.sh crio.bats
+	RUNTIME=${RUNTIME} ./integration/cri-o/cri-o.sh
 
 ginkgo:
 	ln -sf . vendor/src
