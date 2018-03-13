@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
+
 source /etc/os-release
 kubernetes_dir=$(dirname $0)
 
