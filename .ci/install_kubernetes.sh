@@ -34,7 +34,6 @@ EOF"
 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 sudo -E apt update
 sudo -E apt install -y kubelet="$kubernetes_version" kubeadm="$kubernetes_version" kubectl="$kubernetes_version"
-sudo -E apt-mark hold kubelet kubeadm kubectl
 
 echo "Modify kubelet systemd configuration to use CRI-O"
 k8s_systemd_file="/etc/systemd/system/kubelet.service.d/10-kubeadm.conf"
