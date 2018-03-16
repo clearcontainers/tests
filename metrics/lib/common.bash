@@ -107,9 +107,6 @@ function onetime_init()
 
 	# Restart services
 	sudo systemctl restart docker
-	if [[ "${RUNTIME}" == "cor" || "${RUNTIME}" == "cc-runtime" ]];then
-		sudo systemctl restart cc-proxy
-	fi
 
 	# We want this to be seen in sub shells as well...
 	# otherwise init_env() cannot check us
