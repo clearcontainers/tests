@@ -131,10 +131,14 @@ pushd "$CURRENTDIR/../metrics"
 	#
 	# Run some IO tests
 	#
-	bash storage/fio_job.sh -b 16k -o randread -t "storage IO random read bs 16k"
-	bash storage/fio_job.sh -b 16k -o randwrite -t "storage IO random write bs 16k"
-	bash storage/fio_job.sh -b 16k -o read -t "storage IO linear read bs 16k"
-	bash storage/fio_job.sh -b 16k -o write -t "storage IO linear write bs 16k"
+	# Block Size and Ramp Time Settings for Fio Test
+	BLOCK_SIZE="16k"
+	RAMP_TIME="60"
+
+	bash storage/fio_job.sh -b ${BLOCK_SIZE} -u ${RAMP_TIME} -o randread -t "storage IO random read bs ${BLOCK_SIZE}"
+	bash storage/fio_job.sh -b ${BLOCK_SIZE} -u ${RAMP_TIME} -o randwrite -t "storage IO random write bs ${BLOCK_SIZE}"
+	bash storage/fio_job.sh -b ${BLOCK_SIZE} -u ${RAMP_TIME} -o read -t "storage IO linear read bs ${BLOCK_SIZE}"
+	bash storage/fio_job.sh -b ${BLOCK_SIZE} -u ${RAMP_TIME} -o write -t "storage IO linear write bs ${BLOCK_SIZE}"
 
 	# If we are running under a CI, the do some extra work
 	# We check we are under a CI before doing this, as that still leaves us

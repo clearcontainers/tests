@@ -37,7 +37,11 @@ NUM_JOBS="1"
 OPERATION="randread"
 TEST_NAME="storage fio test"
 EXTRA_ARGS=""
-TEST_TIME="30"
+TEST_TIME="300"
+RAMP_TIME="60"
+DIRECT_VALUE="1"
+INVALIDATE_VALUE="1"
+STATUS_TIME="30"
 
 # This docker image includes FIO tool.
 FIO_IMAGE="clusterhq/fio-tool"
@@ -69,6 +73,7 @@ Usage: $0 [-h] [options]
         -n,    Max number of jobs.
         -r,    Runtime for docker.
         -t,    Test name.
+        -u,    Ramp time.
         -x,    Extra fio arguments.
 EOF
 )
@@ -91,6 +96,11 @@ function create_fio_prep_job()
 		--filename="$FILE_NAME" \
 		--bs="$BLOCK_SIZE" \
 		--size="$FILE_SIZE" \
+		--time_based \
+		--direct="$DIRECT_VALUE" \
+		--invalidate="$INVALIDATE_VALUE" \
+		--status-interval="$STATUS_TIME" \
+		--ramp_time="$RAMP_TIME" \
 		--readwrite="$OPERATION" --max-jobs=$NUM_JOBS \
 		--runtime=1 \
 		${EXTRA_ARGS}
@@ -112,6 +122,11 @@ function create_fio_run_job()
 		--filename="$FILE_NAME" \
 		--bs="$BLOCK_SIZE" \
 		--size="$FILE_SIZE" \
+		--time_based \
+		--direct="$DIRECT_VALUE" \
+		--invalidate="$INVALIDATE_VALUE" \
+		--status-interval="$STATUS_TIME" \
+		--ramp_time="$RAMP_TIME" \
 		--readwrite="$OPERATION" --max-jobs=$NUM_JOBS \
 		--runtime="$TEST_TIME" \
 		${EXTRA_ARGS}
@@ -131,9 +146,9 @@ function parse_fio_results()
 		die "bandwidth result not found: check FIO job configuration"
 	fi
 
-	units=$(echo "$bw_data" grep "bw (" | grep -o "[A-Z]*")
-	avg=$(echo "$bw_data" | awk -F "," '{print $4}' | cut -d "=" -f2)
-	stdev=$(echo "$bw_data" | awk -F "," '{print $5}' | cut -d "=" -f2)
+	units=$(echo "$bw_data" | sed 's/^.*bw (/bw (/' | cut -f1 -d ':' | cut -f2 -d '(' | cut -f1 -d ')' | tail -1)
+	avg=$(echo "$bw_data" | sed 's/^.*bw (/bw (/' | awk -F "," '{print $4}' | cut -d "=" -f2 | tail -1)
+	stdev=$(echo "$bw_data" | sed 's/^.*bw (/bw (/' | awk -F "," '{print $5}' | cut -d "=" -f2 | tail -1)
 
 	echo "Units: $units"
 	case "$units" in
@@ -153,7 +168,7 @@ function main()
 {
 	cmds=("bc" "awk" "smem")
 	local OPTIND
-	while getopts "b:e:hs:o:n:r:t:T:x:" opt;do
+	while getopts "b:e:hs:o:n:r:t:T:u:x:" opt;do
 		case ${opt} in
 		b)
 		    BLOCK_SIZE="${OPTARG}"
@@ -182,6 +197,9 @@ function main()
 		    ;;
 		T)
 		    TEST_TIME="${OPTARG}"
+		    ;;
+		u)
+		    RAMP_TIME="${OPTARG}"
 		    ;;
 		x)
 		    EXTRA_ARGS="${OPTARG}"
@@ -230,6 +248,9 @@ function main()
 	(sleep 3; ps --no-headers -o %cpu -C $(basename ${PROCESS}) > ${cpu_temp})&
 	(sleep 4; sudo smem -H -P "^${PROCESS}" -c "pss" > ${pss_temp})&
 	(sleep 5; sudo smem -H -P "^${PROCESS}" -c "rss" > ${rss_temp})&
+
+	# Drop the host page cache
+	sudo bash -c "echo 3>/proc/sys/vm/drop_caches"
 
 	# Finally Launch container
 	output=$(docker exec ${CONTAINER_ID} bash -c "$FIO_RUN_JOB")

@@ -95,10 +95,15 @@ function run_memory_tests() {
 # Only run I/O storage metrics tests
 function run_storage_tests() {
 	# Run I/O storage tests
-	bash ${SCRIPT_PATH}/storage/fio_job.sh -b 16k -o randread -t "storage IO random read bs 16k"
-	bash ${SCRIPT_PATH}/storage/fio_job.sh -b 16k -o randwrite -t "storage IO random write bs 16k"
-	bash ${SCRIPT_PATH}/storage/fio_job.sh -b 16k -o read -t "storage IO linear read bs 16k"
-	bash ${SCRIPT_PATH}/storage/fio_job.sh -b 16k -o write -t "storage IO linear write bs 16k"
+
+	# Block Size and Ramp Time Settings for Fio Test
+        BLOCK_SIZE="16k"
+        RAMP_TIME="60"
+
+	bash ${SCRIPT_PATH}/storage/fio_job.sh -b ${BLOCK_SIZE} -u ${RAMP_TIME} -o randread -t "storage IO random read bs ${BLOCK_SIZE}"
+	bash ${SCRIPT_PATH}/storage/fio_job.sh -b ${BLOCK_SIZE} -u ${RAMP_TIME} -o randwrite -t "storage IO random write bs ${BLOCK_SIZE}"
+	bash ${SCRIPT_PATH}/storage/fio_job.sh -b ${BLOCK_SIZE} -u ${RAMP_TIME} -o read -t "storage IO linear read bs ${BLOCK_SIZE}"
+	bash ${SCRIPT_PATH}/storage/fio_job.sh -b ${BLOCK_SIZE} -u ${RAMP_TIME} -o write -t "storage IO linear write bs ${BLOCK_SIZE}"
 }
 
 # Run all metrics tests
