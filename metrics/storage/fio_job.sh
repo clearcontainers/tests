@@ -200,7 +200,7 @@ function main()
 	# be measured
 	if [ "$RUNTIME" == "runc" ]; then
 		PROCESS="fio"
-	elif [ "$RUNTIME" == "cor" ] || [ "$RUNTIME" == "cc-runtime" ]; then
+	elif [ "$RUNTIME" == "cor" ] || [ "$RUNTIME" == "cc-runtime" ] || [ "$RUNTIME" == "kata-runtime" ]; then
 		PROCESS=${QEMU_PATH}
 	else
 		die "Unknown runtime: $RUNTIME"

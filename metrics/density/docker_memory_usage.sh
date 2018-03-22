@@ -211,7 +211,7 @@ function get_docker_memory_usage(){
 		runc_workload_mem="$(get_runc_pss_memory)"
 		memory_usage="$runc_workload_mem"
 
-	elif [ "$RUNTIME" == "cor" ] || [ "$RUNTIME" == "cc-runtime" ]; then
+	elif [ "$RUNTIME" == "cor" ] || [ "$RUNTIME" == "cc-runtime" ] || [ "$RUNTIME" == "kata-runtime" ]; then
 		# Get PSS memory of CC components.
 		# And check that the smem search has found the process - we get a "0"
 		#  back if that procedure fails (such as if a process has changed its name
@@ -229,14 +229,14 @@ function get_docker_memory_usage(){
 			die "Failed to find PSS for $QEMU_PATH"
 		fi
 
-		cc_shim_mem="$(get_pss_memory "$CC_SHIM_PATH")"
+		cc_shim_mem="$(get_pss_memory "$SHIM_PATH")"
 		if [ "$cc_shim_mem" == "0" ]; then
-			die "Failed to find PSS for $CC_SHIM_PATH"
+			die "Failed to find PSS for $SHIM_PATH"
 		fi
 
-		proxy_mem="$(get_pss_memory "$CC_PROXY_PATH")"
+		proxy_mem="$(get_pss_memory "$PROXY_PATH")"
 		if [ "$proxy_mem" == "0" ]; then
-			die "Failed to find PSS for $CC_PROXY_PATH"
+			die "Failed to find PSS for $PROXY_PATH"
 		fi
 
 		cc_proxy_mem="$(bc -l <<< "scale=2; $proxy_mem / $NUM_CONTAINERS")"

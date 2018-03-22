@@ -102,6 +102,16 @@ run_workload() {
 				${workload_result[@]}
 			EOF
 			) | tail -1 )
+
+		if [ -z "$kernel_last_line" ]; then
+			echo "No kernel last line"
+			for l in "${workload_result[@]}"; do
+				echo ">: [$l]"
+			done
+			die "No kernel last line"
+		fi
+
+
 		kernel_period=$(echo $kernel_last_line | awk '{print $2}' | tr -d "]")
 
 		# And we can then work out how much time it took to get to the kernel
@@ -141,7 +151,7 @@ init () {
 	echo "Executing test: ${TEST_NAME} ${TEST_ARGS}"
 	check_cmds "${REQUIRED_CMDS[@]}"
 
-	if [ "$RUNTIME" == "cor" ] || [ "$RUNTIME" == "cc-runtime" ]; then
+	if [ "$RUNTIME" == "cor" ] || [ "$RUNTIME" == "cc-runtime" ] || [ "$RUNTIME" == "kata-runtime" ] ; then
 		CALCULATE_KERNEL=1
 		DMESGCMD="; dmesg"
 	else
@@ -214,6 +224,7 @@ main() {
 
 	init
 	for i in $(seq 1 "$TIMES"); do
+		echo " run $i"
 		run_workload
 	done
 	clean_env

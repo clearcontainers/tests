@@ -119,5 +119,5 @@ teardown() {
 	$DOCKER_EXE service remove "${SERVICE_NAME}"
 	$DOCKER_EXE swarm leave --force
 	check_processes ${HYPERVISOR_PATH}
-	check_processes ${CC_SHIM_PATH}
+	check_processes ${SHIM_PATH}
 }
