@@ -56,3 +56,6 @@ chronic sudo -E dnf -y install bison
 if ! command -v docker > /dev/null; then
 	"${cidir}/../cmd/container-manager/manage_ctr_mgr.sh" docker install
 fi
+
+echo "Install cri-containerd dependencies"
+chronic sudo -E dnf -y install libseccomp-devel btrfs-progs-devel libseccomp-static
