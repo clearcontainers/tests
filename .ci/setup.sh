@@ -38,6 +38,10 @@ if [ -n "$PULL_REQUEST_NUMBER" ] || [ -n "$LOCALCI_PR_NUMBER" ]; then
 	bash -f "${cidir}/run_fetch_branches_tool.sh"
 fi
 
+echo "Install go"
+#TODO carlos need to build cri-containerd
+bash -f ${cidir}/install_go.sh 1.10
+
 
 echo "Install shim"
 bash -f ${cidir}/install_shim.sh
@@ -63,6 +67,9 @@ bash -f ${cidir}/install_crio.sh
 bash -f "${cidir}/install_kubernetes.sh"
 
 bash -f "${cidir}/openshift_setup.sh"
+
+echo "Install cri-containerd"
+bash -f ${cidir}/install_cri_containerd.sh
 
 echo "Drop caches"
 sync
