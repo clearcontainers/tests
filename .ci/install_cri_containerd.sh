@@ -18,8 +18,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-
-tmp_dir=$(mktemp -d -t tmp.XXXXXXXXXX)
+tmp_dir=$(mktemp -d -t cri-containerd-install.XXXXXXXXXX)
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 finish() {
@@ -39,8 +38,7 @@ info() {
 trap finish EXIT
 
 source "${script_dir}/lib.sh"
-get_cc_versions
-
+#get_cc_versions
 #TODO (jcvenega) remove after https://github.com/clearcontainers/runtime/pull/1091 is merged
 cri_containerd_version="v1.0.0-rc.0"
 
@@ -52,7 +50,8 @@ git fetch
 info "Checkout to ${cri_containerd_version}"
 git checkout "${cri_containerd_version}"
 info "Installing cri-containerd"
-make install.tools
 make install.deps
 make
 sudo -E PATH=$PATH make install
+#TODO (carlos) : Fedora does not look for /usr/local with sudo.
+sudo cp /usr/local/bin/containerd-shim /usr/bin/containerd-shim
