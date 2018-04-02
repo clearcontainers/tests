@@ -24,8 +24,11 @@ readonly runtime_bin=$(command -v "${RUNTIME}")
 
 #cri-containerd configuration test variables
 CRITEST=${GOPATH}/bin/critest
+
+#containerd config fileo
 readonly tmp_dir=$(mktemp -t -d test-cri-containerd.XXXX)
 export REPORT_DIR="${tmp_dir}"
+CONTAINERD_CONFIG_FILE="${tmp_dir}/test-containerd-config"
 
 
 info() {
@@ -56,15 +59,42 @@ rm -f "${CRITEST}"
 cri_containerd_repo="github.com/containerd/cri"
 
 pushd "${GOPATH}/src/${cri_containerd_repo}"
+cat > "${CONTAINERD_CONFIG_FILE}" << EOT
+[plugins]
+  [plugins.cri]
+    [plugins.cri.containerd]
+      [plugins.cri.containerd.default_runtime]
+        runtime_engine = "${runtime_bin}"
+EOT
 
 info "Starting test for cri-tools"
 sudo -E PATH="${PATH}" \
 	FOCUS="runtime should support basic operations on container" \
 	REPORT_DIR="${REPORT_DIR}" \
+	CONTAINERD_CONFIG_FILE="$CONTAINERD_CONFIG_FILE" \
 	make test-cri
 
 info "Starting test for test-integration"
-sudo -E PATH="${PATH}" FOCUS="${t}"\
-	make test-integration
-popd
 
+passing_test=(
+                TestClearContainersCreate
+                TestContainerStats
+                TestContainerListStatsWithIdFilter
+                TestContainerListStatsWithSandboxIdFilterd
+                TestContainerListStatsWithIdSandboxIdFilter
+                TestDuplicateName
+                TestImageLoad
+                TestImageFSInfo
+                TestSandboxCleanRemove
+             )
+
+for t in "${passing_test[@]}"
+do
+sudo -E PATH="${PATH}" \
+	REPORT_DIR="${REPORT_DIR}" \
+	FOCUS="${t}" \
+	CONTAINERD_CONFIG_FILE="$CONTAINERD_CONFIG_FILE" \
+	make test-integration
+done
+
+popd
