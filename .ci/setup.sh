@@ -68,9 +68,6 @@ bash -f "${cidir}/install_kubernetes.sh"
 
 bash -f "${cidir}/openshift_setup.sh"
 
-echo "Install cri-containerd"
-bash -f ${cidir}/install_cri_containerd.sh
-
 echo "Drop caches"
 sync
 sudo -E PATH=$PATH bash -c "echo 3 > /proc/sys/vm/drop_caches"

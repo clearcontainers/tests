@@ -55,7 +55,7 @@ swarm:
 conformance:
 	bats conformance/posixfs/fstest.bats
 
-check: functional crio  integration conformance kubernetes cri-containerd
+check: functional crio integration conformance kubernetes
 
 all: functional checkcommits integration
 

@@ -16,6 +16,7 @@
 
 set -e
 source /etc/os-release
+cidir=$(dirname "$0")
 start_test="$(date '+%Y-%m-%d %H:%M:%S')"
 last_test="${start_test}"
 
