@@ -16,6 +16,7 @@
 
 set -e
 source /etc/os-release
+cidir=$(dirname "$0")
 start_test="$(date '+%Y-%m-%d %H:%M:%S')"
 last_test="${start_test}"
 
@@ -52,3 +53,11 @@ fi
 # see https://github.com/clearcontainers/runtime/issues/902
 last_test=$(date '+%Y-%m-%d %H:%M:%S')
 sudo -E PATH="$PATH" bash -c "make swarm"
+
+last_test=$(date '+%Y-%m-%d %H:%M:%S')
+#TODO <carlos>: cri-o and k8s are in 1.9
+#If install cri-containerd will upgrade crictl to 1.10 and will break k8s/kubaadm.
+#Lets install an run the test after run k8s tests
+echo "Install cri-containerd"
+bash -f ${cidir}/install_cri_containerd.sh
+sudo -E PATH="$PATH" bash -c "make cri-containerd"
