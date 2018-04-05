@@ -50,6 +50,10 @@ err_report() {
 trap err_report ERR
 trap cleanup EXIT
 
+info "Stop crio service"
+
+sudo systemctl stop crio
+
 info "testing using runtime: ${runtime_bin}"
 
 # make sure cri-containerd test install the proper installation for testing
