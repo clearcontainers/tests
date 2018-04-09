@@ -22,6 +22,9 @@ crio:
 	bash .ci/install_bats.sh
 	RUNTIME=${RUNTIME} ./integration/cri-o/cri-o.sh
 
+cri-containerd:
+	bash integration/containerd/cri/integration-tests.sh
+
 ginkgo:
 	ln -sf . vendor/src
 	GOPATH=$(PWD)/vendor go build ./vendor/github.com/onsi/ginkgo/ginkgo

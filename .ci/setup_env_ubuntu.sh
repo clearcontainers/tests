@@ -58,6 +58,9 @@ sudo -E apt install -y build-essential python pkg-config zlib1g-dev
 echo -e "Install CRI-O dependencies available for Ubuntu $VERSION_ID"
 sudo -E apt install -y libdevmapper-dev btrfs-tools util-linux
 
+echo -e "Install cri-containerd dependencies available for Ubuntu $VERSION_ID"
+sudo -E apt install -y libseccomp-dev libapparmor-dev btrfs-tools
+
 if [ "$VERSION_ID" == "16.04" ]; then
 	echo "Install os-tree"
 	sudo -E add-apt-repository ppa:alexlarsson/flatpak -y
