@@ -91,11 +91,24 @@ echo "Set Clear containers as default runtime in CRI-O for untrusted workloads"
 sudo sed -i 's/default_workload_trust = "trusted"/default_workload_trust = "untrusted"/' "$crio_config_file"
 sudo sed -i 's/runtime_untrusted_workload = ""/runtime_untrusted_workload = "\/usr\/local\/bin\/cc-runtime"/' "$crio_config_file"
 
-service_path="/etc/systemd/system"
-crio_service_file="${cidir}/data/crio.service"
+service_path="/etc/systemd/system/crio.service"
 
-echo "Install crio service (${crio_service_file})"
-sudo cp "${crio_service_file}" "${service_path}"
+echo "Install crio service (${service_path})"
+cat << EOT | sudo tee  ${service_path} 
+[Unit]
+Description=CRI-O daemon
+Documentation=https://github.com/kubernetes-incubator/cri-o
+
+[Service]
+Environment="HTTP_PROXY=${http_proxy}"
+Environment="HTTPS_PROXY=${https_proxy}"
+ExecStart=/usr/local/bin/crio --log-level debug
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOT
 
 echo "Reload systemd services"
 sudo systemctl daemon-reload
