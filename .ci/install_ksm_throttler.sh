@@ -27,11 +27,13 @@ clone_build_and_install "github.com/kata-containers/ksm-throttler"
 # to be dynmaically changing the KSM settings under us - we need control of them
 # ourselves
 if [[ ! $METRICS_CI ]]; then
-	systemctl enable vc-throttler.service
-	systemctl start vc-throttler.service
+	sudo systemctl daemon-reload
+	sudo systemctl enable vc-throttler.service
+	sudo systemctl start vc-throttler.service
 fi
 
 # Stop and disable cc-proxy service in case the service files
 # are installed.
-systemctl stop cc-proxy || true
-systemctl disable cc-proxy || true
+sudo systemctl daemon-reload
+sudo systemctl disable cc-proxy || true
+sudo systemctl stop cc-proxy || true
