@@ -140,6 +140,16 @@ pushd "$CURRENTDIR/../metrics"
 	bash storage/fio_job.sh -b ${BLOCK_SIZE} -u ${RAMP_TIME} -o read -t "storage IO linear read bs ${BLOCK_SIZE}"
 	bash storage/fio_job.sh -b ${BLOCK_SIZE} -u ${RAMP_TIME} -o write -t "storage IO linear write bs ${BLOCK_SIZE}"
 
+	#
+	# Run some cpu tests
+	#
+	bash cpu/sysbench_cpu.sh
+
+	#
+	# Run some memory performance tests
+	#
+	bash memperf/sysbench_memory.sh
+
 	# If we are running under a CI, the do some extra work
 	# We check we are under a CI before doing this, as that still leaves us
 	# the ability to run this script by hand outside a CI if we need

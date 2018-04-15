@@ -43,10 +43,12 @@ Usage: $0 [-h] [--help] [-v] [--version]
         aspects of the containers. If no option is specified
         all tests will be executed.
    Options:
+        -c, --cpu          Run cpu metrics tests
         -h, --help         Shows help
         -l, --latency      Run latency/time metrics tests
         -m, --memory       Run memory metrics tests
         -n, --network      Run network metrics tests
+        -p, --memperf      Run memory performance metrics
         -s, --storage      Run I/O storage metrics tests
 EOF
 )"
@@ -106,12 +108,24 @@ function run_storage_tests() {
 	bash ${SCRIPT_PATH}/storage/fio_job.sh -b ${BLOCK_SIZE} -u ${RAMP_TIME} -o write -t "storage IO linear write bs ${BLOCK_SIZE}"
 }
 
+# Only run cpu tests
+function run_cpu_tests() {
+	bash ${SCRIPT_PATH}/cpu/sysbench_cpu.sh
+}
+
+# Only run memory performance tests
+function run_memperf_tests() {
+	bash ${SCRIPT_PATH}/memperf/sysbench_memory.sh
+}
+
 # Run all metrics tests
 function run_all_tests() {
 	run_latency_tests
 	run_network_tests
 	run_memory_tests
 	run_storage_tests
+	run_cpu_tests
+	run_memperf_tests
 }
 
 # This script will run all metricts tests by default if no
@@ -125,6 +139,9 @@ function main() {
 
 	while (( $# )); do
 		case $1 in
+		-c|--cpu)
+			run_cpu_tests
+		;;
 		-h|--help)
 			help
 			exit 0;
@@ -137,6 +154,9 @@ function main() {
 		;;
 		-n|--network)
 			run_network_tests
+		;;
+		-p|--memperf)
+			run_memperf_tests
 		;;
 		-s|--storage)
 			run_storage_tests
